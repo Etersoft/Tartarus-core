@@ -10,10 +10,12 @@ def load(name):
     The argument must be a module name in form 'Tartarus.iface.ModName'
     """
     logging.info("Loading module %s" % name)
-    modname = name[len('Tartarus.iface.'):]
 
-    if '.' in modname:
-        raise RuntimeError, "Invalid module name: %s" % modname
+    period = name.find(".")
+    if period > 0:
+        modname = name[:period]
+    else:
+        modname = name;
 
     mpath = ""
     for dir in path:
@@ -23,7 +25,7 @@ def load(name):
             break
 
     if mpath == "":
-        raise RuntimeError, "Slice files not found in slices.path %s" % path
+        raise RuntimeError, "Could not find module '%s' in path %s" % (modname, path)
 
     files = glob.glob(os.path.join(path, "*.ice"))
     Ice.loadSlice("--all -I%s -I%s" %(path, mpath), files)

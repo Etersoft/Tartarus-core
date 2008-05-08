@@ -4,11 +4,12 @@ from Tartarus import slices
 
 _orig_import = __import__
 
-def import_hook(*args):
+def tartarus_import(*args):
     name = args[0]
     if name.startswith("Tartarus.iface."):
         if not sys.modules.has_key("name"):
             try:
+                mname = name[len("Tartarus.iface."):]
                 slices.load(name)
             except:
                 pass
@@ -18,7 +19,7 @@ def import_hook(*args):
 
 def setup_import_hook():
     import __builtin__
-    __builtin__.__import__ = import_hook
+    __builtin__.__import__ = tartarus_import
 
 
 class Loader(object):
