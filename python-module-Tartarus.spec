@@ -32,7 +32,7 @@ Group: System/Servers
 Summary: Tartarus for Python
 
 %description -n %srvname
-Install tartarus-srv if you need to run tartarus servants written in python.
+Install %srvname if you need to run tartarus servants written in python.
 
 
 %prep

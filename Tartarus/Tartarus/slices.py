@@ -10,7 +10,11 @@ path = [ os.path.join(sys.prefix, 'share', 'Tartarus', 'slice') ]
 def load(name):
     """Load Tartarus interface.
 
-    The argument must be a module name in form 'Tartarus.iface.ModName'
+    Name is in form ModName.SubModName.SubModName ...
+
+    This function finds directory ModName in n Tartarus.slices.path and loads
+    all slice files from it in hope that it makes module Tartarus.iface.<name>
+    avaliable.
     """
     logging.trace(__name__, "Loading module %s" % name, Tartarus.trace_import)
 
