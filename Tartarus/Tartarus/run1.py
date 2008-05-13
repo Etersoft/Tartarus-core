@@ -53,6 +53,7 @@ class _App(Ice.Application):
     def run(self, args):
         try:
             self.shutdownOnInterrupt()
+            Ice.setProcessLogger(comm.getLogger())
             comm = self.communicator()
             adapter = comm.createObjectAdapter("TartarusAdapter")
 
