@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-%define srvname tartarus-srv
+%define srvname tartarus-srv1
 
 Version: 0.0.1
 Release: eter0
@@ -9,7 +9,7 @@ Release: eter0
 
 Summary: Tartarus framework for python
 Name: %packagename
-Source: %modulename-%version.tar.gz
+Source: %modulename-%version.tar
 License: %gpl2plus
 Group: Development/Python/Modules
 Prefix: %_prefix
@@ -39,15 +39,19 @@ Install tartarus-srv if you need to run tartarus servants written in python.
 
 %setup  -q -n %modulename-%version
 
-%build
-%__python setup.py build
+#build
+#__python setup.py build
 
 %install
-%__python setup.py install --root=%buildroot --optimize=2 --record=INSTALLED_FILES
+#__python setup.py install --root=%buildroot --optimize=2 --record=INSTALLED_FILES
+%__mkdir_p  %buildroot%python_sitelibdir
+%__cp -Rp  Tartarus %buildroot%python_sitelibdir
 %__mkdir_p  %buildroot%_sbindir
-%__cp tartarus-srv %buildroot%_sbindir
+%__cp %srvname %buildroot%_sbindir
 
-%files -f INSTALLED_FILES
+%files
+%python_sitelibdir/*
+#files -f INSTALLED_FILES
 #doc README README.ru
 
 %files -n %srvname
