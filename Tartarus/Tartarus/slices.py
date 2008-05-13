@@ -1,5 +1,8 @@
 
-import Ice, sys, logging, glob, os
+import Ice, sys, glob, os
+
+from Tartarus import logging, trace_import
+
 
 
 path = [ os.path.join(sys.prefix, 'share', 'Tartarus', 'slice') ]
@@ -9,7 +12,7 @@ def load(name):
 
     The argument must be a module name in form 'Tartarus.iface.ModName'
     """
-    logging.info("Loading module %s" % name)
+    logging.trace("Loading module %s" % name, trace_import)
 
     period = name.find(".")
     if period > 0:

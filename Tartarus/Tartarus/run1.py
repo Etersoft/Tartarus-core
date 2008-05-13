@@ -1,5 +1,7 @@
 
-import os, sys, logging, traceback, Ice, Tartarus
+import os, sys, traceback, Ice, Tartarus
+
+from Tartarus import logging
 
 _msg_len = 10000
 
@@ -21,20 +23,20 @@ _msg_len = 10000
 
 
 class _App(Ice.Application):
-    def __init__(fd = -1):
+    def __init__(self, fd = -1):
         self.parent_fd = fd
 
     def load_module(self, modname, path):
         if not os.path.isdir(path):
-            logging.debug("Skipping file %s", path)
+            logging.trace(__name__, "Skipping file %s" % path, Tartarus.trace_load)
             return
 
         # we load only modules which names start with big latin letters
         if m[0] < 'A' or m[0] > 'Z':
-            logging.debug("Skipping directory %s", path)
+            logging.trace(__name__, "Skipping directory %s" % path, Tartarus.trace_load)
             return
 
-        logging.info("Loading module %s.", % m)
+        logging.info(__name__, "Loading module %s." % m, Tartarus.trace_load)
         modname = "Tartarus.%s" % m
         __import__(modname)
         module = sys.modules["modname"]
@@ -42,19 +44,25 @@ class _App(Ice.Application):
 
 
     def apply_properties(self, props):
+        Tartarus.trace_import = props.getPropertyAsInt("Tartarus.TraceImport")
+        Tartarus.trace_load = props.getPropertyAsInt("Tartarus.TraceLoad")
         Tartarus.module_path += \
             props.propertiesForPrefix('Tartarus.AddModulePath.').itervalues()
-        logging.debug("Tartarus module path is now %s.", Tartarus.module_path)
+        logging.trace(__name__,
+                "Tartarus module path is now %s." % Tartarus.module_path,
+                Tartarus.trace_import)
         Tartarus.slices.path += \
             props.propertiesForPrefix('Tartarus.AddSlicePath.').itervalues()
-        logging.debug("Tartarus slice path is now %s.", Tartarus.slices_path)
+        logging.trace(__name__,
+                "Tartarus slice path is now %s." % Tartarus.slices_path,
+                Tartarus.trace_load)
 
 
     def run(self, args):
         try:
             self.shutdownOnInterrupt()
-            Ice.setProcessLogger(comm.getLogger())
             comm = self.communicator()
+            Ice.setProcessLogger(comm.getLogger())
             adapter = comm.createObjectAdapter("TartarusAdapter")
 
             self.apply_properties(comm.getProperties())
@@ -77,7 +85,7 @@ class _App(Ice.Application):
                 os.write(self.parent_fd, chr(1))
                 os.write(self.parent_fd, msg[:_msg_len])
             else:
-                logging.critical(msg)
+                logging.error(msg)
             return 1
 
 
@@ -104,7 +112,7 @@ def run_fork(pidfile, args):
     res = os.read(rfd, _msg_len + 3)
     code = ord(res[0])
     if (code != 0):
-        logging.critical(rfd[1:])
+        logging.error(rfd[1:])
         return code
 
     #make pid file

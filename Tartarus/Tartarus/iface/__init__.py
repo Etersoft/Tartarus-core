@@ -1,11 +1,14 @@
 
-import sys, logging
-from Tartarus import slices
+import sys
+from Tartarus import slices, logging, trace_import
 
 _orig_import = __import__
 
 def tartarus_import(*args):
-    logging.debug("Import hook invoked for name '%s', fromlist = %s" % (args[0],args[3]))
+    logging.trace(__name__,
+            "Import hook invoked for name '%s', fromlist = %s"
+                % (args[0],args[3]),
+            trace_import >= 16)
     name = args[0]
     if name.startswith("Tartarus.iface."):
         if not sys.modules.has_key("name"):

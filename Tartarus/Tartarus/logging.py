@@ -13,7 +13,7 @@ def _logger_from_communicator(comm, cond):
         do_log = i > 0
     else:
         raise TypeError,\
-                "Could not determine logging condition form object %s", %obj
+                "Could not determine logging condition form object %s" % obj
 
     if (do_log):
         return comm.getLogger()
