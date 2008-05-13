@@ -1,7 +1,7 @@
 
-import Ice, sys, glob, os
+import Ice, sys, glob, os, Tartarus
 
-from Tartarus import logging, trace_import
+from Tartarus import logging
 
 
 
@@ -12,7 +12,7 @@ def load(name):
 
     The argument must be a module name in form 'Tartarus.iface.ModName'
     """
-    logging.trace("Loading module %s" % name, trace_import)
+    logging.trace(__name__, "Loading module %s" % name, Tartarus.trace_import)
 
     period = name.find(".")
     if period > 0:
@@ -20,19 +20,20 @@ def load(name):
     else:
         modname = name;
 
-    mpath = ""
+    mpath = None
     for dir in path:
         test = os.path.join(dir, modname)
         if os.path.isdir(test):
             mpath = test
             break
 
-    if mpath == "":
+    logging.trace(__name__, "In path %s found dir %s" % (path, mpath),
+            Tartarus.trace_import >= 16)
+
+    if mpath is None:
         raise RuntimeError, "Could not find module '%s' in path %s" % (modname, path)
 
-    files = glob.glob(os.path.join(path, "*.ice"))
-    Ice.loadSlice("--all -I%s -I%s" %(path, mpath), files)
-
-
-
+    files = glob.glob(os.path.join(mpath, "*.ice"))
+    logging.trace(__name__, "Loading slices: %s" % files, Tartarus.trace_import >= 16)
+    Ice.loadSlice("--all -I%s"  % mpath, [ "-I%s" % d for d in path ] + files)
 

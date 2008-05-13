@@ -5,11 +5,17 @@ from Tartarus import slices, logging, trace_import
 _orig_import = __import__
 
 def tartarus_import(*args):
+    name = args[0]
+
+    if len(args) > 3:
+        fromlist = args[3]
+    else:
+        fromlist = None
+
     logging.trace(__name__,
             "Import hook invoked for name '%s', fromlist = %s"
-                % (args[0],args[3]),
+                % (name, fromlist),
             trace_import >= 16)
-    name = args[0]
     if name.startswith("Tartarus.iface."):
         if not sys.modules.has_key("name"):
             try:
@@ -20,9 +26,9 @@ def tartarus_import(*args):
             except:
                 pass
 
-    elif name == "Tartarus.iface" and len(args) > 3 and args[3] != None:
+    elif name == "Tartarus.iface" and fromlist is not None:
         # import in form "from Tartarus.iface import ModuleName1, ModuleName2"
-        for mname in args[3]:
+        for mname in fromlist:
             try:
                 slices.load(mname)
             except:
@@ -49,5 +55,5 @@ class Loader(object):
     def __getattr__(self, name):
         modname = "Tartarus.iface." + name
         __import__(modname)
-        return sys.modules[name]
+        return sys.modules[modname]
 

@@ -26,20 +26,20 @@ class _App(Ice.Application):
     def __init__(self, fd = -1):
         self.parent_fd = fd
 
-    def load_module(self, modname, path):
+    def load_module(self, modname, path, adapter):
         if not os.path.isdir(path):
             logging.trace(__name__, "Skipping file %s" % path, Tartarus.trace_load)
             return
 
         # we load only modules which names start with big latin letters
-        if m[0] < 'A' or m[0] > 'Z':
+        if modname[0] < 'A' or modname[0] > 'Z':
             logging.trace(__name__, "Skipping directory %s" % path, Tartarus.trace_load)
             return
 
-        logging.info(__name__, "Loading module %s." % m, Tartarus.trace_load)
-        modname = "Tartarus.%s" % m
+        logging.trace(__name__, "Loading module %s." % modname, Tartarus.trace_load)
+        modname = "Tartarus.%s" % modname
         __import__(modname)
-        module = sys.modules["modname"]
+        module = sys.modules[modname]
         module.init(adapter)
 
 
@@ -47,14 +47,14 @@ class _App(Ice.Application):
         Tartarus.trace_import = props.getPropertyAsInt("Tartarus.TraceImport")
         Tartarus.trace_load = props.getPropertyAsInt("Tartarus.TraceLoad")
         Tartarus.module_path += \
-            props.propertiesForPrefix('Tartarus.AddModulePath.').itervalues()
+            props.getPropertiesForPrefix('Tartarus.AddModulePath.').itervalues()
         logging.trace(__name__,
                 "Tartarus module path is now %s." % Tartarus.module_path,
                 Tartarus.trace_import)
         Tartarus.slices.path += \
-            props.propertiesForPrefix('Tartarus.AddSlicePath.').itervalues()
+            props.getPropertiesForPrefix('Tartarus.AddSlicePath.').itervalues()
         logging.trace(__name__,
-                "Tartarus slice path is now %s." % Tartarus.slices_path,
+                "Tartarus slice path is now %s." % Tartarus.slices.path,
                 Tartarus.trace_load)
 
 
@@ -69,8 +69,13 @@ class _App(Ice.Application):
 
             Tartarus.__path__ += Tartarus.module_path
             for dir in Tartarus.module_path:
+                if not os.path.isdir(dir):
+                    logging.warning(
+                            "Directory from Tartarus.modpath not found: %s"
+                            % dir)
+                    continue
                 for m in os.listdir(dir):
-                    self.load_module(m, os.path.join(dir,m))
+                    self.load_module(m, os.path.join(dir,m), adapter)
 
             adapter.activate()
             if self.parent_fd > 0:
