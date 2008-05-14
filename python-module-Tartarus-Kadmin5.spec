@@ -9,7 +9,7 @@ Release: alt0
 
 Summary: Tartarus example servant
 Name: %packagename
-Source: %modulename-%version.tar.gz
+Source: %modulename-%version.tar
 License: %gpl2plus
 Group: Development/Python/Modules
 Prefix: %_prefix
@@ -50,7 +50,7 @@ Interface definisions for %modulename.
 
 %files
 %_libdir/Tartarus/modules/*
-%doc README 
+#doc README 
 
 %files -n %modulename-slice
 %_datadir/Tartarus/slice/*/*

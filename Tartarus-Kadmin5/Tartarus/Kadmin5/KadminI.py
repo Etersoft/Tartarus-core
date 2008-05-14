@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-import Tartarus IceSSL, kadmin5
+import Tartarus, IceSSL, kadmin5
 
-import Tartarus.iface.Kerberos5 as I # I stands for Interface
+import Tartarus.iface.Kadmin5 as I # I stands for Interface
 
 __all__ = [ "KadminI" ]
 
-class KadminI(I.Kadmin5):
+class KadminI(I.Kadmin):
     def make_kadmin(self,ctx):
         try:
             princ = IceSSL.getConnectionInfo(ctx.con).krb5Princ
@@ -21,7 +21,7 @@ class KadminI(I.Kadmin5):
         except:
             princ = "Tartarus/admin"
 
-        return kadmin5.kadmin(exc_type = I.KerberosException,
+        return kadmin5.kadmin(exc_type = I.KadminException,
                                 princname=princ)
 
     def getPrincKeys(self, name, ctx):

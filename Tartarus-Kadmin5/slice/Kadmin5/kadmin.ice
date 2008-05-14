@@ -1,9 +1,9 @@
 
-module Tartarus { module iface
+module Tartarus { module iface {
 
-module Kerberos5 {
+module Kadmin5 {
 
-exception KerberosException
+exception KadminException
 {
     int code;
     string where;
@@ -32,28 +32,28 @@ struct PrincKeys
     KeySeq keys;
 };
 
-interface Kadmin5
+interface Kadmin
 {
     PrincKeys getPrincKeys(string name)
-        throws KerberosException;
+        throws KadminException;
 
     PrincKeys createServicePrincipal(string service, string host)
-        throws KerberosException;
+        throws KadminException;
 
     string createPrincipal(string name, string password)
-        throws KerberosException;
+        throws KadminException;
 
     string changePrincPassword(string  name, string password)
-        throws KerberosException;
+        throws KadminException;
 
     void deletePrincipal(string name)
-        throws KerberosException;
+        throws KadminException;
 
     PrincSeq listPrincs(string expr)
-        throws KerberosException;
+        throws KadminException;
 
     PrincSeq listAllPrincs()
-        throws KerberosException;
+        throws KadminException;
 };
 
 };
