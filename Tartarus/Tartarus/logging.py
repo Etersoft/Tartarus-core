@@ -72,22 +72,56 @@ is raised.
 
 import Ice
 
-def _logger_from_communicator(comm, cond):
-    """Private function for internal use."""
-    do_log = False
+
+def _do_test(comm, cond):
+    """Private function for internal use"""
     if type(cond) in [bool, int, long, type(None)]:
-        do_log = bool(cond)
+        return bool(cond)
     elif (type(cond) is tuple and len(cond) == 2 and type(cond[0]) is str):
         i = comm.getProperties().getPropertyAsInt(cond[0])
-        do_log = cond[1] <= i
+        return cond[1] <= i
     elif type(cond) is str:
         i = comm.getProperties().getPropertyAsInt(cond)
-        do_log = i > 0
+        return i > 0
     else:
         raise TypeError,\
                 "Could not determine logging condition form object %s" % obj
 
-    if (do_log):
+
+def test(cond, log_to):
+    """Test a condition.
+
+    Sometimes you want to log a complicated message, constructed
+    every time you call a logging function. For example:
+
+    logging.trace(__name__, "Very long list: %s" % very_long_list,
+                    "MyApp.Debug", comm)
+
+    This code constructs a string representation of very_long_list
+    every time it is called, dispite of actual value of MyApp.Debug
+    property, which is suboptimal.
+
+    With Tartarus.logging.test(...), you can save few CPU cycles by
+    rewriting this code fragment as follows:
+
+    if logging.test("MyApp.Debug", comm):
+        logging.trace(__name__, "Very long list: %s" % very_long_list,
+                        log_to = comm)
+
+    Possible values for log_to and cond paramters are the same as with
+    other functions in this module. See documentation for
+    Tartarus.logging module for details.
+    """
+    if isinstance(log_to, Ice.Communicator):
+        return _do_test(log_to, cond)
+    elif isinstance(log_to, Ice.Current):
+        return _do_test(log_to.adapter.getCommunicator(), cond)
+
+
+
+def _logger_from_communicator(comm, cond):
+    """Private function for internal use."""
+    if _do_test(comm, cond):
         return comm.getLogger()
     else:
         return None
@@ -106,9 +140,9 @@ def _logger(obj, cond):
         else:
             return None
     elif isinstance(obj, Ice.Communicator):
-        _logger_from_communicator(obj, cond)
+        return _logger_from_communicator(obj, cond)
     elif isinstance(obj, Ice.Current):
-        _logger_from_communicator(obj.adapter.getCommunicator(), cond)
+        return _logger_from_communicator(obj.adapter.getCommunicator(), cond)
     else:
         raise TypeError, "Could not get logger from object %s" % obj
 
