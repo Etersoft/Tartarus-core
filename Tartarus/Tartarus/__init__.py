@@ -1,14 +1,9 @@
 
-__all__ = [ 'iface', 'run1' , 'logging' ]
+__all__ = [ 'iface', 'run1' , 'logging', 'slices', 'modules' ]
 
-trace_import = 0
-trace_load = 0
+import iface, slices, modules, logging
 
-import os, sys
-module_path = [os.path.join(sys.prefix, 'lib', 'Tartarus', 'modules')]
+slices.setup_import_hook()
 
-import iface
-iface.setup_import_hook()
 iface = iface.Loader()
-
 
