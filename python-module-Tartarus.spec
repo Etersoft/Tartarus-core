@@ -48,6 +48,9 @@ Install %srvname if you need to run tartarus servants written in python.
 %__cp -Rp  Tartarus %buildroot%python_sitelibdir
 %__mkdir_p  %buildroot%_sbindir
 %__cp %srvname %buildroot%_sbindir
+%__mkdir_p %buildroot%_sysconfdir/Tartarus
+%__cp Tartarus.conf %buildroot%_sysconfdir/Tartarus
+
 
 %files
 %python_sitelibdir/*
@@ -56,6 +59,7 @@ Install %srvname if you need to run tartarus servants written in python.
 
 %files -n %srvname
 %_sbindir/*
+%_sysconfdir/*
 
 %changelog
 
