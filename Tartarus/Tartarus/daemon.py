@@ -31,6 +31,10 @@ def _format_exception():
     else:
         code =  -1
         msg = str().join(traceback.format_exception(et,ev,None))
+
+    if not msg.endswith('\n'):
+        msg += '\n'
+
     return (code, msg)
 
 def _report_exception(fd = None):
@@ -237,6 +241,11 @@ def _parse_options():
             action="store_false", dest = "closefds", default=True,
             help="do not release sandard input, output and error streams")
 
+    parser.add_option("--stderr",
+            action="store_true", default=False,
+            help="log output to stderr instead of system log; "
+                 "with --closefds disables most logging messages")
+
     try:
         sp = sys.argv.index('--')
         our_args = sys.argv[1:sp]
@@ -251,13 +260,25 @@ def _parse_options():
             print "DEBUG: OPTIONS: %s,  %s, %s" % (opts, action, args)
         parser.error("Don't know what to do!")
 
+    if action[0] == 'status':
+        # print status to stderr -- not overridable
+        opts.stderr = True
+
+    if not opts.stderr:
+        args.append('--Ice.UseSyslog')
+
     return (opts, action[0], [sys.argv[0]] + args)
 
 
 
 def main(what):
+    err = None
+
     try:
         (opts, action, args) = _parse_options()
+        if opts.stderr:
+            err = sys.stderr
+
         if action == 'run':
             return what().main(args)
         dc = DaemonController(what, args, opts)
@@ -273,8 +294,12 @@ def main(what):
         raise DaemonError, (-1, "This can't happen!")
     except:
         (code, msg) = _format_exception()
-        sys.stderr.write("%s\n" % msg)
-        return code
+        if err is None:
+            import syslog
+            syslog.openlog('Tartarus', 0)
+            syslog.syslog(msg)
+        else:
+            err.write(msg)
 
-
+        sys.exit(code)
 
