@@ -9,7 +9,7 @@ _msg_len = 10000
 def _report_result(fd, code, msg):
     #if fd is not None and fd > 0:
     try:
-        os.write(fd, chr(code) + msg[:_msg_len])
+        os.write(fd, "%d:%s" % (code, msg[:_msg_len]))
     except:
         if code != 0:
             logging.error(msg)
@@ -30,7 +30,7 @@ def _format_exception():
         msg = "OS Error: %s" % ev.strerror
     else:
         code =  -1
-        msg = traceback.format_exception(et,ev,None)
+        msg = str().join(traceback.format_exception(et,ev,None))
     return (code, msg)
 
 def _report_exception(fd = None):
@@ -69,7 +69,7 @@ class Daemon(Ice.Application):
             _report_result(self.parent_fd, 0, "%d" % os.getpid())
 
         except:
-            _report_exception(parent_fd)
+            _report_exception(self.parent_fd)
 
         try:
             sys.exit(self.wait())
@@ -103,6 +103,8 @@ class DaemonController(object):
             jfile.write('\n')
 
     def _check_jfile(self, pid):
+        if self.jfile is None:
+            return True
         with open("/proc/%d/stat" % pid) as f:
             l = f.readline()
         with open(self.jfile) as jfile:
@@ -114,6 +116,8 @@ class DaemonController(object):
             f.write("%d\n" % pid)
 
     def _check_and_get_pid(self):
+        if self.pidfile is None:
+            raise DaemonError, (2, "please specify pidfile")
         if not os.path.isfile(self.pidfile):
             raise DaemonError, (-1, "service is not running")
         with open(self.pidfile) as f:
@@ -175,15 +179,17 @@ class DaemonController(object):
         #parent
         os.close(wfd)
         res = os.read(rfd, _msg_len + 3)
-        if len(res) < 1:
+        ind = res.find(':')
+        if ind <= 0:
             raise DaemonError, (-1, "Failed to get daemon initialization status")
-        code = ord(res[0])
-        msg = res[1:]
+
+        code = int(res[:ind])
+        msg = res[(ind+1):]
         if (code != 0):
             raise DaemonError, (code, msg)
 
         pid = int(msg)
-        if (self.printpid):
+        if self.printpid:
             print str(pid)
 
         if self.pidfile is not None:
@@ -210,25 +216,25 @@ def _parse_options():
     parser.add_option("-j", "--jfile",
             help="create a jfile JFILE")
     parser.add_option("-o", "--printpid",
-            action="store_true", dest = "printpid", default="False",
+            action="store_true", dest = "printpid", default=False,
             help="optput pid of started process to stdout")
     parser.add_option("--noprintpid",
-            action="store_false", dest = "printpid", default="False",
+            action="store_false", dest = "printpid", default=False,
             help="do not print pid of started process to stdout (the default)")
 
     parser.add_option("--chdir",
-            action="store_true", dest = "chdir", default="True",
+            action="store_true", dest = "chdir", default=True,
             help="change directory of running daemon to root (the default)")
     parser.add_option("--nochdir",
-            action="store_false", dest = "chdir", default="True",
+            action="store_false", dest = "chdir", default=True,
             help="do not change directory of running daemon to root")
 
     parser.add_option("--closefds",
-            action="store_true", dest = "closefds", default="True",
+            action="store_true", dest = "closefds", default=True,
             help="release sandard input, output and error streams"
                     " (the default)")
     parser.add_option("--noclosefds",
-            action="store_false", dest = "closefds", default="True",
+            action="store_false", dest = "closefds", default=True,
             help="do not release sandard input, output and error streams")
 
     try:
