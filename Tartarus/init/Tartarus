@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# Tartarus	Tartarus services.
+#
+# chkconfig: - 90 10
+# description:	This daemon is central to Tartarus infrastructure
+# config: /etc/Tartarus/Tartarus.conf
+# pidfile: /var/run/tartarus-srv1.pid
+
+# Do not load RH compatibility interface.
+WITHOUT_RC_COMPAT=1
+
+# Source function library.
+. /etc/init.d/functions
+
+PIDFILE=/var/run/tartarus-srv1.pid
+JFILE=/var/run/tartarus-srv1.jiff
+LOCKFILE=/var/lock/subsys/tartarus-srv1
+RETVAL=0
+TARTARUS_SRV=/usr/sbin/tartarus-srv1
+CONFIG=/etc/Tartarus/Tartarus.conf
+
+start()
+{
+	"$TARTARUS_SRV" --pidfile "$PIDFILE" --jfile "$JFILE" start -- --Ice.Config="$CONFIG"
+	RETVAL=$?
+	[ $RETVAL == 0 ] && touch $LOCKFILE
+	return $RETVAL
+}
+
+status()
+{
+	"$TARTARUS_SRV" --pidfile "$PIDFILE" --jfile "$JFILE" status
+	RETVAL=$?
+	return $RETVAL
+}
+
+stop()
+{
+	"$TARTARUS_SRV" --pidfile "$PIDFILE" --jfile "$JFILE" stop
+	RETVAL=$?
+	[ $RETVAL == 0 ] && rm -f $LOCKFILE
+	return $RETVAL
+}
+
+restart()
+{
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		restart
+		;;
+	condstop)
+		if [ -e "$LOCKFILE" ]; then
+			stop
+		fi
+		;;
+	condrestart)
+		if [ -e "$LOCKFILE" ]; then
+			restart
+		fi
+		;;
+	status)
+		status
+		;;
+	*)
+		msg_usage "${0##*/} {start|stop|restart|condstop|condrestart|status}"
+		RETVAL=1
+esac
+
+exit $RETVAL

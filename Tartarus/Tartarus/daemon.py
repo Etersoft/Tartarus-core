@@ -21,7 +21,7 @@ def _format_exception():
         raise
     elif et is DaemonError:
         code = ev.code
-        msg = ev.msg
+        msg = ev.message
     elif et is Ice.InitializationException:
         code = -1
         msg = "Failed to initialize runtime: %s" % ev.reason
@@ -107,8 +107,7 @@ class DaemonController(object):
             l = f.readline()
         with open(self.jfile) as jfile:
             j = jfile.readline()
-
-        return l.split()[21] == j
+        return long(l.split()[21]) == long(j)
 
     def _make_pid_file(self, pid):
         with open(self.pidfile, "w") as f:
@@ -268,7 +267,7 @@ def main(what):
         raise DaemonError, (-1, "This can't happen!")
     except:
         (code, msg) = _format_exception()
-        sys.stderr.write("Error: %s\n" % msg)
+        sys.stderr.write("%s\n" % msg)
         return code
 
 
