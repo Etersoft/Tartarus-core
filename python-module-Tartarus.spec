@@ -30,6 +30,8 @@ This module is built for python %__python_version
 %package -n %srvname
 Group: System/Servers
 Summary: Tartarus for Python
+Requires: %name = %version
+Provides: Tartarus
 
 %description -n %srvname
 Install %srvname if you need to run tartarus servants written in python.
@@ -54,6 +56,12 @@ Install %srvname if you need to run tartarus servants written in python.
 %__cp -p init/* %buildroot%_initdir
 
 
+%post -n %srvname
+%post_service Tartarus
+
+%preun -n %srvname
+%preun_service Tartarus
+
 
 %files
 %python_sitelibdir/*
@@ -62,7 +70,7 @@ Install %srvname if you need to run tartarus servants written in python.
 
 %files -n %srvname
 %_sbindir/*
-%_sysconfdir/Tartarus/*
+%config(noreplace) %_sysconfdir/Tartarus/Tartarus.conf
 %_initdir/*
 
 %changelog
