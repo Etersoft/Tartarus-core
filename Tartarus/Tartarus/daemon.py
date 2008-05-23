@@ -10,7 +10,7 @@ def _report_result(fd, code, msg):
     #if fd is not None and fd > 0:
     try:
         os.write(fd, "%d:%s" % (code, msg[:_msg_len - 20]))
-    except:
+    except Exception:
         if code != 0:
             logging.error(msg)
 
@@ -18,7 +18,7 @@ def _format_exception():
     (et, ev, tb) = sys.exc_info()
 
     if et is exceptions.SystemExit:
-        raise
+        sys.exit(ev)
     elif et is DaemonError:
         code = ev.code
         msg = ev.message
@@ -40,7 +40,7 @@ def _format_exception():
 def _report_exception(fd = None):
     (code, msg) = _format_exception()
     _report_result(fd, code, msg)
-    sys.exit(code)
+    return code
 
 
 class DaemonError(exceptions.Exception):
@@ -72,13 +72,15 @@ class Daemon(Ice.Application):
 
             _report_result(self.parent_fd, 0, "%d" % os.getpid())
 
-        except:
-            _report_exception(self.parent_fd)
+        except Exception:
+            return _report_exception(self.parent_fd)
+            
 
         try:
-            sys.exit(self.wait())
-        except:
-            _report_exception()
+            return self.wait()
+        except Exception:
+            return _report_exception()
+            
 
 
 
@@ -167,8 +169,8 @@ class DaemonController(object):
                 sys.exit(0)
 
             sys.exit(self.what(parent_fd).main(self.args))
-        except:
-            _report_exception(parent_fd)
+        except Exception:
+            sys.exit(_report_exception(parent_fd))
 
     def start(self):
         """Start an application as a daemon."""
@@ -292,7 +294,7 @@ def main(what):
                 return 0
 
         raise DaemonError, (-1, "This can't happen!")
-    except:
+    except Exception:
         (code, msg) = _format_exception()
         if err is None:
             import syslog
