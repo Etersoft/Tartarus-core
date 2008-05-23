@@ -22,14 +22,28 @@ def load_module(modname, adapter):
 def load_modules1(adapter):
     Tartarus.__path__ += path
 
-    for dir in path:
+    props = adapter.getCommunicator().getProperties()
+    d = props.getPropertiesForPrefix("Tartarus.module.") #note '.' at the end
+    if d == {}:
+        #load everything we can find
+        logging.trace(__name__, "Loading all modules from path.", trace > 16)
+        mods = _walk_path(path)
+    else:
+        mods = d.itervalues()
+
+    for m in mods:
+        load_module(m, adapter)
+
+
+def _walk_path(p):
+    for dir in p:
         if not os.path.isdir(dir):
             logging.warning("Directory from Tartarus.modpath not found: %s"
                             % dir)
             continue
         for m in os.listdir(dir):
             if os.path.isdir(os.path.join(dir,m)):
-                    load_module(m, adapter)
+                yield m
             elif trace > 5:
                 logging.trace(__name__, "Skipping %s from %s" % (m, dir))
 
