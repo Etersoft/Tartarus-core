@@ -9,7 +9,7 @@ _msg_len = 10000
 def _report_result(fd, code, msg):
     #if fd is not None and fd > 0:
     try:
-        os.write(fd, "%d:%s" % (code, msg[:_msg_len]))
+        os.write(fd, "%d:%s" % (code, msg[:_msg_len - 20]))
     except:
         if code != 0:
             logging.error(msg)
@@ -182,7 +182,7 @@ class DaemonController(object):
 
         #parent
         os.close(wfd)
-        res = os.read(rfd, _msg_len + 3)
+        res = os.read(rfd, _msg_len)
         ind = res.find(':')
         if ind <= 0:
             raise DaemonError, (-1, "Failed to get daemon initialization status")
@@ -301,5 +301,5 @@ def main(what):
         else:
             err.write(msg)
 
-        sys.exit(code)
+        return code
 
