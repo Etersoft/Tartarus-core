@@ -11,6 +11,6 @@ import Tartarus, Ice
 import Tartarus.iface.Kadmin5 as I
 
 c = Ice.initialize()
-a = I.KadminPrx.checkedCast(c.stringToProxy("Kadmin5:tcp -p 12345"))
+a = I.KadminPrx.checkedCast(c.propertyToProxy("Tartarus.Kadmin5.Prx"))
 
 

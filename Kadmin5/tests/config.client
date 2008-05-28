@@ -1,19 +1,18 @@
 #
-# The server creates one single object adapter with the name
-# "Hello". The following line sets the endpoints for this
-# adapter.
+# The client reads this property to create the reference to the
+# "hello" object in the server.
 #
-TartarusAdapter.Endpoints=ssl -h evilistiq.saratov.etersoft.ru -p 12345
+Tartarus.Kadmin5.Prx=Kadmin5:ssl -h evilistiq.saratov.etersoft.ru -p 12345
 
 #
 # Warn about connection exceptions
 #
-Ice.Warn.Connections=1
+#Ice.Warn.Connections=1
 
 #
 # We want a faster ACM for this demo.
 #
-Ice.ACM.Server=10
+Ice.ACM.Client=10
 
 #
 # Network Tracing
@@ -23,7 +22,7 @@ Ice.ACM.Server=10
 # 2 = like 1, but more detailed
 # 3 = like 2, but also trace data transfer
 #
-#Ice.Trace.Network=3
+#Ice.Trace.Network=1
 
 #
 # Protocol Tracing
@@ -44,26 +43,11 @@ IceSSL.Trace.Security=1
 #
 # SSL Configuration
 #
-#Ice.InitPlugins=0
 Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
 IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
 IceSSL.ServiceName=host
-IceSSL.Keytab=/etc/krb5.keytab
 #IceSSL.DefaultDir=../../../certs
 #IceSSL.CertAuthFile=cacert.pem
-#IceSSL.CertFile=s_rsa1024_pub.pem
-#IceSSL.KeyFile=s_rsa1024_priv.pem
-
-
-#
-# Tartarus configuration:
-#
-#Tartarus.addSlicePath.Test = ../slice
-#Tartarus.addModulePath.Test = ../Tartarus
-
-Tartarus.import.Trace = 255
-Tartarus.modules.Trace = 255
-Tartarus.Hello.Trace = 255
-
-I
+#IceSSL.CertFile=c_rsa1024_pub.pem
+#IceSSL.KeyFile=c_rsa1024_priv.pem
