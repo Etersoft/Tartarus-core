@@ -3,7 +3,7 @@ import Ice, sys, glob, os, Tartarus
 
 from Tartarus import logging
 
-path = [ os.path.join(sys.prefix, 'share', 'Tartarus', 'slice') ]
+path = []
 trace = 0
 
 _orig_import = __import__
@@ -17,7 +17,12 @@ def load(name):
     all slice files from it in hope that it makes module Tartarus.iface.<name>
     avaliable.
     """
+    global path
     logging.trace(__name__, "Loading module %s" % name, trace)
+
+    # append default path if needed.
+    if len(path) == 0:
+        path = [os.path.join(sys.prefix, 'share', 'Tartarus', 'slice') ]
 
     period = name.find(".")
     if period > 0:

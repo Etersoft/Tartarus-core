@@ -2,7 +2,7 @@
 
 import os, sys, Tartarus
 from Tartarus import logging
-path = [os.path.join(sys.prefix, 'lib', 'Tartarus', 'modules')]
+path = []
 
 trace = 0
 
@@ -20,7 +20,15 @@ def load_module(modname, adapter):
     module.init(adapter)
 
 def load_modules1(adapter):
-    Tartarus.__path__ += path
+    #if no value specified yet, append the default
+    global path
+    if len(path) == 0:
+        path += [os.path.join(sys.prefix, 'lib', 'Tartarus', 'modules')]
+
+    #update module search path
+    for p in path:
+        if p not in Tartarus.__path__:
+            Tartarus.__path__.append(p)
 
     props = adapter.getCommunicator().getProperties()
     d = props.getPropertiesForPrefix("Tartarus.module.") #note '.' at the end
