@@ -1,7 +1,7 @@
 """Logging facilities for Tartarus.
 
 Module Tartarus.logging provides logging facilities for Tartarus. Three
-functions are defined here:
+functions defined here are used for issuing log messages:
     error(...) -- for logging error messages
     warning(...) -- for warning messages
     trace(...) -- for debug and informational messages.
@@ -77,10 +77,11 @@ def _do_test(comm, cond):
     """Private function for internal use"""
     if type(cond) in [bool, int, long, type(None)]:
         return bool(cond)
-    elif (type(cond) is tuple and len(cond) == 2 and type(cond[0]) is str):
+    elif (type(cond) is tuple and len(cond) == 2
+            and type(cond[0]) in (str, unicode)):
         i = comm.getProperties().getPropertyAsInt(cond[0])
         return cond[1] <= i
-    elif type(cond) is str:
+    elif type(cond) in (str,unicode):
         i = comm.getProperties().getPropertyAsInt(cond)
         return i > 0
     else:
