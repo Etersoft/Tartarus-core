@@ -1,3 +1,9 @@
+"""Tartarus.daemon module provides a way of writing services in python.
+
+Such services are intended to run as unix daemons and provide Ice
+servants (Ice is Internet Communication Egine -- an object-oriented RPC
+developed by Zeroc -- http://www.zeroc.com ).
+"""
 
 from __future__ import with_statement
 import sys, os, traceback, exceptions, Ice, Tartarus
@@ -7,6 +13,14 @@ _msg_len = 10000
 
 
 def _report_result(fd, code, msg):
+    r"""Private function for internal use.
+
+    Report a result through given file descriptor.
+
+    When starting a daemon, parent process waits on a pipe to read the results
+    of child initialization. This function is used to write such results to the
+    pipe.
+    """
     #if fd is not None and fd > 0:
     try:
         os.write(fd, "%d:%s" % (code, msg[:_msg_len - 20]))
@@ -15,6 +29,17 @@ def _report_result(fd, code, msg):
             logging.error(msg)
 
 def _format_exception():
+    r"""Private function for internal use.
+
+    Get code and description from occured exception.
+
+    From system information about last ocuured exception it forms a string
+    description of the error caused the exception, which can be reported to
+    user, and integer error code, which can be, for example, reported to
+    operating system as process exit code.
+
+    Returns a pair (code, description).
+    """
     (et, ev, tb) = sys.exc_info()
 
     if et is exceptions.SystemExit:
@@ -38,20 +63,38 @@ def _format_exception():
     return (code, msg)
 
 def _report_exception(fd = None):
+    r"""Private function for internal use.
+
+    When error occured, it is used to report information on to parent process
+    or current logging mechanism.
+    """
     (code, msg) = _format_exception()
     _report_result(fd, code, msg)
     return code
 
 
 class DaemonError(exceptions.Exception):
+    """Basic class for exceptions connected with daemon startup."""
     def __init__(self, code, msg):
         self.code = code
         self.message = msg
     def __repr__(self):
-        return self.__class__.__name__ + (": %s" % args)
+        return "%s: %s (%d)" % (
+                self.__class__.__name__ , self.message, self.code)
 
 
 class Daemon(Ice.Application):
+    r"""Base class of all Tartarus daemons.
+
+    It provides two hooks for derived classes:
+        - start(self, communicator, args) to make derivative initialize
+          operation
+        - wait() where derived classes should perform their job.
+
+    After calling start(...) it reports the result (succes or, in case
+    start(...) trow an exception, failure) to the parent though file desctiptor
+    given to it's constructor (if any).
+    """
     # clients will override this two:
     def start(self, comm, args):
         pass
@@ -74,13 +117,11 @@ class Daemon(Ice.Application):
 
         except Exception:
             return _report_exception(self.parent_fd)
-            
 
         try:
             return self.wait()
         except Exception:
             return _report_exception()
-            
 
 
 
@@ -206,6 +247,12 @@ class DaemonController(object):
         return 0
 
 def _parse_options():
+    """Private function for internal use.
+
+    Used by main(...) to parse command-line options. Returns a 3-tuple of
+    options object,  an action program was asked to perfom and arguments that
+    should be passed farther to child process.
+    """
     import optparse
     usage = "usage: %prog [options] [action] [-- [ice_opts]]"
     description = ("Available actions are start, stop, status and run. " +
@@ -301,7 +348,10 @@ def main(what):
             syslog.openlog('Tartarus', 0)
             syslog.syslog(msg)
         else:
-            err.write(msg)
+            try:
+                err.write(msg)
+            except:
+                pass
 
         return code
 
