@@ -12,6 +12,9 @@ from Tartarus import logging
 _msg_len = 10000
 
 
+verbose = False
+
+
 def _report_result(fd, code, msg):
     r"""Private function for internal use.
 
@@ -41,6 +44,8 @@ def _format_exception():
     Returns a pair (code, description).
     """
     (et, ev, tb) = sys.exc_info()
+    if not verbose:
+        tb = None
 
     if et is exceptions.SystemExit:
         sys.exit(ev)
@@ -55,7 +60,7 @@ def _format_exception():
         msg = "OS Error: %s" % ev.strerror
     else:
         code =  -1
-        msg = str().join(traceback.format_exception(et,ev,None))
+        msg = str().join(traceback.format_exception(et,ev,tb))
 
     if not msg.endswith('\n'):
         msg += '\n'
@@ -290,6 +295,10 @@ def _parse_options():
             action="store_false", dest = "closefds", default=True,
             help="do not release sandard input, output and error streams")
 
+    parser.add_option("-v", "--verbose",
+            action="store_true", default=False,
+            help="be more verbose in case of error")
+
     parser.add_option("--stderr",
             action="store_true", default=False,
             help="log output to stderr instead of system log; "
@@ -315,6 +324,9 @@ def _parse_options():
 
     if not opts.stderr:
         args.append('--Ice.UseSyslog')
+
+    global verbose
+    verbose = opts.verbose
 
     return (opts, action[0], [sys.argv[0]] + args)
 
