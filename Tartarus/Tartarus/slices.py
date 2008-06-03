@@ -18,7 +18,6 @@ def load(name):
     avaliable.
     """
     global path
-    logging.trace(__name__, "Loading module %s" % name, trace)
 
     # append default path if needed.
     if len(path) == 0:
@@ -29,6 +28,11 @@ def load(name):
         modname = name[:period]
     else:
         modname = name;
+
+    if "Tartarus.iface." + modname in sys.modules:
+        return
+
+    logging.trace(__name__, "Loading %s interface" % modname, trace)
 
     mpath = None
     for dir in path:
@@ -63,7 +67,7 @@ def tartarus_import(*args):
                 % (name, fromlist),
             trace >= 16)
     if name.startswith("Tartarus.iface."):
-        if not sys.modules.has_key("name"):
+        if name not in sys.modules:
             try:
                 # Strip a prefix from argument.
                 # len("Tartarus.iface.") == 15
