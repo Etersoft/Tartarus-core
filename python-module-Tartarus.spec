@@ -3,7 +3,7 @@
 %define srvname tartarus-srv1
 
 Version: 0.0.1
-Release: eter0
+Release: eter1
 
 %setup_python_module Tartarus
 
@@ -11,13 +11,15 @@ Summary: Tartarus framework for python
 Name: %packagename
 Source: %modulename-%version.tar
 License: %gpl2plus
-Group: Development/Python/Modules
+Group: Development/Python
 Prefix: %_prefix
 Url: http://tartarus.org
+Packager: Ivan A. Melnikov <iv@altlinux.org>
 
 BuildArchitectures: noarch
 
 
+BuildRequires(pre): rpm-build-licenses
 # Automatically added by buildreq on Fri Mar 21 2008
 BuildRequires: python-devel
 
@@ -74,5 +76,8 @@ Install %srvname if you need to run tartarus servants written in python.
 %_initdir/*
 
 %changelog
+* Thu Jun 05 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.1-eter1
+inital build
+
 
 
