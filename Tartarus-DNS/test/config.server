@@ -1,0 +1,72 @@
+#
+# The server creates one single object adapter with the name
+# "Hello". The following line sets the endpoints for this
+# adapter.
+#
+TartarusAdapter.Endpoints=ssl -p 12345
+
+#
+# Tartarus configuration:
+#
+Tartarus.addSlicePath.Test = ../slice
+Tartarus.addModulePath.Test = ../Tartarus
+
+Tartarus.import.Trace = 1
+Tartarus.modules.Trace = 1
+Tartarus.DNS.db.engine = sqlite
+Tartarus.DNS.db.database = :memory:
+#Tartarus.Hello.Trace = 255
+
+
+#
+# Warn about connection exceptions
+#
+Ice.Warn.Connections=1
+
+#
+# We want a faster ACM for this demo.
+#
+Ice.ACM.Server=10
+
+#
+# Network Tracing
+#
+# 0 = no network tracing
+# 1 = trace connection establishment and closure
+# 2 = like 1, but more detailed
+# 3 = like 2, but also trace data transfer
+#
+#Ice.Trace.Network=3
+
+#
+# Protocol Tracing
+#
+# 0 = no protocol tracing
+# 1 = trace protocol messages
+#
+#Ice.Trace.Protocol=1
+
+#
+# Security Tracing
+#
+# 0 = no security tracing
+# 1 = trace messages
+#
+IceSSL.Trace.Security=1
+
+#
+# SSL Configuration
+#
+#Ice.InitPlugins=0
+Ice.Plugin.IceSSL=IceSSL:createIceSSL
+IceSSL.Ciphers=KRB5
+IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
+IceSSL.ServiceName=host
+IceSSL.Keytab=/etc/krb5.keytab
+#IceSSL.DefaultDir=../../../certs
+#IceSSL.CertAuthFile=cacert.pem
+#IceSSL.CertFile=s_rsa1024_pub.pem
+#IceSSL.KeyFile=s_rsa1024_priv.pem
+
+
+
