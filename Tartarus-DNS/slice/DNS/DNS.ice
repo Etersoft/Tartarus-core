@@ -11,7 +11,7 @@ module Errors
 {
     exception Basic
     {
-        string reason;
+        string message;
     };
 
     exception ObjectNotFound extends Basic
@@ -30,6 +30,11 @@ module Errors
     exception ConfigError extends Basic
     {
         string property;
+    };
+
+    exception DBError extends Basic
+    {
+        string response;
     };
 };
 
@@ -107,12 +112,13 @@ struct SOARecord
 
 interface Domain
 {
+    idempotent string getName() throws Errors::Basic;
     void addRecord(Record r) throws Errors::Basic;
     void addRecords(RecordSeq rs) throws Errors::Basic;
     idempotent void clearAll() throws Errors::Basic;
-    void dropRecord(string name, RecordType type) throws Errors::Basic;
+    void dropRecord(Record r) throws Errors::Basic;
 
-    RecordSeq getRecords(long offset, long limit) throws Errors::Basic;
+    RecordSeq getRecords(long limit, long offset) throws Errors::Basic;
     long countRecords() throws Errors::Basic;
     RecordSeq findRecords(string phrase, long limit) throws Errors::Basic;
 
@@ -140,6 +146,9 @@ interface Server
     idempotent ServerOptionSeq getOptions() throws Errors::Basic;
     idempotent void setOptions(ServerOptionSeq opts) throws Errors::Basic;
     idempotent void setOption(ServerOption opt) throws Errors::Basic;
+
+    //called once on deployment:
+    void initNewDatabase() throws Errors::Basic;
 };
 
 

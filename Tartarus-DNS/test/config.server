@@ -13,8 +13,8 @@ Tartarus.addModulePath.Test = ../Tartarus
 
 Tartarus.import.Trace = 1
 Tartarus.modules.Trace = 1
-Tartarus.DNS.db.engine = sqlite
-Tartarus.DNS.db.database = :memory:
+Tartarus.DNS.db.engine = sqlite2
+Tartarus.DNS.db.database = /var/lib/powerdns/sqlite.db
 #Tartarus.Hello.Trace = 255
 
 
@@ -52,7 +52,7 @@ Ice.ACM.Server=10
 # 0 = no security tracing
 # 1 = trace messages
 #
-IceSSL.Trace.Security=1
+#IceSSL.Trace.Security=1
 
 #
 # SSL Configuration

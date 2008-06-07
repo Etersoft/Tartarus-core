@@ -10,11 +10,6 @@ Tartarus.DNS.Prx=DNS-Server/Server:ssl -p 12345
 #Ice.Warn.Connections=1
 
 #
-# We want a faster ACM for this demo.
-#
-Ice.ACM.Client=10
-
-#
 # Network Tracing
 #
 # 0 = no network tracing
@@ -38,7 +33,7 @@ Ice.ACM.Client=10
 # 0 = no security tracing
 # 1 = trace messages
 #
-IceSSL.Trace.Security=1
+#IceSSL.Trace.Security=1
 
 #
 # SSL Configuration
