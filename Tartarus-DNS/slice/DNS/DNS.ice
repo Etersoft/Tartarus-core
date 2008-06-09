@@ -7,36 +7,30 @@ module DNS
 {
 
 
-module Errors
+exception Error
 {
-    exception Basic
-    {
-        string message;
-    };
-
-    exception ObjectNotFound extends Basic
-    {
-    };
-
-    exception AlreadyExists extends Basic
-    {
-    };
-
-    exception ValueError extends Basic
-    {
-        string value;
-    };
-
-    exception ConfigError extends Basic
-    {
-        string property;
-    };
-
-    exception DBError extends Basic
-    {
-        string response;
-    };
+    string message;
 };
+
+exception DBError extends Error
+{
+    string response;
+};
+
+exception ObjectNotFound extends DBError
+{
+};
+
+exception ValueError extends Error
+{
+    string value;
+};
+
+exception ConfigError extends Error
+{
+    string property;
+};
+
 
 enum RecordType
 {
@@ -92,41 +86,41 @@ struct Record
 {
     string name;
     RecordType type;
-    string content;
+    string data;
     long ttl;
-    long prio; // not really used
+    long prio;
 };
 sequence<Record> RecordSeq;
 
 
 struct SOARecord
 {
-    string primary;
+    string nameserver;
     string hostmaster;
     long serial;
     long refresh;
     long retry;
     long expire;
-    long defaultTtl;
+    long ttl;
 };
 
-interface Domain
+interface Zone
 {
-    idempotent string getName() throws Errors::Basic;
-    void addRecord(Record r) throws Errors::Basic;
-    void addRecords(RecordSeq rs) throws Errors::Basic;
-    idempotent void clearAll() throws Errors::Basic;
-    void dropRecord(Record r) throws Errors::Basic;
+    idempotent string getName() throws Error;
 
-    RecordSeq getRecords(long limit, long offset) throws Errors::Basic;
-    long countRecords() throws Errors::Basic;
-    RecordSeq findRecords(string phrase, long limit) throws Errors::Basic;
+    void addRecord(Record r) throws Error;
+    void addRecords(RecordSeq rs) throws Error;
+    idempotent void clearAll() throws Error;
+    void dropRecord(Record r) throws Error;
 
-    idempotent SOARecord getSOA() throws Errors::Basic;
-    idempotent void setSOA(SOARecord soar) throws Errors::Basic;
+    long countRecords() throws Error;
+    RecordSeq getRecords(long limit, long offset) throws Error;
+    RecordSeq findRecords(string phrase, long limit) throws Error;
+
+    idempotent SOARecord getSOA() throws Error;
+    idempotent void setSOA(SOARecord soar) throws Error;
 };
-sequence<Domain*> DomainSeq;
-
+sequence<Zone*> ZoneSeq;
 
 struct ServerOption
 {
@@ -137,18 +131,18 @@ sequence<ServerOption> ServerOptionSeq;
 
 interface Server
 {
-    idempotent DomainSeq getDomains() throws Errors::Basic;
-    idempotent Domain* getDomain(string name) throws Errors::Basic;
-    Domain* createDomain(string name) throws Errors::Basic;
-    void deleteDomain(string name) throws Errors::Basic;
-    void deleteDomainByRef(Domain* proxy) throws Errors::Basic;
+    idempotent ZoneSeq getZones() throws Error;
+    idempotent Zone* getZone(string name) throws Error;
+    Zone* createZone(string name, SOARecord soar) throws Error;
+    void deleteZone(string name) throws Error;
+    void deleteZoneByRef(Zone* proxy) throws Error;
 
-    idempotent ServerOptionSeq getOptions() throws Errors::Basic;
-    idempotent void setOptions(ServerOptionSeq opts) throws Errors::Basic;
-    idempotent void setOption(ServerOption opt) throws Errors::Basic;
+    idempotent ServerOptionSeq getOptions() throws Error;
+    idempotent void setOptions(ServerOptionSeq opts) throws Error;
+    idempotent void setOption(ServerOption opt) throws Error;
 
     //called once on deployment:
-    void initNewDatabase() throws Errors::Basic;
+    void initNewDatabase() throws Error;
 };
 
 

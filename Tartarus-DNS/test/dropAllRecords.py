@@ -5,12 +5,5 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    server.deleteZone('eter.ru')
-    try:
-        d = server.getZone('eter.ru')
-        print 'WTF'
-    except DNS.ObjectNotFound:
-        print 'OK'
-
-
-
+    d = server.getZone('eter.ru')
+    d.clearAll()

@@ -5,15 +5,15 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    d = server.getDomain('eter.ru')
+    d = server.getZone('eter.ru')
     soar = DNS.SOARecord(
-            primary='eter.ru',
+            nameserver='eter.ru',
             hostmaster='nobody.eter.ru',
             serial=0,
             refresh=43200,
             retry=3600,
             expire=604800,
-            defaultTtl=3600
+            ttl=3600
             )
 
     d.setSOA(soar)

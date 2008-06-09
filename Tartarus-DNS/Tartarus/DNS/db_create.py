@@ -1,7 +1,8 @@
 
-import db
 import Tartarus
 from Tartarus.iface import DNS as I
+
+import db,utils
 
 _sqlite_db_create = [
 """
@@ -99,15 +100,16 @@ def create_db():
     try:
         qlist = _create_mapping[db.module.__name__]
     except KeyError:
-        raise I.Errors.ConfigError(
+        raise I.ConfigError(
                 "Database created not supported for current engine",
                 db.engine)
 
     try:
+        con = db.get_connection()
         for q in qlist:
-            db.execute(q)
+            utils.execute(con, q)
         db.commit()
     except StandardError, e:
-        raise I.Errors.DBError("Database creation failure", e.message)
+        raise I.DBError("Database creation failure", e.message)
 
 

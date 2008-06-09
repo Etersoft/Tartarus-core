@@ -1,5 +1,5 @@
 
-import db, server,domain
+import db, server, zone
 
 def init(adapter):
     com = adapter.getCommunicator()
@@ -7,5 +7,4 @@ def init(adapter):
 
     adapter.add(server.ServerI(),
             com.stringToIdentity("DNS-Server/Server"))
-    adapter.addServantLocator(domain.Locator(),
-            "DNS-Domain")
+    adapter.addServantLocator(zone.Locator(), "DNS-Zone")

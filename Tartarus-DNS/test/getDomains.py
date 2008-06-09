@@ -5,7 +5,8 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    print server.getDomain('eter.ru').getName()
+    for d in server.getZones():
+        print d.getName()
 
 
 

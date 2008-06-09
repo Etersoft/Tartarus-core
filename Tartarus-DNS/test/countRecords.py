@@ -5,6 +5,6 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    d = server.getDomain('eter.ru')
+    d = server.getZone('eter.ru')
     print d.countRecords()
 

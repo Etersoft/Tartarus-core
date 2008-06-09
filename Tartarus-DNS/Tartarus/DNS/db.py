@@ -31,31 +31,20 @@ def get_connection():
     #return _connection.val
     return module.connect(**db_opts)
 
-def fetch_one(con, query, current=None, **params):
-    cur = con.cursor()
-    cur.execute(query, params)
-    result = cur.fetchall()
-    if len(result) !=1:
-        if current:
-            raise NoSuchObject
-        else:
-            raise I.Errors.ObjectNotFound("Failed to fetch object")
-    return result[0]
-
 def init(props):
     """Initialize internal data."""
     global engine
     if engine is not None:
-        raise I.Errors.ConfigError("db.init called for second time!", "")
+        raise I.ConfigError("db.init called for second time!", "")
     engine = props.getProperty('Tartarus.DNS.db.engine')
     if len(engine) < 1:
-        raise I.Errors.ConfigError("Database engine not specified",
+        raise I.ConfigError("Database engine not specified",
                                      "Tartarus.DNS.db.engine")
 
     try:
         e = _engines_mapping[engine]
     except KeyError:
-        raise I.Errors.ConfigError("Database engine not supported", engine)
+        raise I.ConfigError("Database engine not supported", engine)
 
     __import__(e)
     global module
