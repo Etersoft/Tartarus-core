@@ -39,7 +39,7 @@ Interface definisions for %name.
 
 %prep
 
-%setup  -q -n %modulename-%version
+%setup  -q
 
 
 %install
