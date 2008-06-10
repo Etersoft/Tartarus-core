@@ -5,9 +5,9 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    d = server.getZone('eter.ru')
+    d = server.getZone('asdffdsa.org')
     d.addRecord(DNS.Record(
-        name='bar',
+        name='bar.asdffdsa.org.',
         type=DNS.RecordType.A,
         data='192.168.44.28',
         ttl=84600, prio=0

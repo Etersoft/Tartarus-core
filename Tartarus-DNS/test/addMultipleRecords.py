@@ -6,10 +6,10 @@ from Tartarus.iface import DNS
 
 
 def test(com, server):
-    d = server.getZone('eter.ru')
+    d = server.getZone('asdffdsa.org')
     records = [
             DNS.Record(
-                    name="xx%d" %num,
+                    name="xx%d.asdffdsa.org." %num,
                     type=DNS.RecordType.A,
                     data='192.168.44.%d' % num,
                     ttl=-1, prio=-1

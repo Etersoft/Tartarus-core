@@ -5,10 +5,10 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    d = server.getZone('eter.ru')
+    d = server.getZone('asdffdsa.org')
     soar = DNS.SOARecord(
-            nameserver='eter.ru',
-            hostmaster='nobody.eter.ru',
+            nameserver='asdffdsa.org',
+            hostmaster='nobody.asdffdsa.org',
             serial=0,
             refresh=43200,
             retry=3600,
@@ -17,7 +17,7 @@ def test(com, server):
             )
 
     d.setSOA(soar)
-    soar.hostmaster='root.eter.ru'
+    soar.hostmaster='root.asdffdsa.org'
     d.setSOA(soar)
     print d.getSOA()
 

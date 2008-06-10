@@ -19,24 +19,22 @@ class Locator(ServantLocator):
 
 
 class ZoneI(I.Zone):
-    def _check_existance(self, con, current):
+    def _get_name(self, con, current):
         cur = utils.execute(con,
-            "SELECT count(*) FROM domains WHERE id=%s",
-            utils.name(current))
-        res = cur.fetchone()[0]
-        if res != 1:
+                "SELECT name FROM domains WHERE id=%s",
+                utils.name(current))
+        result = cur.fetchall()
+        if len(result) != 1:
             raise utils.NoSuchObject
+        return result[0][0]
+
+    def _check_existance(self, con, current):
+        _get_name(self, con, current)
 
     def getName(self, current):
         try:
             con = db.get_connection()
-            cur = utils.execute(con,
-                    "SELECT name FROM domains WHERE id=%s",
-                    utils.name(current))
-            result = cur.fetchall()
-            if len(result) != 1:
-                raise utils.NoSuchObject
-            return result[0][0]
+            return self._get_name(con, current)
         except db.module.Error, e:
             raise I.DBError(
                     "Database failure while retrieving domain name",
@@ -48,17 +46,24 @@ class ZoneI(I.Zone):
     VALUES (%s, %s, %s, %s, %s, %s)
     """
 
+    def _unpack_record(self, r, id, domain):
+        if r.name.endswith('.'):
+            r.name = r.name[:-1]
+        #if not r.name.endswith(domain):
+        #    raise I.ValueError('Invalid record name.', r.name)
+        return (id, r.name, str(r.type), r.data,
+                (r.ttl if r.ttl > 0 else None),
+                (r.prio if r.prio >= 0 else None))
+
     def addRecord(self, r, current):
         try:
             con = db.get_connection()
-            self._check_existance(con, current)
+            domain = self._get_name(con, current)
             id = utils.name(current)
             cur = utils.execute(con,
                     self._add_record_query,
-                    id, r.name, str(r.type), r.data,
-                    (r.ttl if r.ttl > 0 else None),
-                    (r.prio if r.prio >= 0 else None)
-                    )
+                    *self._unpack_record(r, id, domain)
+                   )
             if cur.rowcount != 1:
                 raise utils.NoSuchObject
             con.commit()
@@ -70,14 +75,11 @@ class ZoneI(I.Zone):
     def addRecords(self, rs, current):
         try:
             con = db.get_connection()
-            self._check_existance(con, current)
+            domain = self._get_name(con, current)
             if len(rs) < 1:
                 return
             id = utils.name(current)
-            rgen = ( (id, r.name, str(r.type), r.data,
-                        (r.ttl if r.ttl > 0 else None),
-                        (r.prio if r.prio >= 0 else None))
-                    for r in rs)
+            rgen = (self._unpack_record(r,id, domain) for r in rs)
             cur = utils.executemany(con, self._add_record_query, rgen)
             con.commit()
         except db.module.Error, e:
@@ -134,7 +136,7 @@ class ZoneI(I.Zone):
                     "Database failure while counting records",
                     e.message)
 
-    def _unpack_records(self, qresult):
+    def _pack_records(self, qresult, domain):
         return [ I.Record(
                         name=n,
                         type=I.RecordType.__dict__[t],
@@ -148,14 +150,15 @@ class ZoneI(I.Zone):
     def getRecords(self, limit, offset, current):
         try:
             con = db.get_connection()
-            #self._check_existance(con, current)
-
             cur = utils.execute_limited(con, limit, offset,
                     "SELECT name, type, content, ttl, prio "
                     "FROM records WHERE domain_id=%s AND type != 'SOA'",
                     utils.name(current))
             res = cur.fetchall()
-            return self._unpack_records(res)
+            if len(res) < 1:
+                #maybe there is no such zone?
+                self._check_existance(con, current)
+            return self._pack_records(res)
         except db.module.Error, e:
             raise I.DBError(
                     "Database failure while fetching records",
@@ -164,13 +167,15 @@ class ZoneI(I.Zone):
     def findRecords(self, phrase, limit, current):
         try:
             con = db.get_connection()
-            self._check_existance(con, current)
-
             cur = utils.execute_limited(con, limit, 0,
                     "SELECT name, type, content, ttl, prio FROM records "
                     "WHERE domain_id=%s AND type!='SOA' AND name LIKE %s",
                     utils.name(current), phrase)
-            return self._unpack_records(cur.fetchall())
+            res = cur.fetchall()
+            if len(res) < 1:
+                #maybe there is no such zone?
+                self._check_existance(con, current)
+            return self._pack_records(res)
         except db.module.Error, e:
             raise I.DBError(
                     "Database failure while fetching records",

@@ -6,15 +6,15 @@ from Tartarus.iface import DNS
 
 def test(com, server):
     soar = DNS.SOARecord(
-            nameserver='eter.ru',
-            hostmaster='nobody.eter.ru',
+            nameserver='localhost.',
+            hostmaster='nobody.asdffdsa.org',
             serial=0,
             refresh=43200,
             retry=3600,
             expire=604800,
             ttl=3600
             )
-    server.createZone('xeter.ru', soar)
+    server.createZone('asdffdsa.org', soar)
 
 
 

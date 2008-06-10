@@ -5,7 +5,7 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    d = server.getZone('eter.ru')
+    d = server.getZone('asdffdsa.org')
     for r in d.getRecords(-1,-1):
         print r.type, r.data , r.name
 

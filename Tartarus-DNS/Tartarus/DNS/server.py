@@ -41,6 +41,13 @@ class ServerI(I.Server):
             utils.execute(con,
                     'INSERT INTO domains (name, type) VALUES (%s, %s)',
                     name, 'NATIVE')
+            cur = utils.execute(con,
+                    "INSERT INTO records (domain_id, name, type, content)"
+                    "SELECT id, %s, 'SOA', %s FROM domains WHERE name=%s",
+                    name, utils.soar2str(soar), name)
+            if  cur.rowcount != 1:
+                raise I.DBError("Zone creation failed",
+                        "Failed to add SOA Record.")
             con.commit()
         except db.module.Error, e:
             raise I.DBError("Zone creation failed", e.message)

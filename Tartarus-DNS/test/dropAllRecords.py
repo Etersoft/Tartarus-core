@@ -5,5 +5,5 @@ import Tartarus
 from Tartarus.iface import DNS
 
 def test(com, server):
-    d = server.getZone('eter.ru')
+    d = server.getZone('asdffdsa.org')
     d.clearAll()
