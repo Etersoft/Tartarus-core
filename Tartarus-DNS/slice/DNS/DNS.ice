@@ -138,11 +138,11 @@ interface Server
     void deleteZoneByRef(Zone* proxy) throws Error;
 
     idempotent ServerOptionSeq getOptions() throws Error;
-    idempotent void setOptions(ServerOptionSeq opts) throws Error;
-    idempotent void setOption(ServerOption opt) throws Error;
+    void setOptions(ServerOptionSeq opts) throws Error;
+    void changeOptions(ServerOptionSeq opts) throws Error;
 
     //called once on deployment:
-    void initNewDatabase() throws Error;
+    void initNewDatabaseUnsafe(ServerOptionSeq opts) throws Error;
 };
 
 

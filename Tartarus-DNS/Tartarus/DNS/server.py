@@ -1,13 +1,18 @@
 
-import Tartarus
+import Tartarus, os
 from Tartarus import logging
 import Tartarus.iface.DNS as I
 
-import db
-import db_create
-import utils
+import db, db_create, utils, cfgfile
 
 class ServerI(I.Server):
+    def __init__(self, cfg_file_name):
+        I.Server.__init__(self)
+        dir, name = os.path.split(cfg_file_name)
+        if len(name) < 1 or not os.path.isdir(dir):
+            raise I.ConfigError("Bad config file specified", cfg_file_name)
+        self._config_file = cfg_file_name
+
     def getZones(self, current):
         try:
             con = db.get_connection()
@@ -70,17 +75,83 @@ class ServerI(I.Server):
         id = utils.name(current, proxy.ice_getIdentity())
         self._dropZone(db.get_connection(), id)
 
+    _supported_options = set((
+        "allow-recursion",
+        "recursor"
+        ))
+
     def getOptions(self, current):
-        return I.ServerOptionSeq()
+        try:
+            return [ I.ServerOption(*pair)
+                     for pair in cfgfile.parse(self._config_file)
+                     if pair[0] in self._supported_options]
+
+        except IOError:
+            raise I.ConfigError("Failed to read configuration file",
+                                 self._config_file)
+
+    def _convert_option(self, opt):
+        if opt.name not in self._supported_options:
+            raise I.ValueError("Unsupported option", opt.name)
+        return opt.name, opt.value
+
+    def _reload_config(self):
+        try:
+            retval = os.system("pdns_control cycle &>/dev/null")
+            if os.WIFEXITED(retval) and os.WEXITSTATUS(retval) == 0:
+                return
+        except:
+            pass
+        raise I.Error('Failed to reload configuration file. '
+                      'All changes will be applied on next server restart.')
 
     def setOptions(self, opts, current):
-        if len(opts) < 1:
-            return
-        raise I.ValueError("Unsupported option", opts[0].name)
+        try:
+            if len(opts) < 1:
+                return
+            new_opts = [ self._convert_option(opt) for opt in opts ]
+            # save all extra options
+            old_opts = [ pair
+                         for pair in cfgfile.parse(self._config_file)
+                         if pair[0] not in self._supported_options ]
+            new_opts += old_opts
+            cfgfile.gen(self._config_file, new_opts)
+        except IOError:
+            raise I.ConfigError("Failed to alter configuration file",
+                                 self._config_file)
+        self._reload_config()
+
+
+    def changeOptions(self, opts, current):
+        try:
+            if len(opts) < 1:
+                return
+            opts_dict = dict( (self._convert_option(opt)
+                               for opt in opts) )
+            new_opts = [ pair
+                         for pair in cfgfile.parse(self._config_file)
+                         if pair[0] not in opts_dict ]
+            new_opts.extend(opts_dict.iteritems())
+            cfgfile.gen(self._config_file, new_opts)
+        except IOError:
+            raise I.ConfigError("Failed to alter configuration file",
+                                 self._config_file)
+        self._reload_config()
+
+
 
     def setOption(self, opt, current):
         raise I.ValueError("Unsupported option", opt.name)
 
-    def initNewDatabase(self, current):
+    def initNewDatabaseUnsafe(self, opts, current):
+        if len(opts) > 0:
+            try:
+               cfgfile.gen( ((opt.name, opt.value)
+                             for opt in opts),
+                           self._config_file)
+            except IOError:
+                raise I.ConfigError("Failed to alter configuration file",
+                                     self._config_file)
         db_create.create_db()
+        self._reload_config()
 
