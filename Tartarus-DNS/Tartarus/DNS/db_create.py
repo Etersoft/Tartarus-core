@@ -108,7 +108,7 @@ def create_db():
         con = db.get_connection()
         for q in qlist:
             utils.execute(con, q)
-        db.commit()
+        con.commit()
     except StandardError, e:
         raise I.DBError("Database creation failure", e.message)
 
