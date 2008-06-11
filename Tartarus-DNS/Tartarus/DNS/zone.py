@@ -136,7 +136,7 @@ class ZoneI(I.Zone):
                     "Database failure while counting records",
                     e.message)
 
-    def _pack_records(self, qresult, domain):
+    def _pack_records(self, qresult):
         return [ I.Record(
                         name=n,
                         type=I.RecordType.__dict__[t],
