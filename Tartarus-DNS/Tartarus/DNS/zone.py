@@ -29,7 +29,7 @@ class ZoneI(I.Zone):
         return result[0][0]
 
     def _check_existance(self, con, current):
-        _get_name(self, con, current)
+        self._get_name(con, current)
 
     def getName(self, current):
         try:
