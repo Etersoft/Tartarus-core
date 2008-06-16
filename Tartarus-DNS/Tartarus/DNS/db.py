@@ -55,6 +55,6 @@ def init(props):
     # check if given db parameters do work:
     try:
         get_connection()
-    except db.module.Error, e:
+    except module.Error, e:
         raise I.DBError("Could not connect to database", e.message)
 

@@ -4,6 +4,7 @@ from Tartarus import logging
 import Tartarus.iface.DNS as I
 
 import db, db_create, utils, cfgfile
+from utils import using_db
 
 class ServerI(I.Server):
     def __init__(self, cfg_file_name):
@@ -13,74 +14,61 @@ class ServerI(I.Server):
             raise I.ConfigError("Bad config file specified", cfg_file_name)
         self._config_file = cfg_file_name
 
-    def getZones(self, current):
-        try:
-            con = db.get_connection()
-            cur = utils.execute(con, 'SELECT id FROM domains')
-            result = [ utils.proxy(I.ZonePrx, current, "DNS-Zone", str(x[0]))
-                       for x in cur.fetchall() ];
-            return result
-        except db.module.Error, e:
-            raise I.DBError("Database failure", e.message)
+    @using_db("retrieving all zones")
+    def getZones(self, con, current):
+        cur = utils.execute(con, 'SELECT id FROM domains')
+        result = [ utils.proxy(I.ZonePrx, current, "DNS-Zone", str(x[0]))
+                   for x in cur.fetchall() ];
+        return result
 
-    def getZone(self, name, current):
-        try:
-            con = db.get_connection()
-            cur = utils.execute(con,
-                    'SELECT id FROM domains WHERE name=%s',name)
-            result = cur.fetchall()
-            if len(result) != 1:
-                raise I.ObjectNotFound("Could not locate zone in the database")
-            return utils.proxy(I.ZonePrx, current, "DNS-Zone", str(result[0][0]))
-        except db.module.Error, e:
-            raise I.DBError("Database failure", e.message)
+    @using_db("retrieving zone by name")
+    def getZone(self, con, name, current):
+        cur = utils.execute(con,
+                'SELECT id FROM domains WHERE name=%s',name)
+        result = cur.fetchall()
+        if len(result) != 1:
+            raise I.ObjectNotFound("Could not locate zone in the database")
+        return utils.proxy(I.ZonePrx, current, "DNS-Zone", str(result[0][0]))
 
-    def createZone(self, name, soar, current):
-        try:
-            con = db.get_connection()
-            utils.execute(con,
-                    'INSERT INTO domains (name, type) VALUES (%s, %s)',
-                    name, 'NATIVE')
-            cur = utils.execute(con,
-                    "INSERT INTO records (domain_id, name, type, content)"
-                    "SELECT id, %s, 'SOA', %s FROM domains WHERE name=%s",
-                    name, utils.soar2str(soar), name)
-            if  cur.rowcount != 1:
-                raise I.DBError("Zone creation failed",
-                        "Failed to add SOA Record.")
-            con.commit()
-        except db.module.Error, e:
-            raise I.DBError("Zone creation failed", e.message)
+    @using_db("creating a zone")
+    def createZone(self, con, name, soar, current):
+        utils.execute(con,
+                'INSERT INTO domains (name, type) VALUES (%s, %s)',
+                name, 'NATIVE')
+        cur = utils.execute(con,
+                "INSERT INTO records (domain_id, name, type, content)"
+                "SELECT id, %s, 'SOA', %s FROM domains WHERE name=%s",
+                name, utils.soar2str(soar), name)
+        if  cur.rowcount != 1:
+            raise I.DBError("Zone creation failed",
+                    "Failed to add SOA Record.")
+        con.commit()
 
     def _dropZone(self, con, id):
-        try:
-            cur = utils.execute(con,
-                    "DELETE FROM domains WHERE id=%s", id)
-            if cur.rowcount != 1:
-                raise I.ObjectNotFound("Zone not found in database.")
-            utils.execute(con,
-                    "DELETE FROM records WHERE domain_id=%s", id)
-            con.commit()
-        except db.module.Error, e:
-            raise I.DBError("Zone delition failed", e.message)
+        cur = utils.execute(con,
+                "DELETE FROM domains WHERE id=%s", id)
+        if cur.rowcount != 1:
+            raise I.ObjectNotFound("Zone not found in database.")
+        utils.execute(con,
+                "DELETE FROM records WHERE domain_id=%s", id)
+        con.commit()
 
-    def deleteZone(self, name, current):
-        con = db.get_connection()
+    @using_db("Deleting a zone")
+    def deleteZone(self, con, name, current):
         id = None
-        try:
-            cur = utils.execute(con,
-                    "SELECT id FROM domains WHERE name=%s", name)
-            res = cur.fetchall()
-            if len(res) != 1:
-                raise I.ObjectNotFound("No such zone.")
-            id = res[0][0]
-        except db.module.Error, e:
-            raise I.DBError("Database failure.", e.message)
+        cur = utils.execute(con,
+                "SELECT id FROM domains WHERE name=%s", name)
+        res = cur.fetchall()
+        if len(res) != 1:
+            raise I.ObjectNotFound("No such zone.")
+        id = res[0][0]
         self._dropZone(con, id)
 
-    def deleteZoneByRef(self, proxy, current):
+    @using_db("Deleting a zone")
+    def deleteZoneByRef(self, con, proxy, current):
         id = utils.name(current, proxy.ice_getIdentity())
-        self._dropZone(db.get_connection(), id)
+        self._dropZone(con, id)
+
 
     _supported_options = set((
         "allow-recursion",

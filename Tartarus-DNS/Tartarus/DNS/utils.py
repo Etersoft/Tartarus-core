@@ -70,3 +70,18 @@ def str2soar(arg):
     (pr, hm, s, ref, ret, exp, ttl) = arg.split()
     return (pr, hm, long(s), long(ref), long(ret), long(exp), long(ttl))
 
+def using_db(msg):
+    def decor(method):
+        def wrapper(*pargs, **kwargs):
+            try:
+                return method(pargs[0],
+                        db.get_connection(),
+                        *pargs[1:], **kwargs)
+            except db.module.Error, e:
+                if msg:
+                    raise I.DBError("Database falure while " + msg, e.message)
+                else:
+                    raise I.DBError("Database falure", e.message)
+        return wrapper
+    return decor
+
