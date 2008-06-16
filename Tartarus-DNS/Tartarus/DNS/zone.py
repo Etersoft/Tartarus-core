@@ -105,9 +105,11 @@ class ZoneI(I.Zone):
     def dropRecord(self, r, current):
         try:
             con = db.get_connection()
+            if r.name.endswith('.'):
+                r.name = r.name[:-1]
             cur = utils.execute(con,
                     "DELETE FROM records "
-                    "WHERE domain_id=%s, name=%s, type=%s, contents=%s",
+                    "WHERE domain_id=%s AND name=%s AND type=%s AND content=%s",
                     utils.name(current), r.name, str(r.type), r.data)
             if cur.rowcount == 0:
                 self._check_existance(con, current)
@@ -116,7 +118,31 @@ class ZoneI(I.Zone):
             con.commit()
         except db.module.Error, e:
             raise I.DBError(
-                    "Database failure while removing records",
+                    "Database failure while removing record",
+                    e.message)
+
+
+    def replaceRecord(self, oldr, newr, current):
+        try:
+            con = db.get_connection()
+            domain = self._get_name(con, current)
+            if oldr.name.endswith('.'):
+                oldr.name = oldr.name[:-1]
+            args = self._unpack_record(newr, None, domain)[1:]
+            args += (utils.name(current), oldr.name, str(oldr.type), oldr.data)
+            cur = utils.execute(con,
+                    "UPDATE records SET "
+                    "name=%s, type=%s, content=%s, ttl=%s, prio=%s "
+                    "WHERE domain_id=%s AND name=%s AND type=%s AND content=%s",
+                    *args)
+            if cur.rowcount != 1:
+                # domain already exists, so there is no such record
+                raise I.ObjectNotFound("Failed to replace record",
+                        "Record not found")
+            con.commit()
+        except db.module.Error, e:
+            raise I.DBError(
+                    "Database failure while replacing record",
                     e.message)
 
 

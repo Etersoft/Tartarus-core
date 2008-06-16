@@ -52,3 +52,9 @@ def init(props):
     for k in ['dsn', 'user', 'password', 'port', 'host', 'database']:
         _add_to_dict(db_opts, props, k)
 
+    # check if given db parameters do work:
+    try:
+        get_connection()
+    except db.module.Error, e:
+        raise I.DBError("Could not connect to database", e.message)
+

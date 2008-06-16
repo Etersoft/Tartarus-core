@@ -111,6 +111,11 @@ interface Zone
     void addRecord(Record r) throws Error;
     void addRecords(RecordSeq rs) throws Error;
     idempotent void clearAll() throws Error;
+
+    // replace oldr with newr. ignores ttl and prio fields of oldr.
+    void replaceRecord(Record oldr, Record newr) throws Error;
+
+    // removes record r. ignores ttl and prio fields of r.
     void dropRecord(Record r) throws Error;
 
     long countRecords() throws Error;
