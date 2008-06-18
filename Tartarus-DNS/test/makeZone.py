@@ -14,7 +14,7 @@ def test(com, server):
             expire=604800,
             ttl=3600
             )
-    server.createZone('asdffdsa.org', soar)
-
+    d = server.createZone('asdffdsa.org', soar)
+    print d.getName()
 
 

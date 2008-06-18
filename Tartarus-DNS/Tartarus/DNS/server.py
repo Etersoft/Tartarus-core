@@ -35,14 +35,24 @@ class ServerI(I.Server):
         utils.execute(con,
                 'INSERT INTO domains (name, type) VALUES (%s, %s)',
                 name, 'NATIVE')
+        # we'll need id later to create proxy
+        cur = utils.execute(con,
+                'SELECT id FROM domains WHERE name=%s',name)
+        result = cur.fetchall()
+        if len(result) != 1:
+            raise I.DBError("Zone creation failed"
+                    "Could not locate zone in the database")
+        id = str(result[0][0])
         cur = utils.execute(con,
                 "INSERT INTO records (domain_id, name, type, content)"
-                "SELECT id, %s, 'SOA', %s FROM domains WHERE name=%s",
-                name, utils.soar2str(soar), name)
+                "VALUES (%s, %s, 'SOA', %s)",
+                id, name, utils.soar2str(soar))
         if  cur.rowcount != 1:
             raise I.DBError("Zone creation failed",
                     "Failed to add SOA Record.")
         con.commit()
+        return utils.proxy(I.ZonePrx, current, "DNS-Zone", id)
+
 
     def _dropZone(self, con, id):
         cur = utils.execute(con,
