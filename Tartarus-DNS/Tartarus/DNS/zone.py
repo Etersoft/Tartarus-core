@@ -152,6 +152,10 @@ class ZoneI(I.Zone):
 
     @using_db("retrieving records")
     def findRecords(self, con, phrase, limit, current):
+        phrase = (phrase.replace('\\',  '\\\\')
+                        .replace('%',   '\\%')
+                        .replace('_',   '\\_')
+                        + '%')
         cur = utils.execute_limited(con, limit, 0,
                 "SELECT name, type, content, ttl, prio FROM records "
                 "WHERE domain_id=%s AND type!='SOA' AND name LIKE %s",
