@@ -3,7 +3,7 @@
 %define modulename Kadmin5
 
 Version: 0.0.1
-Release: eter0
+Release: eter1
 
 
 Summary: Tartarus example servant
@@ -17,6 +17,8 @@ BuildArchitectures: noarch
 
 Requires: %name-slice = %version-%release
 
+Packager: Ivan A. Melnikov <iv@altlinux.org>
+BuildRequires(pre): rpm-build-licenses
 
 # Automatically added by buildreq on Wed May 28 2008
 BuildRequires: python-base
@@ -54,3 +56,6 @@ Interface definisions for %name.
 %_datadir/Tartarus/slice/*/*
 
 %changelog
+* Thu Jun 05 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.1-eter1
+inital build
+
