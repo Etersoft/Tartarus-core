@@ -144,19 +144,15 @@ class ServerI(I.Server):
         self._reload_config()
 
 
-
-    def setOption(self, opt, current):
-        raise I.ValueError("Unsupported option", opt.name)
-
     def initNewDatabaseUnsafe(self, opts, current):
-        if len(opts) > 0:
-            try:
-               cfgfile.gen( ((opt.name, opt.value)
-                             for opt in opts),
-                           self._config_file)
-            except IOError:
-                raise I.ConfigError("Failed to alter configuration file",
-                                     self._config_file)
+        opt_dict = dict(cfgfile.parse(self._config_file))
+        opt_dict.update( ( (opt.name, opt.value) for opt in opts ) )
+        db_create.db_pararms(opt_dict)
+        try:
+            cfgfile.gen(self._config_file, opt_dict.iteritems())
+        except IOError:
+            raise I.ConfigError("Failed to alter configuration file",
+                                 self._config_file)
         db_create.create_db()
         self._reload_config()
 

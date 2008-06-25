@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python ./deploy.py --Ice.Config=../test/config.client --IceSSL.ServiceHost=`hostname`  "$@"
+python ./deploy.py --Ice.Config=./test.cfg  "$@"
 

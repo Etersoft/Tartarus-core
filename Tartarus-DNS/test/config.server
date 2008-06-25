@@ -3,7 +3,7 @@
 # "Hello". The following line sets the endpoints for this
 # adapter.
 #
-TartarusAdapter.Endpoints=ssl -p 12345
+TartarusAdapter.Endpoints=tcp -p 12345
 
 #
 # Tartarus configuration:
@@ -58,7 +58,7 @@ Ice.ACM.Server=10
 # SSL Configuration
 #
 #Ice.InitPlugins=0
-Ice.Plugin.IceSSL=IceSSL:createIceSSL
+#Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
 IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
 IceSSL.ServiceName=host

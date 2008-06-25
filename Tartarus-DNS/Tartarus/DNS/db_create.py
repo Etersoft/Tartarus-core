@@ -113,3 +113,42 @@ def create_db():
         raise I.DBError("Database creation failure", e.message)
 
 
+def _get_sqlite_database(d):
+    try:
+        dbpath = db.db_opts['database']
+    except KeyError:
+        raise I.ConfigError('Database parameter undefined',
+                            'Tartarus.DNS.db.' + e.message)
+    try:
+        chroot = d['chroot']
+    except KeyError:
+        return dbpath
+
+    if not dbpath.startswith(chroot):
+        raise I.ConfigError(
+                "Database file unreachable from chroot", dbpath)
+
+    return dbpath[len(chroot):]
+
+def _sqlite_db_params(d):
+    return [ ('launch' , 'gsqlite'),
+             ('gsqlite-database', _get_sqlite_database(d)) ]
+
+def _sqlite3_db_params(d):
+    return [ ('launch' , 'gsqlite3'),
+             ('gsqlite3-database', _get_sqlite_database(d)) ]
+
+def _psycopg2_db_params(d):
+    raise I.ConfigError('Database initialization unimplemented',
+                        'Tartarus.DNS.db.engine')
+
+_params_mapping = {
+        'sqlite'        : _sqlite_db_params,
+        'sqlite3'       : _sqlite3_db_params,
+        'psycopg2'      : _psycopg2_db_params
+        }
+
+def db_pararms(d):
+    d.update(_params_mapping[db.module.__name__](d))
+    return d
+
