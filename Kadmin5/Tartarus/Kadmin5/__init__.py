@@ -9,7 +9,7 @@ from Tartarus import logging
 #
 def init(adapter):
     c = adapter.getCommunicator()
-    logging.trace("Tartarus.Kadmin5", "Initializing!",
-            log_to = c, cond = "Tartarus.Kadmin5.Trace")
+    logging.trace("Tartarus.Kadmin5", "Initializing...",
+            log_to = c, cond = "Tartarus.Kadmin5.trace")
     adapter.add(KadminI.KadminI(), c.stringToIdentity("Kadmin5"))
 

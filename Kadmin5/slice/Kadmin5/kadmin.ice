@@ -54,8 +54,13 @@ interface Kadmin
 
     PrincSeq listAllPrincs()
         throws KadminException;
-};
 
+    bool isPrincEnabled(string name)
+        throws KadminException;
+
+    void setPrincEnabled(string name, bool enable)
+        throws KadminException;
+};
 };
 
 }; };

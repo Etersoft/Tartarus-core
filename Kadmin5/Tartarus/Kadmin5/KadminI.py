@@ -27,15 +27,13 @@ class KadminI(I.Kadmin):
     def getPrincKeys(self, name, ctx):
         adm = self.make_kadmin(ctx)
         keys = adm.get_princ_keys(name)
-        return I.PrincKeys(name,
-                           [I.Key(i[0],i[1],i[2]) for i in keys])
+        return I.PrincKeys(name, [I.Key(*i) for i in keys])
 
     def createServicePrincipal(self, service, host, ctx):
         adm = self.make_kadmin(ctx)
         princ = adm.create_service_princ(service, host)
         keys = adm.get_princ_keys(princ)
-        return I.PrincKeys(princ,
-                           [I.Key(i[0],i[1],i[2]) for i in keys])
+        return I.PrincKeys(princ, [I.Key(*i) for i in keys])
 
     def createPrincipal(self, name, password, ctx):
         adm = self.make_kadmin(ctx)
@@ -52,4 +50,20 @@ class KadminI(I.Kadmin):
 
     def listAllPrincs(self, ctx):
         return self.make_kadmin(ctx).list()
+
+    _disabling_attrs = kadmin5.attributes.DISALLOW_ALL_TIX
+
+    def isPrincEnabled(self, name, ctx):
+        attrs = self.make_kadmin(ctx).get_princ_attributes(name)
+        return (attrs & self._disabling_attrs) == 0
+
+    def setPrincEnabled(self, name, enable, ctx):
+        adm = self.make_kadmin(ctx)
+        attrs = adm.get_princ_attributes(name)
+        if enable:
+            attrs &= ~self._disabling_attrs
+        else:
+            attrs |= self._disabling_attrs
+        adm.set_princ_attributes(name, attrs)
+
 

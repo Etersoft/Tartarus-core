@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-%define modulename Kadmin5
+%define tmodname Kadmin5
 
-Version: 0.0.1
+Version: 0.0.2
 Release: eter1
 
 
 Summary: Tartarus example servant
-Name: Tartarus-%modulename
-Source: %modulename-%version.tar
+Name: Tartarus-%tmodname
+Source: %tmodname-%version.tar
 License: %gpl2plus
 Group: System/Servers
 Url: http://www.tartarus.ru
@@ -24,23 +24,23 @@ BuildRequires(pre): rpm-build-licenses
 BuildRequires: python-base
 
 %description
-This module privides Tartarus example servant named %modulename.
+This module privides Tartarus example servant named %tmodname.
 
 This module is built for python %__python_version.
 
 
 %package slice
 Group: Development/Other
-Summary: Interface definisions for %modulename
+Summary: Interface definisions for %tmodname
 
-BuildArchitectures: noarch
+BuildArch: noarch
 
 %description slice
 Interface definisions for %name.
 
 %prep
 
-%setup  -q -n %modulename-%version
+%setup  -q -n %tmodname-%version
 
 
 %install
@@ -48,14 +48,21 @@ Interface definisions for %name.
 %__cp -R Tartarus/* %buildroot/%_libdir/Tartarus/modules
 %__mkdir_p %buildroot/%_datadir/Tartarus
 %__cp -R slice %buildroot/%_datadir/Tartarus
+%__mkdir_p %buildroot%_sysconfdir/Tartarus/modules
+%__cp config/* %buildroot%_sysconfdir/Tartarus/modules
 
 %files
 %_libdir/Tartarus/modules/*
+%_sysconfdir/Tartarus/modules/*
+
 
 %files slice
 %_datadir/Tartarus/slice/*/*
 
 %changelog
+* Thu Jun 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter1
+- new version: enabling and disabling of principals implemented
+
 * Thu Jun 05 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.1-eter1
-inital build
+- inital build
 
