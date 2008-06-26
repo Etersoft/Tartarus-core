@@ -6,7 +6,7 @@ developed by Zeroc -- http://www.zeroc.com ).
 """
 
 from __future__ import with_statement
-import sys, os, traceback, exceptions, Ice, Tartarus
+import sys, os, traceback, exceptions, Ice, Tartarus, threading
 from Tartarus import logging
 
 _msg_len = 10000
@@ -88,43 +88,91 @@ class DaemonError(exceptions.Exception):
                 self.__class__.__name__ , self.message, self.code)
 
 
-class Daemon(Ice.Application):
+class Daemon(object):
     r"""Base class of all Tartarus daemons.
 
-    It provides two hooks for derived classes:
-        - start(self, communicator, args) to make derivative initialize
+    Derived classes will want to override the following functions:
+        - __init__(self, communicator, args) to make derivative initialize
           operation
-        - wait() where derived classes should perform their job.
+        - run() where derived classes should perform their job.
 
-    After calling start(...) it reports the result (succes or, in case
-    start(...) trow an exception, failure) to the parent though file desctiptor
-    given to it's constructor (if any).
+    The general idea is that after successfull call to __init__(...) daemon
+    is considered to be ready to work, so success will be reported to user
+    and/or syslog.
     """
-    # clients will override this two:
-    def start(self, comm, args):
+    def __init__(self, comm, args):
+        if type(self) is Daemon:
+            raise RuntimeError("Tartarus Daemon cannot be summoned directly!"
+                    " It is abstract class.")
         pass
-    def wait(self):
-        pass
+    def run(self):
+        raise RuntimeError("run() not implemented")
 
-    def __init__(self, fd=None):
-        self.parent_fd = fd
-        Ice.Application.__init__(self)
 
-    def run(self, args):
+class DaemonWrapper(object):
+    def __init__(self, daemon):
+        self.daemon = daemon
+        self.mutex = None
+        self.instance = None
+        self.condVar = threading.Condition()
+        self._communicator = None
+
+    def interruptCallback(self, sig):
         try:
-            self.shutdownOnInterrupt()
-            comm = self.communicator()
-            Ice.setProcessLogger(comm.getLogger())
+            with self.condVar:
+                try:
+                    if self._communicator:
+                        self._communicator.destroy()
+                except:
+                    _report_exception()
+                self._communicator = None
+                self.condVar.notify()
+        except:
+            pass
 
-            self.start(self.communicator(), args)
+    def main(self, args, fd=None, cfgfile=None, syslog=False):
+        try:
+            with self.condVar:
+                # initialize runtime
+                self._signalHandler = Ice.CtrlCHandler()
+                self._signalHandler.setCallback(self.interruptCallback)
 
-            _report_result(self.parent_fd, 0, "%d" % os.getpid())
+                initData = Ice.InitializationData()
+                initData.properties = Ice.createProperties([args[0]])
+
+                if cfgfile:
+                    initData.properties.load(cfgfile)
+
+                args = initData.properties.parseIceCommandLineOptions(args)
+
+                if syslog:
+                    initData.properties.setProperty("Ice.UseSyslog", "1")
+
+
+                self._communicator = Ice.initialize([args[0]], initData)
+
+                Ice.setProcessLogger(self._communicator.getLogger())
+
+                # initialize daemon instance
+                self.instance = self.daemon(self._communicator, args)
+
+                # report success
+                _report_result(fd, 0, "%d" % os.getpid())
 
         except Exception:
-            return _report_exception(self.parent_fd)
+            return _report_exception(fd)
 
         try:
-            return self.wait()
+            # run the daemon
+            status =  self.instance.run()
+
+            #cleanup
+            with self.condVar:
+                while self._communicator is not None:
+                    self.condVar.wait()
+                self._signalHandler.destroy()
+                self._signalHandler = None
+                return status
         except Exception:
             return _report_exception()
 
@@ -146,10 +194,18 @@ class DaemonController(object):
         self.printpid = opts.printpid
         self.chdir = opts.chdir
         self.closefds = opts.closefds
+        self.cfgfile = opts.config
+        self.syslog = not opts.stderr
+
+    def _j_from_proc(self, pid):
+        with open("/proc/%d/stat" % pid) as f:
+            s = f.read()
+            i = s.rfind(')') + 2
+            s = s[i:]
+            return s.split()[19]
 
     def _make_jfile(self, pid):
-        with open("/proc/%d/stat" % pid) as f:
-            j = f.readline().split()[21]
+        j = self._j_from_proc(pid)
         with open(self.jfile, "w") as jfile:
             jfile.write(j)
             jfile.write('\n')
@@ -157,11 +213,10 @@ class DaemonController(object):
     def _check_jfile(self, pid):
         if self.jfile is None:
             return True
-        with open("/proc/%d/stat" % pid) as f:
-            l = f.readline()
+        l = self._j_from_proc(pid)
         with open(self.jfile) as jfile:
             j = jfile.readline()
-        return long(l.split()[21]) == long(j)
+        return long(l) == long(j)
 
     def _make_pid_file(self, pid):
         with open(self.pidfile, "w") as f:
@@ -214,7 +269,7 @@ class DaemonController(object):
             if os.fork() > 0:
                 sys.exit(0)
 
-            sys.exit(self.what(parent_fd).main(self.args))
+            sys.exit(self.what.main(self.args, parent_fd, self.cfgfile, self.syslog))
         except Exception:
             sys.exit(_report_exception(parent_fd))
 
@@ -288,11 +343,11 @@ def _parse_options():
             help="do not change directory of running daemon to root")
 
     parser.add_option("--closefds",
-            action="store_true", dest = "closefds", default=True,
+            action="store_true", dest = "closefds",
             help="release sandard input, output and error streams"
                     " (the default)")
     parser.add_option("--noclosefds",
-            action="store_false", dest = "closefds", default=True,
+            action="store_false", dest = "closefds",
             help="do not release sandard input, output and error streams")
 
     parser.add_option("-v", "--verbose",
@@ -304,6 +359,9 @@ def _parse_options():
             help="log output to stderr instead of system log; "
                  "with --closefds disables most logging messages")
 
+    parser.add_option("-c", "--config", metavar="FILE",
+            help="configuration file for daemon")
+
     try:
         sp = sys.argv.index('--')
         our_args = sys.argv[1:sp]
@@ -314,16 +372,14 @@ def _parse_options():
 
     (opts, action) = parser.parse_args(our_args)
     if len(action) != 1 or action[0] not in ['start','stop','status','run']:
-        if "print-opts" in action:
-            print "DEBUG: OPTIONS: %s,  %s, %s" % (opts, action, args)
         parser.error("Don't know what to do!")
 
     if action[0] == 'status':
         # print status to stderr -- not overridable
         opts.stderr = True
 
-    if not opts.stderr:
-        args.append('--Ice.UseSyslog')
+    if opts.closefds is None:
+        opts.closefds = not opts.stderr
 
     global verbose
     verbose = opts.verbose
@@ -331,8 +387,7 @@ def _parse_options():
     return (opts, action[0], [sys.argv[0]] + args)
 
 
-
-def main(what):
+def main(daemon):
     err = None
 
     try:
@@ -340,8 +395,10 @@ def main(what):
         if opts.stderr:
             err = sys.stderr
 
+        what = DaemonWrapper(daemon)
+
         if action == 'run':
-            return what().main(args)
+            return what.main(args, cfgfile=opts.config)
         dc = DaemonController(what, args, opts)
         if action == 'start':
             return dc.start()

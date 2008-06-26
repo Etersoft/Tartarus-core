@@ -14,14 +14,14 @@ class _App(daemon.Daemon):
             props.getPropertiesForPrefix('Tartarus.addSlicePath.').itervalues()
 
 
-    def start(self, comm, args):
+    def __init__(self, comm, args):
         self.adapter = comm.createObjectAdapter("TartarusAdapter")
         self.apply_properties(comm.getProperties())
         modules.load_modules1(self.adapter)
         self.adapter.activate()
 
 
-    def wait(self):
+    def run(self):
         self.adapter.waitForDeactivate()
         return 0
 
