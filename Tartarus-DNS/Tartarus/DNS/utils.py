@@ -1,7 +1,6 @@
 
 
 import Ice, IcePy
-import db
 
 from Ice import ObjectNotExistException as NoSuchObject
 
@@ -24,44 +23,6 @@ def name(current, id=None):
         return id.name
     return current.id.name
 
-def _make_dict(params):
-    l = len(params)
-    gen = ( ("p%d" % i, params[i]) for i in xrange(0,l) )
-    return dict(gen)
-
-def _translate_query(q, l):
-    psubst = tuple( ("%%(p%d)s" % i for i in xrange(0,l)) )
-    w = q % psubst
-    return w
-
-
-def execute(con, query, *params):
-    cur = con.cursor()
-    q = _translate_query(query, len(params))
-    p = _make_dict(params)
-    #print q % p
-    cur.execute(q, _make_dict(params))
-    return cur
-
-def executemany(con, query, mparams):
-    cur = con.cursor()
-    l = query.count('%s')
-    q = _translate_query(query, l)
-    p = [_make_dict(p) for p in mparams]
-    #print q % p[0]
-    cur.executemany(q, p)
-    return cur
-
-def execute_limited(con, limit, offset, query, *params):
-    if not query.startswith('SELECT'):
-        raise ValueError("Internal sever error", "%d,%d" %(limit,offset))
-    if limit >= 0:
-        q = " LIMIT %d" % limit
-        if offset >= 0:
-            q += " OFFSET %d" % offset
-        query += q
-    return execute(con, query, *params)
-
 def soar2str(soar):
     return ('%(nameserver)s %(hostmaster)s %(serial)d %(refresh)d '
            '%(retry)d %(expire)d %(ttl)d' % soar.__dict__)
@@ -69,19 +30,4 @@ def soar2str(soar):
 def str2soar(arg):
     (pr, hm, s, ref, ret, exp, ttl) = arg.split()
     return (pr, hm, long(s), long(ref), long(ret), long(exp), long(ttl))
-
-def using_db(msg):
-    def decor(method):
-        def wrapper(*pargs, **kwargs):
-            try:
-                return method(pargs[0],
-                        db.get_connection(),
-                        *pargs[1:], **kwargs)
-            except db.module.Error, e:
-                if msg:
-                    raise I.DBError("Database falure while " + msg, e.message)
-                else:
-                    raise I.DBError("Database falure", e.message)
-        return wrapper
-    return decor
 

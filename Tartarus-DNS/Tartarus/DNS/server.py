@@ -1,49 +1,49 @@
 
 import Tartarus, os
-from Tartarus import logging
+from Tartarus import logging, db
 import Tartarus.iface.DNS as I
 
-import db, db_create, utils, cfgfile
-from utils import using_db
+import db_create, utils, cfgfile
 
 class ServerI(I.Server):
-    def __init__(self, cfg_file_name):
+    def __init__(self, cfg_file_name, dbh):
+        self._dbh = dbh
         I.Server.__init__(self)
         dir, name = os.path.split(cfg_file_name)
         if len(name) < 1 or not os.path.isdir(dir):
             raise I.ConfigError("Bad config file specified", cfg_file_name)
         self._config_file = cfg_file_name
 
-    @using_db("retrieving all zones")
+    @db.wrap("retrieving all zones")
     def getZones(self, con, current):
-        cur = utils.execute(con, 'SELECT id FROM domains')
+        cur = self._dbh.execute(con, 'SELECT id FROM domains')
         result = [ utils.proxy(I.ZonePrx, current, "DNS-Zone", str(x[0]))
                    for x in cur.fetchall() ];
         return result
 
-    @using_db("retrieving zone by name")
+    @db.wrap("retrieving zone by name")
     def getZone(self, con, name, current):
-        cur = utils.execute(con,
+        cur = self._dbh.execute(con,
                 'SELECT id FROM domains WHERE name=%s',name)
         result = cur.fetchall()
         if len(result) != 1:
             raise I.ObjectNotFound("Could not locate zone in the database")
         return utils.proxy(I.ZonePrx, current, "DNS-Zone", str(result[0][0]))
 
-    @using_db("creating a zone")
+    @db.wrap("creating a zone")
     def createZone(self, con, name, soar, current):
-        utils.execute(con,
+        self._dbh.execute(con,
                 'INSERT INTO domains (name, type) VALUES (%s, %s)',
                 name, 'NATIVE')
         # we'll need id later to create proxy
-        cur = utils.execute(con,
+        cur = self._dbh.execute(con,
                 'SELECT id FROM domains WHERE name=%s',name)
         result = cur.fetchall()
         if len(result) != 1:
             raise I.DBError("Zone creation failed"
                     "Could not locate zone in the database")
         id = str(result[0][0])
-        cur = utils.execute(con,
+        cur = self._dbh.execute(con,
                 "INSERT INTO records (domain_id, name, type, content)"
                 "VALUES (%s, %s, 'SOA', %s)",
                 id, name, utils.soar2str(soar))
@@ -55,18 +55,18 @@ class ServerI(I.Server):
 
 
     def _dropZone(self, con, id):
-        cur = utils.execute(con,
+        cur = self._dbh.execute(con,
                 "DELETE FROM domains WHERE id=%s", id)
         if cur.rowcount != 1:
             raise I.ObjectNotFound("Zone not found in database.")
-        utils.execute(con,
+        self._dbh.execute(con,
                 "DELETE FROM records WHERE domain_id=%s", id)
         con.commit()
 
-    @using_db("Deleting a zone")
+    @db.wrap("Deleting a zone")
     def deleteZone(self, con, name, current):
         id = None
-        cur = utils.execute(con,
+        cur = self._dbh.execute(con,
                 "SELECT id FROM domains WHERE name=%s", name)
         res = cur.fetchall()
         if len(res) != 1:
@@ -74,7 +74,7 @@ class ServerI(I.Server):
         id = res[0][0]
         self._dropZone(con, id)
 
-    @using_db("Deleting a zone")
+    @db.wrap("Deleting a zone")
     def deleteZoneByRef(self, con, proxy, current):
         id = utils.name(current, proxy.ice_getIdentity())
         self._dropZone(con, id)
@@ -147,12 +147,12 @@ class ServerI(I.Server):
     def initNewDatabaseUnsafe(self, opts, current):
         opt_dict = dict(cfgfile.parse(self._config_file))
         opt_dict.update( ( (opt.name, opt.value) for opt in opts ) )
-        db_create.db_pararms(opt_dict)
+        db_create.db_pararms(self._dbh)
         try:
             cfgfile.gen(self._config_file, opt_dict.iteritems())
         except IOError:
             raise I.ConfigError("Failed to alter configuration file",
                                  self._config_file)
-        db_create.create_db()
+        db_create.create_db(self._dbh)
         self._reload_config()
 

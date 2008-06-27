@@ -1,8 +1,7 @@
 
 import Tartarus
-from Tartarus.iface import DNS as I
 
-import db,utils
+import utils
 
 _sqlite_db_create = [
 """
@@ -92,30 +91,30 @@ _create_mapping = {
         'psycopg2'      : _psycopg2_db_create
         }
 
-def create_db():
+def create_db(dbh):
     """Create database.
 
     Creates tables, indices and such stuff.
     """
     try:
-        qlist = _create_mapping[db.module.__name__]
+        qlist = _create_mapping[dbh.modname]
     except KeyError:
         raise I.ConfigError(
                 "Database created not supported for current engine",
-                db.engine)
+                dbh.engine)
 
     try:
-        con = db.get_connection()
+        con = dbh.get_connection()
         for q in qlist:
-            utils.execute(con, q)
+            dbh.execute(con, q)
         con.commit()
     except StandardError, e:
-        raise I.DBError("Database creation failure", e.message)
+        raise dbh.DBError("Database creation failure", e.message)
 
 
-def _get_sqlite_database(d):
+def _get_sqlite_database(d, dbh):
     try:
-        dbpath = db.db_opts['database']
+        dbpath = dbh.options['database']
     except KeyError:
         raise I.ConfigError('Database parameter undefined',
                             'Tartarus.DNS.db.' + e.message)
@@ -130,15 +129,15 @@ def _get_sqlite_database(d):
 
     return dbpath[len(chroot):]
 
-def _sqlite_db_params(d):
+def _sqlite_db_params(d, dbh):
     return [ ('launch' , 'gsqlite'),
-             ('gsqlite-database', _get_sqlite_database(d)) ]
+             ('gsqlite-database', _get_sqlite_database(d, dbh)) ]
 
-def _sqlite3_db_params(d):
+def _sqlite3_db_params(d, dbh):
     return [ ('launch' , 'gsqlite3'),
              ('gsqlite3-database', _get_sqlite_database(d)) ]
 
-def _psycopg2_db_params(d):
+def _psycopg2_db_params(d, dbh):
     raise I.ConfigError('Database initialization unimplemented',
                         'Tartarus.DNS.db.engine')
 
@@ -148,7 +147,12 @@ _params_mapping = {
         'psycopg2'      : _psycopg2_db_params
         }
 
-def db_pararms(d):
-    d.update(_params_mapping[db.module.__name__](d))
-    return d
+def db_pararms(dbh):
+    try:
+        d = dbh.options.copy()
+        d.update(_params_mapping[dbh.modname](d, dbh))
+        return d
+    except KeyError:
+        raise dbh.ConfigError('Database engine not supported', dbn.engine)
+
 
