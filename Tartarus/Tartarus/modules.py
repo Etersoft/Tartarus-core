@@ -20,11 +20,13 @@ def load_module(modname, adapter):
     module.init(adapter)
 
 def _load_config(props, path):
+    logging.trace(__name__, "Loading configuration from %s" % path, trace)
     if not os.path.isdir(path):
         logging.error("Invalid path to configuration files: %s" % path)
         return
 
-    for f in os.listdir(path):
+    for fi in os.listdir(path):
+        f = os.path.join(path, fi)
         if not os.path.isfile(f):
             continue
         try:
@@ -42,7 +44,7 @@ def load_modules1(adapter):
     #update module search path
     for p in path:
         if not os.path.isdir(p):
-            logging.trace(__name__, "Module path not found: %s" % p, trace)
+            logging.warning("Module path not found: %s" % p, trace)
             continue
         if p not in Tartarus.__path__:
             Tartarus.__path__.append(p)
@@ -57,9 +59,9 @@ def load_modules1(adapter):
 
     for m in d.itervalues():
         # we load only modules which names start with big latin letters
-        if modname[0] < 'A' or modname[0] > 'Z':
+        if m[0] < 'A' or m[0] > 'Z':
             if trace > 5:
-                logging.trace(__name__, "Skipping module %s" % modname)
+                logging.warning("Skipping module %s" % m)
         else:
             load_module(m, adapter)
 
