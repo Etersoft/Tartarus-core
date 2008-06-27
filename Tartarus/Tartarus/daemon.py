@@ -7,6 +7,7 @@ developed by Zeroc -- http://www.zeroc.com ).
 
 from __future__ import with_statement
 import sys, os, traceback, exceptions, Ice, Tartarus, threading
+from time import sleep
 from Tartarus import logging
 
 _msg_len = 10000
@@ -122,6 +123,8 @@ class DaemonWrapper(object):
             with self.condVar:
                 try:
                     if self._communicator:
+                        self._communicator.shutdown()
+                        self._communicator.waitForShutdown()
                         self._communicator.destroy()
                 except:
                     _report_exception()
@@ -244,6 +247,21 @@ class DaemonController(object):
         try:
             pid = self._check_and_get_pid()
             os.kill(pid, 15)
+            # We'll wait for 10 seconds, periodically checking wheter killed
+            # process have terminated. If it had, kill(pid, 0) fails and
+            # raises OSError. If target process is still alive after 10 seconds,
+            # it is considered to be error.
+            try:
+                sleep(0.25)
+                os.kill(pid, 0)
+                for i in range(1,20):
+                    sleep(0.5)
+                    os.kill(pid, 0)
+            except OSError:
+                #procces finished
+                return 0
+            #process did not finish
+            raise DaemonError(-1, "time limit exceeded while stopping daemon")
         finally:
             if self.pidfile and os.path.isfile(self.pidfile):
                 os.unlink(self.pidfile)

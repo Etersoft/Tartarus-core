@@ -2,7 +2,7 @@
 
 %define srvname tartarus-srv1
 
-Version: 0.0.1
+Version: 0.0.2
 Release: eter1
 
 %setup_python_module Tartarus
@@ -52,11 +52,10 @@ Install %srvname if you need to run tartarus servants written in python.
 %__cp -Rp  Tartarus %buildroot%python_sitelibdir
 %__mkdir_p  %buildroot%_sbindir
 %__cp %srvname %buildroot%_sbindir
-%__mkdir_p %buildroot%_sysconfdir/Tartarus
+%__mkdir_p %buildroot%_sysconfdir/Tartarus/modules
 %__cp Tartarus.conf %buildroot%_sysconfdir/Tartarus
 %__mkdir_p %buildroot%_initdir
 %__cp -p init/* %buildroot%_initdir
-
 
 %post -n %srvname
 %post_service Tartarus
@@ -72,12 +71,20 @@ Install %srvname if you need to run tartarus servants written in python.
 
 %files -n %srvname
 %_sbindir/*
+%dir %_sysconfdir/Tartarus
+%dir %_sysconfdir/Tartarus/modules
 %config(noreplace) %_sysconfdir/Tartarus/Tartarus.conf
 %_initdir/*
 
 %changelog
+* Fri Jun 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter1
+- new snapshot:
+    - improvements in daemon code
+    - better scheme of module loading
+- configuration files updated
+
 * Thu Jun 05 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.1-eter1
-inital build
+- inital build
 
 
 
