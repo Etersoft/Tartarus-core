@@ -14,7 +14,6 @@ def _strip_prefix(prefix, d):
 
 
 def make_servant_config(opts):
-    print opts
     demontype =  opts.get('DNS.DaemonType')
     if demontype and demontype != 'powerdns':
         raise I.ConfigError(
@@ -32,6 +31,7 @@ def make_servant_config(opts):
         if key.startswith('DNS.db.'):
             res['Tartarus.'+key] = opts[key]
     res['Tartarus.DNS.trace'] = opts.get('DNS.trace', 0)
+    res['Tartarus.module.DNS'] = 'DNS'
     with open(filename,'w') as f:
         f.write("#\n# This file was generated automatically\n#\n\n")
         for pair in res.iteritems():
@@ -40,10 +40,12 @@ def make_servant_config(opts):
 
 
 def connect(com):
-    pr = com.propertyToProxy("Tartarus.DNS.Prx")
-    if not pr:
-        raise I.ConfigError
-    server = I.ServerPrx.checkedCast(pr)
+    try:
+        pr = com.propertyToProxy("Tartarus.DNS.Prx")
+        server = I.ServerPrx.checkedCast(pr)
+    except Exception:
+        raise I.ConfigError("Don't know how to connect DNS configurator",
+                "Tartarus.DNS.Prx")
     return server
 
 
@@ -111,7 +113,9 @@ def reverse_zone_name(a,m):
     a.reverse()
     return '.'.join(a) + '.in-addr.arpa'
 
+
 _needed_opts = [
+        'DNS.ConfigFile',
         'DNS.DaemonType',
         'DNS.Hostmaster',
         'DNS.NameServer',
@@ -125,31 +129,33 @@ _needed_opts = [
         ]
 
 def update_and_check_options(opts):
+    if 'Domain' not in opts:
+        raise I.ConfigError("Option not specified", "Domain")
+
+    if 'ServerFQDN' not in opts:
+        import socket
+        opts['DNS.ServerFQDN'] = socket.getfqdn()
+
+    if 'DNS.NameServer' not in opts:
+        opts['DNS.NameServer'] = 'ns.' + opts['Domain']
+
     try:
-        if 'Domain' not in opts:
-            raise I.ConfigError("Option not specified", "Domain")
-
-        if 'ServerFQDN' not in opts:
-            import socket
-            opts['DNS.ServerFQDN'] = socket.getfqdn()
-
-        if 'DNS.NameServer' not in opts:
-            opts['DNS.NameServer'] = 'ns.' + opts['Domain']
-
         s,m = opts['Subnet'].split('/')
-        try:
-            m = int(m)
-        except I.ValueError:
-            raise I.ConfigError("Invalid subnet mask", opts['Subnet'])
+        m = int(m)
+    except KeyError:
+        raise I.ConfigError("Option not specified", 'Subnet')
+    except ValueError:
+        raise I.ConfigError("Invalid domain subnet", opts['Subnet'])
 
-        if 'DNS.ReverseZone' not in opts:
-            b = mask2octets(m)
-            if b*8 != m:
-                I.ConfigError("For your subnet, supply DNS.ReverseZone",
-                        opts['Subnet'])
-            opts['DNS.ReverseZone'] = reverse_zone_name(s,m)
+    if 'DNS.ReverseZone' not in opts:
+        b = mask2octets(m)
+        if b*8 != m:
+            I.ConfigError("For your subnet, supply DNS.ReverseZone",
+                    opts['Subnet'])
+        opts['DNS.ReverseZone'] = reverse_zone_name(s,m)
 
-        # DNS.Hostmaster
+    # DNS.Hostmaster
+    if 'DNS.Hostmaster' in opts:
         c = opts['DNS.Hostmaster'].count('@')
         if c == 1:
             opts['DNS.Hostmaster'] = opts['DNS.Hostmaster'].replace('@','.')
@@ -158,14 +164,14 @@ def update_and_check_options(opts):
 
         if opts['DNS.Hostmaster'].find('.') < 0:
             opts['DNS.Hostmaster'] += '.' + opts['DNS.NameServer']
+    else:
+        opts['DNS.Hostmaster'] = 'root.' + opts['DNS.NameServer']
 
-        for n in _needed_opts:
-            if n not in opts:
-                raise I.ConfigError("Option not specified", n)
+    for n in _needed_opts:
+        if n not in opts:
+            raise I.ConfigError("Option not specified", n)
 
-        return opts
-    except KeyError, e:
-        raise I.ConfigError('Parameter not specified', e.message)
+    return opts
 
 
 def _ptr_record(ip, fqdn, zone):

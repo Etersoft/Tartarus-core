@@ -147,7 +147,7 @@ class ServerI(I.Server):
     def initNewDatabaseUnsafe(self, opts, current):
         opt_dict = dict(cfgfile.parse(self._config_file))
         opt_dict.update( ( (opt.name, opt.value) for opt in opts ) )
-        db_create.db_pararms(self._dbh)
+        db_create.db_pararms(opt_dict, self._dbh)
         try:
             cfgfile.gen(self._config_file, opt_dict.iteritems())
         except IOError:

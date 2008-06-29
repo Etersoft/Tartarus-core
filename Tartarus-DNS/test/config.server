@@ -13,6 +13,7 @@ Tartarus.addModulePath.Test = ../Tartarus
 
 Tartarus.import.Trace = 1
 Tartarus.modules.Trace = 1
+Tartarus.module.DNS = DNS
 Tartarus.DNS.db.engine = sqlite2
 Tartarus.DNS.db.database = /var/lib/powerdns/sqlite.db
 #Tartarus.Hello.Trace = 255

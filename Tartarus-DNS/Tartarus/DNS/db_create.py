@@ -99,7 +99,7 @@ def create_db(dbh):
     try:
         qlist = _create_mapping[dbh.modname]
     except KeyError:
-        raise I.ConfigError(
+        raise dbh.ConfigError(
                 "Database created not supported for current engine",
                 dbh.engine)
 
@@ -116,7 +116,7 @@ def _get_sqlite_database(d, dbh):
     try:
         dbpath = dbh.options['database']
     except KeyError:
-        raise I.ConfigError('Database parameter undefined',
+        raise dbh.ConfigError('Database parameter undefined',
                             'Tartarus.DNS.db.' + e.message)
     try:
         chroot = d['chroot']
@@ -124,7 +124,7 @@ def _get_sqlite_database(d, dbh):
         return dbpath
 
     if not dbpath.startswith(chroot):
-        raise I.ConfigError(
+        raise dbh.ConfigError(
                 "Database file unreachable from chroot", dbpath)
 
     return dbpath[len(chroot):]
@@ -138,7 +138,7 @@ def _sqlite3_db_params(d, dbh):
              ('gsqlite3-database', _get_sqlite_database(d)) ]
 
 def _psycopg2_db_params(d, dbh):
-    raise I.ConfigError('Database initialization unimplemented',
+    raise dbh.ConfigError('Database initialization unimplemented',
                         'Tartarus.DNS.db.engine')
 
 _params_mapping = {
@@ -147,9 +147,8 @@ _params_mapping = {
         'psycopg2'      : _psycopg2_db_params
         }
 
-def db_pararms(dbh):
+def db_pararms(d, dbh):
     try:
-        d = dbh.options.copy()
         d.update(_params_mapping[dbh.modname](d, dbh))
         return d
     except KeyError:
