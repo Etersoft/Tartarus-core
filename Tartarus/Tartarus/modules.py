@@ -20,6 +20,9 @@ def load_module(modname, adapter):
     module.init(adapter)
 
 def _load_config(props, path):
+    if len(path) == 0:
+        logging.warning("Tartarus configuration path not specified")
+        return
     logging.trace(__name__, "Loading configuration from %s" % path, trace)
     if not os.path.isdir(path):
         logging.error("Invalid path to configuration files: %s" % path)
@@ -51,8 +54,7 @@ def load_modules1(adapter):
 
     props = adapter.getCommunicator().getProperties()
 
-    conf_dir = props.getPropertyWithDefault(
-            "Tartarus.configDir", "/etc/Tartarus")
+    conf_dir = props.getProperty("Tartarus.configDir")
     _load_config(props, conf_dir)
 
     d = props.getPropertiesForPrefix("Tartarus.module.") #note '.' at the end
