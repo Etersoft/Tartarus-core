@@ -16,8 +16,7 @@ Tartarus.modules.Trace = 1
 Tartarus.module.SysDB = SysDB
 Tartarus.SysDB.db.engine = sqlite3
 Tartarus.SysDB.db.database = ../deploy/test.db
-#Tartarus.Hello.Trace = 255
-
+Tartarus.SysDB.db.trace = 255
 
 #
 # Warn about connection exceptions

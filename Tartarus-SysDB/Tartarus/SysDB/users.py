@@ -3,20 +3,22 @@ import Tartarus
 from Tartarus import db, logging
 from Tartarus.iface import SysDB as I
 
-_user_query = ("SELECT users.id, groupid, name, fullname, shell"
-               "FROM users, group_entries "
+_user_query = ("SELECT users.id, groupid, name, fullname, shell "
+               "FROM users , group_entries "
                "WHERE users.id == group_entries.userid "
-               " AND group_entries.is_primary")
+               "AND group_entries.is_primary ")
 
 
 class UserManagerI(I.UserManager):
     def __init__(self, dbh, user_offset, group_offset):
+        self._dbh = dbh
         self._uo = user_offset
         self._go = group_offset
 
 
     def _db2users(self, mas):
-        return [I.UserRecord(uid + self._uo, gid + self._go, name, fn, s)
+        return [I.UserRecord(uid + self._uo, gid + self._go, str(name),
+                            (str(fn) if fn else ""), str(s))
                 for uid, gid, name, fn, s in mas]
 
 
@@ -36,12 +38,12 @@ class UserManagerI(I.UserManager):
     def getByName(self, con, name, current):
         cur = self._dbh.execute(con,
                 _user_query +
-                " AND user.name == %s", name)
+                " AND users.name == %s", name)
         res = cur.fetchall()
         if len(res) == 1:
             return self._db2users(res)[0]
         #XXX: RETURN USER WITH gid=-1
-        raise I.UserNotFound("User not found", name)
+        raise I.NotFound("User not found %s" % name)
 
 
     @db.wrap("retrieving multiple users")
@@ -49,7 +51,7 @@ class UserManagerI(I.UserManager):
         ids = tuple((i - self._uo for i in userIds))
         ps = '(' + ', '.join(('%s' for x in ids)) +')'
         cur = self._dbh.execute(con,
-                _user_query + " AND id IN " + ps, *ids)
+                _user_query + " AND users.id IN " + ps, *ids)
         res = self._db2users(cur.fetchall())
         if (len(res) != len(userIds)
                 and current.ctx.get("PartialStrategy") != "Partial"):
@@ -76,65 +78,76 @@ class UserManagerI(I.UserManager):
     @db.wrap("counting users")
     def count(self, con, current):
         cur = self._dbh.execute(con,
-                "SELECT count(*) FROM users")
+                "SELECT count(name) FROM users")
         res = cur.fetchall()
         if len(res) != 1:
             raise I.DBError(
                 "Database failure while counting users.",
                 "No count fetched!")
-        return long(res[0])
+        return long(res[0][0])
 
 
     @db.wrap("retrieving users")
     def get(self, con, limit, offset, current):
-        cur = self._dbh.execute_limited(con, limit, offest, _user_query)
+        cur = self._dbh.execute_limited(con, limit, offset, _user_query)
         return self._db2users(cur.fetchall())
 
 
     @db.wrap("changing user record")
     def modify(self, con, user, current):
-        user.uid -= self._uo
-        self.gid -= self._go
+        uid = user.uid - self._uo
+        gid = user.gid - self._go
         cur = self._dbh.execute(con,
                 "UPDATE users SET "
                 "name=%s, fullname=%s, shell=%s "
                 "WHERE id == %s",
-                user.name, user.fullName, user.shell, user.uid)
+                user.name, user.fullName, user.shell, uid)
         if cur.rowcount != 1:
-            raise I.UserNotFound("User not found", user.uid + self._uo)
+            raise I.UserNotFound("User not found", user.uid)
         cur = self._dbh.execute(con,
                 "UPDATE group_entries SET groupid=%s"
                 "WHERE userid == %s AND is_primary",
-                user.gid, user.uid)
+                gid, uid)
         if cur.rowcount != 1:
             cur = self._dbh.execute(
                     "INSERT INTO group_entries (userid, groupid, is_primary) "
                     "VALUES (%s, %s, %s)",
-                    user.uid, user.gid, 1)
+                    uid, gid, 1)
         con.commit()
 
 
     @db.wrap("creating user")
     def create(self, con, newUser, current):
-        set._dbh.execute(con,
+        self._dbh.execute(con,
                 "INSERT INTO users (name, fullname, shell) "
                 "VALUES (%s, %s, %s)",
                 newUser.name, newUser.fullName, newUser.shell)
-        cur = set._dbh.execute(con,
+        cur = self._dbh.execute(con,
+                "SELECT id FROM users WHERE name = %s", newUser.name)
+        res = cur.fetchall()
+        if len(res) != 1:
+            raise I.DBError("Failed to add user",
+                    "User not found after insertion")
+        uid = res[0][0]
+        cur = self._dbh.execute(con,
                 "INSERT INTO group_entries (groupid, userid, is_primary) "
-                "SELECT groups.id, users.id, %s FROM users, groups "
-                "WHERE groups.id=%s, users.name=%s",
-                1, newUser.gid - self._go, newUser.name)
+                "SELECT groups.id, %s, %s FROM groups WHERE groups.id=%s",
+                uid, 1, newUser.gid - self._go)
         if (cur.rowcount != 1):
             raise I.GroupNotFound(
                     "Not found primary group for new user", newUser.gid)
         con.commit()
-
+        return uid + self._uo
 
     @db.wrap("deleting user")
     def delete(self, con, id, current):
-        db.execute("DELETE FROM users WHERE id=%s", id - self._uo)
-        db.execute("DELETE FROM group_entries WHERE userid=%s", id - self._uo)
+        cur = self._dbh.execute(con,
+                "DELETE FROM users WHERE id=%s", id - self._uo)
+        if cur.rowcount != 1:
+            raise I.UserNotFound("User not found", id)
+        self._dbh.execute(con,
+                "DELETE FROM group_entries WHERE userid=%s",
+                id - self._uo)
         con.commit()
 
 

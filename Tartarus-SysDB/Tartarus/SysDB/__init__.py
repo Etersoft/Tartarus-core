@@ -16,9 +16,9 @@ def init(adapter):
         go = props.getPropertyAsIntWithDefault(
                 "Tartarus.SysDB.GroupIDOffset", 65536)
         adapter.add(users.UserManagerI(dbh, uo, go),
-                com.stringToIdentity("SysDB-Mangager/Users"))
+                com.stringToIdentity("SysDB-Manager/Users"))
         adapter.add(groups.GroupManagerI(dbh, uo, go),
-                com.stringToIdentity("SysDB-Mangager/Groups"))
+                com.stringToIdentity("SysDB-Manager/Groups"))
     except:
         import traceback
         traceback.print_exc()

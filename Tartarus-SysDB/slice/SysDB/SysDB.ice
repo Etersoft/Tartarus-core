@@ -74,79 +74,79 @@ sequence<long> IdSeq;
 interface UserReader
 {
     idempotent UserRecord getById(long uid)
-                            throws UserNotFound, PermissionDenied;
+                            throws Error;
     idempotent UserRecord getByName(string name)
-                            throws UserNotFound, PermissionDenied;
+                            throws Error;
 
     idempotent UserSeq getUsers(IdSeq userIds)
-                            throws UserNotFound, PermissionDenied;
+                            throws Error;
 
     idempotent UserSeq search(string factor, long limit)
-                            throws PermissionDenied;
+                            throws Error;
 
-    idempotent long count() throws PermissionDenied;
+    idempotent long count() throws Error;
 
     idempotent UserSeq get(long limit, long offset)
-                            throws PermissionDenied;
+                            throws Error;
 };
 
 interface UserManager extends UserReader
 {
     idempotent void modify(UserRecord user)
-                            throws UserNotFound, PermissionDenied;
+                            throws Error;
     /** uid field from parameter is ignored */
     long create(UserRecord newUser)
-                            throws UserAlreadyExists, PermissionDenied;
-    void delete(long id) throws UserNotFound, PermissionDenied;
+                            throws Error;
+    void delete(long id) throws Error;
 };
 
 interface GroupReader
 {
     idempotent GroupRecord getById(long gid)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
     idempotent GroupRecord getByName(string name)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
 
     idempotent IdSeq getGroupsForUserId(long uid)
-                            throws UserNotFound, PermissionDenied;
+                            throws Error;
     idempotent IdSeq getGroupsForUserName(string name)
-                            throws UserNotFound, PermissionDenied;
+                            throws Error;
 
     idempotent GroupSeq getGroups(IdSeq groupIds)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
     idempotent IdSeq getUsers(long gid)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
 
 
-    GroupSeq search(string factor, long limit) throws PermissionDenied;
-    idempotent long count() throws PermissionDenied;
+    GroupSeq search(string factor, long limit) throws Error;
+    idempotent long count() throws Error;
     idempotent GroupSeq get(long limit, long offset)
-                            throws PermissionDenied;
+                            throws Error;
 };
 
 interface GroupManager extends GroupReader
 {
     idempotent void setUsers(long gid, IdSeq userIds)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
     void addUsers(long gid, IdSeq userIds)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
     void delUsers(long gid, IdSeq userIds)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
 
     idempotent void modify(GroupRecord group)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
 
     /** gid field from parameter is ignored */
     long create(GroupRecord newGroup)
-                            throws GroupAlreadyExists, PermissionDenied;
-    void delete(long id) throws UserNotFound, PermissionDenied;
+                            throws Error;
+    void delete(long id) throws Error;
 
     void addUserToGroups(long uid, IdSeq groups)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
 
     /** */
     void delUserFromGroups(long uid, IdSeq groups)
-                            throws GroupNotFound, PermissionDenied;
+                            throws Error;
 };
 
 };

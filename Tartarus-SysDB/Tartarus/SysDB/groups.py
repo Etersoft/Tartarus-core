@@ -6,17 +6,19 @@ from Tartarus.iface import SysDB as I
 
 class GroupManagerI(I.GroupManager):
     def __init__(self, dbh, user_offset, group_offset):
+        self._dbh = dbh
         self._uo = user_offset
         self._go = group_offset
 
 
     def _db2users(self, mas):
-        return [I.UserRecord(uid + self._uo, gid + self._go, name, fn, s)
+        return [I.UserRecord(uid + self._uo, gid + self._go,
+                             str(name), str(fn), s)
                 for uid, gid, name, fn, s in mas]
 
 
     def _db2groups(self, mas):
-        return [I.GroupRecord(gid + self._go, name, descr)
+        return [I.GroupRecord(gid + self._go, str(name), str(descr))
                 for gid, name, descr in mas]
 
     def _group_exists(self, con, gid):
@@ -127,18 +129,18 @@ class GroupManagerI(I.GroupManager):
     @db.wrap("counting groups")
     def count(self, con, current):
         cur = self._dbh.execute(con,
-                "SELECT count(*) FROM groups")
+                "SELECT count(name) FROM groups")
         res = cur.fetchall()
         if len(res) != 1:
             raise I.DBError(
                 "Database failure while counting groups.",
                 "No count fetched!")
-        return long(res[0])
+        return long(res[0][0])
 
 
     @db.wrap("retrieving groups")
     def get(self, con, limit, offset, current):
-        cur = self._dbh.execute_limited(con, limit, offest,
+        cur = self._dbh.execute_limited(con, limit, offset,
                 "SELECT id, name, description FROM groups ")
         return self._db2groups(cur.fetchall())
 
@@ -201,11 +203,19 @@ class GroupManagerI(I.GroupManager):
 
     @db.wrap("creating group")
     def create(self, con, newGroup, current):
-        set._dbh.execute(con,
+        self._dbh.execute(con,
                 "INSERT INTO groups (name, description) "
                 "VALUES (%s, %s)",
                 newGroup.name, newGroup.description)
+        cur = self._dbh.execute(con,
+                "SELECT id FROM groups WERE name=%s",
+                newGroup.name)
+        res = cur.fetchall()
+        if len(res) != 1:
+            raise I.DBError("Failed to create group",
+                    "Group not found after insertion")
         con.commit()
+        return res[0][0] + self._go
 
     @db.wrap("deleting group")
     def delete(self, con, id, current):
