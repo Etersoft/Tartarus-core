@@ -112,14 +112,16 @@ class _Helper(object):
         return cur
 
     def execute_many(self, con, query, mparams):
+        if self.trace > 16:
+            mparams = list(mparams)
+            logging.trace(__name__,
+                    "Multiple query on database %s, first is:\n%s" %
+                    (self.options['database'],
+                    _query2string(query, mparams[0])))
         cur = con.cursor()
         l = query.count('%s')
         q = self.trans.query(query, l)
         p = [self.trans.params(p) for p in mparams]
-        if self.trace > 16:
-            logging.trace(__name__,
-                    "Multiple query on database %s, first is:\n%s",
-                    self.options['database'], _query2string(query, params))
         cur.executemany(q, p)
         return cur
 
