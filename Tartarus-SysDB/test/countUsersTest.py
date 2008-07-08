@@ -2,14 +2,8 @@
 
 from testbase import *
 
-class countTest(TestBase):
-    name = 'Test user that does not exist, for countTest'
-    def setUp(self):
-        TestBase.setUp(self)
-        g = self.gm.get(1,-1)
-        self.gid = g[0].gid
-
-    def runTest(self):
+class countUsersTest(TestWithUser):
+    def testCreateRemove(self):
         c1 = self.um.count()
         ur = self.I.UserRecord(-1, self.gid, self.name, self.name)
         id = self.um.create(ur)
@@ -19,16 +13,14 @@ class countTest(TestBase):
         self.assertEqual(c1, c3)
         self.assertEqual(c1, c2- 1)
 
-    def tearDown(self):
-        try:
-            user = self.um.getByName(self.name)
-            self.um.delete(user.uid)
-        except Exception, e:
-            pass
-        TestBase.tearDown(self)
+    def testGetUsers(self):
+        c = self.um.count()
+        u = self.um.get(-1, -1)
+        self.assertEqual(c, len(u))
 
 
-tests = load(countTest)
+tests = load(countUsersTest)
 
 if __name__ == '__main__':
     main(tests)
+

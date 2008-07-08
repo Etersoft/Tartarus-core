@@ -2,6 +2,9 @@
 
 from testbase import *
 
+def getUid(user):
+    return user.uid
+
 class getUserTest(TestBase):
     def runTest(self):
         us = self.um.get(10, -1)
@@ -11,8 +14,8 @@ class getUserTest(TestBase):
         ids = [ u.uid for u in us ]
         us2 = self.um.getUsers(ids)
 
-        us.sort()
-        us2.sort()
+        us.sort(key=getUid)
+        us2.sort(key=getUid)
         self.assertEqual(us, us2)
 
 
