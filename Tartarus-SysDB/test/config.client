@@ -40,9 +40,9 @@ Tartarus.SysDB.GroupManagerPrx=SysDB-Manager/Groups:tcp -p 12345
 # SSL Configuration
 #
 #Ice.Plugin.IceSSL=IceSSL:createIceSSL
-IceSSL.Ciphers=KRB5
+#IceSSL.Ciphers=KRB5
 #IceSSL.ServiceHost=service.f.q.d.n.org
-IceSSL.ServiceName=host
+#IceSSL.ServiceName=host
 #IceSSL.DefaultDir=../../../certs
 #IceSSL.CertAuthFile=cacert.pem
 #IceSSL.CertFile=c_rsa1024_pub.pem

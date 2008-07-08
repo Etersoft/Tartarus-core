@@ -145,10 +145,10 @@ class GroupManagerI(I.GroupManager):
 
     @db.wrap("setting users for group")
     def setUsers(self, con, gid, userIds, current):
-        self._dbh.execute(
+        cur = self._dbh.execute(con,
                 "DELETE FROM group_entries "
                 "WHERE groupid == %s AND is_primary IS NULL",
-                gid)
+                gid - self._go)
         self._addUsers(con, gid, userIds, current)
 
     @db.wrap("adding users to group")
@@ -157,7 +157,7 @@ class GroupManagerI(I.GroupManager):
 
     def _addUsers(self, con, gid, userIds, current):
         self._group_exists(con, gid)
-        gen = ( (uid, gid) for uid in userIds )
+        gen = ( (gid - self._go, uid - self._uo) for uid in userIds )
         cur = self._dbh.execute_many(con,
                 "INSERT INTO group_entries (userid, groupid) "
                 "SELECT users.id, %s FROM users WHERE users.id == %s",
@@ -172,10 +172,10 @@ class GroupManagerI(I.GroupManager):
                 "DELETE FROM group_entries "
                 "WHERE groupid == %s AND is_primary IS NULL "
                 "AND userid IN " + ps,
-                gid, *ids)
+                gid - self._go, *ids)
         if cur.rowcount != len(userIds):
             self._group_exists(con, gid)
-            cur = self.execute(con,
+            cur = self._dbh.execute(con,
                     "SELECT userid FROM group_entries "
                     "WHERE groupid == %s AND is_primary "
                     "AND userid IN " + ps, gid, *ids)
@@ -195,7 +195,7 @@ class GroupManagerI(I.GroupManager):
                 "UPDATE groups SET "
                 "name=%s, description=%s "
                 "WHERE id == %s",
-                group.gid - self._go, group.name, group.description)
+                group.name, group.description, group.gid - self._go)
         if cur.rowcount != 1:
             raise I.GroupNotFound("Group not found!", group.gid)
         con.commit()
@@ -207,7 +207,7 @@ class GroupManagerI(I.GroupManager):
                 "VALUES (%s, %s)",
                 newGroup.name, newGroup.description)
         cur = self._dbh.execute(con,
-                "SELECT id FROM groups WERE name=%s",
+                "SELECT id FROM groups WHERE name=%s",
                 newGroup.name)
         res = cur.fetchall()
         if len(res) != 1:
@@ -218,6 +218,7 @@ class GroupManagerI(I.GroupManager):
 
     @db.wrap("deleting group")
     def delete(self, con, id, current):
+        gid = id - self._go
         cur = self._dbh.execute(con,
                     "SELECT userid FROM group_entries "
                     "WHERE groupid == %s AND is_primary ",
@@ -227,15 +228,17 @@ class GroupManagerI(I.GroupManager):
             raise I.DBError("Cannot delete group which is primary for users",
                     str(res))
         self._dbh.execute(con,
-                "DELETE FROM group_entries WHERE groupid == %s", id)
-        self._dbh.execute(con,
-                "DELETE FROM groups WHERE id == %s", id)
+                "DELETE FROM group_entries WHERE groupid == %s", gid)
+        cur = self._dbh.execute(con,
+                "DELETE FROM groups WHERE id == %s", gid)
+        if cur.rowcount != 1:
+            raise I.GroupNotFound("Group not found", id)
         con.commit()
 
     @db.wrap("adding user to multiple groups")
     def addUserToGroups(self, con, uid, groups, current):
         self._user_exists(con, uid)
-        gen = ( (uid, gid) for gid in groups )
+        gen = ( (uid - self._uo, gid - self._go) for gid in groups )
         cur = self._dbh.execute_many(con,
                 "INSERT INTO group_entries (userid, groupid) "
                 "SELECT %s, groups.id FROM groups WHERE groups.id == %s",
@@ -250,9 +253,9 @@ class GroupManagerI(I.GroupManager):
                 "DELETE FROM group_entries "
                 "WHERE userid == %s AND is_primary IS NULL "
                 "AND groupid IN " + ps,
-                uid, *ids)
+                uid - self._uo, *ids)
         if cur.rowcount != len(groups):
-            self._user_exists(con, gid)
+            self._user_exists(con, uid)
             cur = self.execute(con,
                     "SELECT groupid FROM group_entries "
                     "WHERE userid == %s AND is_primary ",

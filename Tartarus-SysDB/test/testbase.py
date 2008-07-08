@@ -1,7 +1,7 @@
 
 import Ice, Tartarus, unittest, sys, os
 
-__all__ = ['TestBase', 'TestWithUser', 'main', 'load']
+__all__ = ['TestBase', 'TestWithGroup', 'TestWithUser', 'main', 'load']
 
 Tartarus.modules.trace = 0
 Tartarus.slices.trace = 0
@@ -24,6 +24,21 @@ class TestBase(unittest.TestCase):
         del self.gm
         self.com.destroy()
         del self.com
+
+
+class TestWithGroup(TestBase):
+    def setUp(self):
+        TestBase.setUp(self)
+        self.gname = ('Test group that does not exist, for '
+                        + self.__class__.__name__)
+
+    def tearDown(self):
+        try:
+            group = self.gm.getByName(self.gname)
+            self.gm.delete(group.gid)
+        except Exception, e:
+            pass
+        TestBase.tearDown(self)
 
 
 class TestWithUser(TestBase):
@@ -49,6 +64,6 @@ def load(*args):
                 for a in args))
     return s
 
-def main(suite, verbosity=0):
+def main(suite, verbosity=2):
     unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
