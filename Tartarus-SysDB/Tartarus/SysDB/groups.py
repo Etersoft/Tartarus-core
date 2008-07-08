@@ -49,16 +49,16 @@ class GroupManagerI(I.GroupManager):
     def getByName(self, con, name, current):
         cur = self._dbh.execute(con,
                 "SELECT id, name, description FROM groups "
-                "WHERE id == %s", gid - self._go)
+                "WHERE name == %s", name)
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.GroupNotFound("Group not found", gid)
+            raise I.NotFound("Group not found: %s" % name)
         return self._db2groups(res)[0]
 
     @db.wrap("retrieving groups for user id")
     def getGroupsForUserId(self, con, uid, current):
         cur = self._dbh.execute(con,
-                "SELECT groups.id, name, description "
+                "SELECT groups.id "
                 "FROM groups, group_entries "
                 "WHERE groups.id == group_entries.groupid "
                 "AND group_entries.userid == %s",
@@ -67,12 +67,12 @@ class GroupManagerI(I.GroupManager):
         if len(res) == 0:
             #user definitly has primary group...
             raise I.UserNotFound("User not found", uid)
-        return self._db2groups(res)
+        return [ x[0] + self._go for x in res ]
 
     @db.wrap("retrieving groups for user name")
     def getGroupsForUserName(self, con, name, current):
         cur = self._dbh.execute(con,
-                "SELECT groups.id, groups.name, description "
+                "SELECT groups.id "
                 "FROM groups, group_entries, users "
                 "WHERE groups.id == group_entries.groupid "
                 "AND group_entries.userid == users.id "
@@ -82,7 +82,7 @@ class GroupManagerI(I.GroupManager):
         if len(res) == 0:
             #user definitly has primary group...
             raise I.UserNotFound("User not found", name)
-        return self._db2groups(res)
+        return [ x[0] + self._go for x in res ]
 
 
     @db.wrap("retrieving multiple groups")
@@ -102,7 +102,7 @@ class GroupManagerI(I.GroupManager):
         return res
 
     @db.wrap("retrieving users for group")
-    def getUsers(self, gid, current):
+    def getUsers(self, con, gid, current):
         cur = self._dbh.execute(con,
                 "SELECT userid FROM group_entries "
                 "WHERE groupid == %s",
@@ -111,7 +111,7 @@ class GroupManagerI(I.GroupManager):
         if len(res) == 0:
             self._group_exists(con, gid)
             return []
-        return self._db2groups(res)
+        return [ x[0] + self._uo for x in res]
 
     @db.wrap("searching for groups")
     def search(self, con, factor, limit, current):
@@ -121,9 +121,8 @@ class GroupManagerI(I.GroupManager):
                         + '%')
         cur = self._dbh.execute_limited(con, limit, 0,
                 "SELECT id, name, description FROM groups "
-                " AND name LIKE %s",
-                phrase, phrase)
-        return self._db2users(cur.fetchall())
+                "WHERE name LIKE %s", phrase)
+        return self._db2groups(cur.fetchall())
 
 
     @db.wrap("counting groups")

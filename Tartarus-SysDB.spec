@@ -3,7 +3,7 @@
 %define modulename SysDB
 
 Version: 0.0.1
-Release: eter1
+Release: alt1
 
 
 Summary: Tartarus example servant

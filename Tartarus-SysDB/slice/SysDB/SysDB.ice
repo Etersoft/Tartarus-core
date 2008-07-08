@@ -117,7 +117,6 @@ interface GroupReader
     idempotent IdSeq getUsers(long gid)
                             throws Error;
 
-
     GroupSeq search(string factor, long limit) throws Error;
     idempotent long count() throws Error;
     idempotent GroupSeq get(long limit, long offset)

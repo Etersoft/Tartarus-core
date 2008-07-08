@@ -3,8 +3,12 @@
 from testbase import *
 
 class searchNothingTest(TestBase):
-    def runTest(self):
+    def testUsers(self):
         l = self.um.search("%%%%%%%%%", -1)
+        self.assertEqual(l, [])
+
+    def testGroups(self):
+        l = self.gm.search("%%%%%%%%%", -1)
         self.assertEqual(l, [])
 
 tests = load(searchNothingTest)

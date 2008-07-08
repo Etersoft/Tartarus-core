@@ -2,13 +2,7 @@
 
 from testbase import *
 
-class modifyTest(TestBase):
-    name = 'Test user that does not exist, for modifyTest'
-    def setUp(self):
-        TestBase.setUp(self)
-        g = self.gm.get(1,-1)
-        self.gid = g[0].gid
-
+class modifyUserTest(TestWithUser):
     def runTest(self):
         ur = self.I.UserRecord(-1, self.gid, self.name, self.name)
         ur.uid = self.um.create(ur)
@@ -24,16 +18,8 @@ class modifyTest(TestBase):
 
         self.um.delete(ur.uid)
 
-    def tearDown(self):
-        try:
-            user = self.um.getByName(self.name)
-            self.um.delete(user.uid)
-        except Exception, e:
-            pass
-        TestBase.tearDown(self)
-
-
-tests = load(modifyTest)
+tests = load(modifyUserTest)
 
 if __name__ == '__main__':
     main(tests)
+
