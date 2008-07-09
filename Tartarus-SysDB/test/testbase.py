@@ -9,7 +9,7 @@ Tartarus.slices.path += ["../slice"]
 
 class TestBase(unittest.TestCase):
     def setUp(self):
-        args = sys.argv
+        args = [a for a in sys.argv] #copy list by value
         if len(sys.argv) < 2 and 'ICE_CONFIG' not in os.environ:
             args.append('--Ice.Config=./config.client')
         self.com = Ice.initialize(args)
@@ -60,7 +60,7 @@ class TestWithUser(TestBase):
 
 def load(*args):
     s = unittest.TestSuite()
-    s.addTests((unittest.TestLoader().loadTestsFromTestCase(a)
+    s.addTests((unittest.defaultTestLoader.loadTestsFromTestCase(a)
                 for a in args))
     return s
 
