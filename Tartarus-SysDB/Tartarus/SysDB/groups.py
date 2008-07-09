@@ -91,12 +91,12 @@ class GroupManagerI(I.GroupManager):
         ps = '(' + ', '.join(('%s' for x in ids)) +')'
         cur = self._dbh.execute(con,
                 "SELECT id, name, description FROM groups "
-                + " AND id IN " + ps, *ids)
+                + "WHERE id IN " + ps, *ids)
         res = self._db2groups(cur.fetchall())
-        if (len(res) != len(userIds)
+        if (len(res) != len(groupIds)
                 and current.ctx.get("PartialStrategy") != "Partial"):
             retrieved = set( (g.gid for g in res) )
-            for i in userIds:
+            for i in groupIds:
                 if i not in retrieved:
                     raise I.GroupNotFound("Group not found", i)
         return res
