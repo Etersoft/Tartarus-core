@@ -3,7 +3,7 @@
 %define srvname tartarus-srv1
 
 Version: 0.0.2
-Release: eter1
+Release: eter2
 
 %setup_python_module Tartarus
 
@@ -16,7 +16,7 @@ Prefix: %_prefix
 Url: http://tartarus.org
 Packager: Ivan A. Melnikov <iv@altlinux.org>
 
-BuildArchitectures: noarch
+BuildArch: noarch
 
 
 BuildRequires(pre): rpm-build-licenses
@@ -43,17 +43,15 @@ Install %srvname if you need to run tartarus servants written in python.
 
 %setup  -q -n %modulename-%version
 
-#build
-#__python setup.py build
 
 %install
-#__python setup.py install --root=%buildroot --optimize=2 --record=INSTALLED_FILES
 %__mkdir_p  %buildroot%python_sitelibdir
 %__cp -Rp  Tartarus %buildroot%python_sitelibdir
 %__mkdir_p  %buildroot%_sbindir
 %__cp %srvname %buildroot%_sbindir
 %__mkdir_p %buildroot%_sysconfdir/Tartarus/modules
-%__cp Tartarus.conf %buildroot%_sysconfdir/Tartarus
+%__mkdir_p %buildroot%_sysconfdir/Tartarus/deploy
+%__cp config/* %buildroot%_sysconfdir/Tartarus
 %__mkdir_p %buildroot%_initdir
 %__cp -p init/* %buildroot%_initdir
 
@@ -66,17 +64,23 @@ Install %srvname if you need to run tartarus servants written in python.
 
 %files
 %python_sitelibdir/*
-#files -f INSTALLED_FILES
-#doc README README.ru
 
 %files -n %srvname
 %_sbindir/*
 %dir %_sysconfdir/Tartarus
 %dir %_sysconfdir/Tartarus/modules
+%dir %_sysconfdir/Tartarus/deploy
+%config %_sysconfdir/Tartarus/Tartarus-deploy.conf
 %config(noreplace) %_sysconfdir/Tartarus/Tartarus.conf
-%_initdir/*
+%_initdir/Tartarus
 
 %changelog
+* Wed Jul 09 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter2
+- new snapshot:
+    - added Tartarus.db submodule
+    - many bugfixes
+- added special configuration for deployment
+
 * Fri Jun 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter1
 - new snapshot:
     - improvements in daemon code

@@ -90,13 +90,6 @@ class _Helper(object):
             if k in opts:
                 self.options[k] = opts[k]
 
-        # test wheter given connection parameters do work
-        try:
-            self.get_connection()
-        except self.Error, e:
-            raise self.DBError("Could not connect to database", e.message)
-
-
     def get_connection(self):
         return self.module.connect(**self.options)
 
