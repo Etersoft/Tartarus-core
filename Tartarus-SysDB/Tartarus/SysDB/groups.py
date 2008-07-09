@@ -33,7 +33,7 @@ class GroupManagerI(I.GroupManager):
                 "SELECT name FROM users WHERE id == %s",
                 uid - self._uo)
         if len(cur.fetchall()) != 1:
-            raise I.UserNotFound("Group not found", gid)
+            raise I.UserNotFound("User not found", uid)
 
     @db.wrap("retrieving group by id")
     def getById(self, con, gid, current):
@@ -81,7 +81,7 @@ class GroupManagerI(I.GroupManager):
         res = cur.fetchall()
         if len(res) == 0:
             #user definitly has primary group...
-            raise I.UserNotFound("User not found", name)
+            raise I.NotFound("User not found: %s" % name)
         return [ x[0] + self._go for x in res ]
 
 
