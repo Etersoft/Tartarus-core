@@ -43,19 +43,27 @@ Interface definisions for %name.
 
 
 %install
-%__mkdir_p %buildroot/%_libdir/Tartarus/modules
-%__cp -R Tartarus/* %buildroot/%_libdir/Tartarus/modules
-%__mkdir_p %buildroot/%_datadir/Tartarus
-%__cp -R slice %buildroot/%_datadir/Tartarus
+%__mkdir_p %buildroot%_libdir/Tartarus/modules
+%__cp -R Tartarus/* %buildroot%_libdir/Tartarus/modules
+%__mkdir_p %buildroot%_datadir/Tartarus
+%__cp -R slice %buildroot%_datadir/Tartarus
+
+%__mkdir_p %buildroot%_sysconfdir/Tartarus/deploy
+%__cp deploy/%modulename.conf %buildroot/%_sysconfdir/Tartarus/deploy
+
+%__mkdir_p %buildroot%_localstatedir/Tartarus/%modulename
 
 %files
 %_libdir/Tartarus/modules/*
-#doc README 
+%config %_sysconfdir/Tartarus/deploy/%modulename.conf
+%dir %_localstatedir/Tartarus/%modulename
 
 %files slice
 %dir %_datadir/Tartarus/slice/%modulename
 %_datadir/Tartarus/slice/%modulename/*
 
 %changelog
+* Wed Jul 09 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.1-alt1
+- inital build
 
 

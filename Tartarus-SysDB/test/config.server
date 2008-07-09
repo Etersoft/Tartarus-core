@@ -14,6 +14,7 @@ Tartarus.addModulePath.Test = ../Tartarus
 Tartarus.import.Trace = 1
 Tartarus.modules.Trace = 1
 Tartarus.module.SysDB = SysDB
+#Tartarus.SysDB.db.deploy = 1
 Tartarus.SysDB.db.engine = sqlite3
 Tartarus.SysDB.db.database = ../deploy/test.db
 Tartarus.SysDB.db.trace = 255
