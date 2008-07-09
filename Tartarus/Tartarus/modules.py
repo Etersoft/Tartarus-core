@@ -1,6 +1,6 @@
 
 
-import os, sys, Tartarus
+import os, sys, traceback, Tartarus
 from Tartarus import logging
 path = []
 
@@ -15,15 +15,18 @@ def load_module(modname, adapter):
         __import__(modname)
         module = sys.modules[modname]
         module.init(adapter)
+        return True
     except (ImportError, KeyError):
         logging.error("Failed to load module %s, skipping." % modname)
+        return False
     except Exception:
         et, ev, tb = sys.exc_info()
         if trace <= 16:
             tb = None
-        msg = str().join(tracerback.format_exception(et, ev, tb))
+        msg = str().join(traceback.format_exception(et, ev, tb))
         logging.error("Failed to load module %s:\n%s" %
                 (modname, msg))
+        return False
 
 
 
@@ -67,6 +70,7 @@ def load_modules1(adapter):
     _load_config(props, conf_dir)
 
     d = props.getPropertiesForPrefix("Tartarus.module.") #note '.' at the end
+    a = props.getPropertyAsInt("Tartarus.modules.LoadAll")
 
     for m in d.itervalues():
         # we load only modules which names start with big latin letters
@@ -74,5 +78,9 @@ def load_modules1(adapter):
             if trace > 5:
                 logging.warning("Skipping module %s" % m)
         else:
-            load_module(m, adapter)
+            res = load_module(m, adapter)
+            if not res and a > 0:
+                raise RuntimeError("Modules initialization failed")
+
+
 
