@@ -59,7 +59,7 @@ class _Helper(object):
     options = {}        # database options
     module = None       # module corresponding to database engine
     modname = None      # name of database module
-    trace = None        # if if > 16 trace queries (quite slow)
+    trace = 0           # if if > 16 trace queries (quite slow)
     trans = None
 
     def __init__(self, opts, iface):
@@ -67,7 +67,7 @@ class _Helper(object):
         self.DBError = iface.DBError
 
         if 'trace' in opts:
-            self.trace = opts['trace']
+            self.trace = int(opts['trace'])
 
         try:
             self.engine = opts['engine']
@@ -138,7 +138,7 @@ class _Helper(object):
         return self.execute(con, query, *params)
 
 
-def wrap(msg):
+def wrap(msg = None):
     def decor(method):
         def wrapper(self, *pargs, **kwargs):
             h = self._dbh
@@ -148,10 +148,13 @@ def wrap(msg):
                         *pargs, **kwargs)
             except h.Error, e:
                 if msg:
-                    raise h.DBError(
-                            "Database falure while " + msg, e.message)
+                    message = "Database failure while " + msg
                 else:
-                    raise h.DBError("Database falure", e.message)
+                    message = "Database failure"
+                if h.trace > 8:
+                    logging.warning("FAILED: %s: %s: %s" %
+                            (h.options['database'], message, e.message))
+                raise h.DBError(message, e.message)
         return wrapper
     return decor
 
