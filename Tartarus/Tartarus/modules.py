@@ -14,10 +14,19 @@ def load_module(modname, adapter):
         modname = "Tartarus.%s" % modname
         __import__(modname)
         module = sys.modules[modname]
+        module.init(adapter)
     except (ImportError, KeyError):
         logging.error("Failed to load module %s, skipping." % modname)
-        return
-    module.init(adapter)
+    except Exception:
+        et, ev, tb = sys.exc_info()
+        if trace <= 16:
+            tb = None
+        msg = str().join(tracerback.format_exception(et, ev, tb))
+        logging.error("Failed to load module %s:\n%s" %
+                (modname, msg))
+
+
+
 
 def _load_config(props, path):
     if len(path) == 0:
