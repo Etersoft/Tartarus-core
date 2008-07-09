@@ -178,7 +178,7 @@ class GroupManagerI(I.GroupManager):
             cur = self._dbh.execute(con,
                     "SELECT userid FROM group_entries "
                     "WHERE groupid == %s AND is_primary "
-                    "AND userid IN " + ps, gid, *ids)
+                    "AND userid IN " + ps, gid - self._go, *ids)
             res = cur.fetchall()
             if len(res) > 0:
                 raise I.DBError(
@@ -256,12 +256,12 @@ class GroupManagerI(I.GroupManager):
                 uid - self._uo, *ids)
         if cur.rowcount != len(groups):
             self._user_exists(con, uid)
-            cur = self.execute(con,
+            cur = self._dbh.execute(con,
                     "SELECT groupid FROM group_entries "
                     "WHERE userid == %s AND is_primary ",
-                    uid)
+                    uid - self._uo)
             res = cur.fetchall()
-            if len(res) > 0 and res[0] in ids:
+            if len(res) > 0 and res[0][0] in ids:
                 raise I.DBError(
                         "Cannot delete users from primary group",
                         '@' + str(res[0]))

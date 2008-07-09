@@ -25,8 +25,6 @@ class getGroupTest(TestBase):
         self.assertEqual(groups, groups2)
 
 
-
-
 tests = load(getGroupTest)
 
 if __name__ == '__main__':
