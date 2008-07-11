@@ -3,16 +3,20 @@ import Tartarus, os
 from Tartarus import logging, db
 import Tartarus.iface.DNS as I
 
-import db_create, utils, cfgfile
+import deploy, utils, cfgfile
 
 class ServerI(I.Server):
-    def __init__(self, cfg_file_name, dbh):
+    def __init__(self, cfg_file_name, dbh, do_reload=True):
         self._dbh = dbh
+        self._do_reload = do_reload
         I.Server.__init__(self)
         dir, name = os.path.split(cfg_file_name)
         if len(name) < 1 or not os.path.isdir(dir):
             raise I.ConfigError("Bad config file specified", cfg_file_name)
         self._config_file = cfg_file_name
+        # enshure server is here and works with actual config file
+        if self._do_reload:
+            self._reload_config()
 
     @db.wrap("retrieving all zones")
     def getZones(self, con, current):
@@ -141,18 +145,7 @@ class ServerI(I.Server):
         except IOError:
             raise I.ConfigError("Failed to alter configuration file",
                                  self._config_file)
-        self._reload_config()
+        if self._do_reload:
+            self._reload_config()
 
-
-    def initNewDatabaseUnsafe(self, opts, current):
-        opt_dict = dict(cfgfile.parse(self._config_file))
-        opt_dict.update( ( (opt.name, opt.value) for opt in opts ) )
-        db_create.db_pararms(opt_dict, self._dbh)
-        try:
-            cfgfile.gen(self._config_file, opt_dict.iteritems())
-        except IOError:
-            raise I.ConfigError("Failed to alter configuration file",
-                                 self._config_file)
-        db_create.create_db(self._dbh)
-        self._reload_config()
 

@@ -13,32 +13,6 @@ def _strip_prefix(prefix, d):
     return dict(gen)
 
 
-def make_servant_config(opts):
-    demontype =  opts.get('DNS.DaemonType')
-    if demontype and demontype != 'powerdns':
-        raise I.ConfigError(
-                "Daemon type not supported", opts['DNS.DaemonType'])
-    filename = opts.get('DNS.ConfiguratorConfig',
-            '/etc/Tartarus/modules/DNS.conf')
-
-    res = {}
-    try:
-        res['Tartarus.DNS.ConfigFile'] = opts['DNS.ConfigFile']
-    except KeyError:
-        pass
-
-    for key in opts:
-        if key.startswith('DNS.db.'):
-            res['Tartarus.'+key] = opts[key]
-    res['Tartarus.DNS.trace'] = opts.get('DNS.trace', 0)
-    res['Tartarus.module.DNS'] = 'DNS'
-    with open(filename,'w') as f:
-        f.write("#\n# This file was generated automatically\n#\n\n")
-        for pair in res.iteritems():
-            f.write('%s = %s\n' % pair)
-        f.write('\n')
-
-
 def connect(com):
     try:
         pr = com.propertyToProxy("Tartarus.DNS.Prx")
@@ -120,7 +94,6 @@ _needed_opts = [
         'DNS.Hostmaster',
         'DNS.NameServer',
         'DNS.ReverseZone',
-        'DNS.db.engine',
         'Domain',
         'ServerFQDN',
         'ServerIP',
@@ -196,14 +169,6 @@ def _ptr_record(ip, fqdn, zone):
 
 
 def deploy(srv, opts):
-    srv_opts = []
-    if 'DNS.Recursor' in opts:
-        srv_opts.append(I.ServerOption('recursor', opts['DNS.Recursor']))
-        srv_opts.append(I.ServerOption('allow-recursion', opts['Subnet']))
-
-    logging.trace('DNS', 'Crating database', opts['trace'])
-
-    srv.initNewDatabaseUnsafe(srv_opts)
 
     if opts.get('DNS.AddLocalZones', True):
         process(srv, local_data, opts['trace'])
@@ -242,29 +207,24 @@ def deploy(srv, opts):
                 ]
         z.addRecords(records)
 
+    srv_opts = []
+    if 'DNS.Recursor' in opts:
+        srv_opts.append(I.ServerOption('recursor', opts['DNS.Recursor']))
+        srv_opts.append(I.ServerOption('allow-recursion', opts['Subnet']))
+    srv.setOptions(srv_opts)
+
 
 def main():
     class App(Ice.Application):
         def run(self, args):
             try:
-                if len(args) != 2:
-                    logging.error("Too many arguments")
-                    return -1
-
                 props = self.communicator().getProperties()
                 opts = props.getPropertiesForPrefix('Deploy.')
                 opts = _strip_prefix('Deploy.', opts)
                 update_and_check_options(opts)
-                if args[1] == 'check':
-                    return 0
-                if args[1] == 'config':
-                    make_servant_config(opts)
-                    return 0
-                if args[1] == 'deploy':
-                    srv = connect(self.communicator())
-                    deploy(srv, opts)
-                    return 0
-                logging.error("Don't know how to %s" % args[1])
+                srv = connect(self.communicator())
+                deploy(srv, opts)
+                return 0
             except I.ConfigError, e:
                 logging.error('DNS: %s: %s' % (e.message, e.property))
                 return -1

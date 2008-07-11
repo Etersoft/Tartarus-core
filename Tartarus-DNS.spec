@@ -3,7 +3,7 @@
 %define modulename DNS
 
 Version: 0.0.1
-Release: eter1
+Release: alt1
 
 
 Summary: Tartarus example servant
@@ -43,20 +43,28 @@ Interface definisions for %name.
 
 
 %install
-%__mkdir_p %buildroot/%_libdir/Tartarus/modules
-%__cp -R Tartarus/* %buildroot/%_libdir/Tartarus/modules
-%__mkdir_p %buildroot/%_datadir/Tartarus
-%__cp -R slice %buildroot/%_datadir/Tartarus
+%__mkdir_p %buildroot%_datadir/Tartarus
+%__cp -R slice %buildroot%_datadir/Tartarus
+
+%__mkdir_p %buildroot%_libdir/Tartarus/modules
+%__cp -R Tartarus/* %buildroot%_libdir/Tartarus/modules
+
+%__mkdir_p %buildroot%_sysconfdir/Tartarus/modules
+%__cp config/%modulename.conf %buildroot%_sysconfdir/Tartarus/modules
+
+%__mkdir_p %buildroot%_sysconfdir/Tartarus/deploy
+%__cp config/%modulename-deploy.conf %buildroot%_sysconfdir/Tartarus/deploy/%modulename.conf
 
 %files
 %_libdir/Tartarus/modules/*
-#doc README 
+%config(noreplace) %_sysconfdir/Tartarus/modules/%modulename.conf
+%config %_sysconfdir/Tartarus/deploy/%modulename.conf
 
 %files slice
 %_datadir/Tartarus/slice/*/*
 
 %changelog
-* Wed May 28 2008 Ivan Melnikov <imelnikov@etersoft.ru> 0.0.1-eter1
+* Wed May 28 2008 Ivan Melnikov <imelnikov@etersoft.ru> 0.0.1-alt1
 - inital build
 
 

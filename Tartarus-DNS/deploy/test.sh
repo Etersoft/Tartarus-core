@@ -1,4 +1,4 @@
 #!/bin/bash
 
-python ./deploy.py --Ice.Config=./test.cfg  "$@"
+python ./stage3.py --Ice.Config=./test.cfg  "$@"
 

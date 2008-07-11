@@ -1,7 +1,7 @@
 
 import Tartarus
 
-import utils
+import utils, cfgfile
 
 _sqlite_db_create = [
 """
@@ -135,7 +135,7 @@ def _sqlite_db_params(d, dbh):
 
 def _sqlite3_db_params(d, dbh):
     return [ ('launch' , 'gsqlite3'),
-             ('gsqlite3-database', _get_sqlite_database(d)) ]
+             ('gsqlite3-database', _get_sqlite_database(d, dbh)) ]
 
 def _psycopg2_db_params(d, dbh):
     raise dbh.ConfigError('Database initialization unimplemented',
@@ -154,4 +154,15 @@ def db_pararms(d, dbh):
     except KeyError:
         raise dbh.ConfigError('Database engine not supported', dbn.engine)
 
+
+
+def do_deploy(dbh, config_file):
+    opt_dict = dict(cfgfile.parse(config_file))
+    db_pararms(opt_dict, dbh)
+    try:
+        cfgfile.gen(config_file, opt_dict.iteritems())
+    except IOError:
+        raise I.ConfigError("Failed to alter configuration file",
+                             config_file)
+    create_db(dbh)
 

@@ -145,9 +145,6 @@ interface Server
     idempotent ServerOptionSeq getOptions() throws Error;
     void setOptions(ServerOptionSeq opts) throws Error;
     void changeOptions(ServerOptionSeq opts) throws Error;
-
-    //called once on deployment:
-    void initNewDatabaseUnsafe(ServerOptionSeq opts) throws Error;
 };
 
 
