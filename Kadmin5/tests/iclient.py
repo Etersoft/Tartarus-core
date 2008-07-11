@@ -1,13 +1,7 @@
 
-import rlcompleter
-import readline
-readline.parse_and_bind("tab: complete")
-
-
-
+import user
 import Tartarus, Ice
-
-
+Tartarus.slices.path=['../slice']
 import Tartarus.iface.Kadmin5 as I
 
 c = Ice.initialize()

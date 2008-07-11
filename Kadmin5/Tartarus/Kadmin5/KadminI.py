@@ -6,10 +6,26 @@ import Tartarus.iface.Kadmin5 as I # I stands for Interface
 
 __all__ = [ "KadminI" ]
 
+def run_command(args, msg):
+    try:
+        import subprocess
+        p = subprocess.Popen(args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+        res = p.wait()
+        s = p.communicate()[1]
+        if res != 0:
+            raise I.KadminException(res, msg, s)
+    except OSError, e:
+        raise I.KadminException(e.errno, msg, e.strerror)
+
+
 class KadminI(I.Kadmin):
-    def __init__(self):
+    def __init__(self, enable_deploy=False):
+        self.enable_deploy = enable_deploy
         # test configuration:
-        self.make_kadmin(None)
+        if not enable_deploy:
+            self.make_kadmin(None)
 
     def make_kadmin(self,ctx):
         try:
@@ -69,5 +85,16 @@ class KadminI(I.Kadmin):
         else:
             attrs |= self._disabling_attrs
         adm.set_princ_attributes(name, attrs)
+
+    def reGenerateDatabase(self, password, ctx):
+        if not self.enable_deploy:
+            raise I.KadminException(-1,
+                    "Failed to create new database",
+                    "This function was disabled")
+        run_command(["kdb5_util", "destroy", "-f"],
+                "Failed to destroy existing database")
+
+        run_command(["kdb5_util", "create", "-s", "-P", password],
+                "Failed to create database")
 
 

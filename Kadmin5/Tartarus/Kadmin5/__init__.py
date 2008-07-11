@@ -11,5 +11,7 @@ def init(adapter):
     c = adapter.getCommunicator()
     logging.trace("Tartarus.Kadmin5", "Initializing...",
             log_to = c, cond = "Tartarus.Kadmin5.trace")
-    adapter.add(KadminI.KadminI(), c.stringToIdentity("Kadmin5"))
+    d = c.getProperties().getPropertyAsInt('Tartarus.Kadmin5.deploy')
+
+    adapter.add(KadminI.KadminI(d > 0), c.stringToIdentity("Kadmin5"))
 

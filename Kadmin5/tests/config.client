@@ -1,18 +1,13 @@
 #
 # The client reads this property to create the reference to the
-# "hello" object in the server.
+# object in the server.
 #
-Tartarus.Kadmin5.Prx=Kadmin5:ssl -h evilistiq.saratov.etersoft.ru -p 12345
+Tartarus.Kadmin5.Prx=Kadmin5:tcp -p 12345
 
 #
 # Warn about connection exceptions
 #
 #Ice.Warn.Connections=1
-
-#
-# We want a faster ACM for this demo.
-#
-Ice.ACM.Client=10
 
 #
 # Network Tracing
@@ -38,15 +33,15 @@ Ice.ACM.Client=10
 # 0 = no security tracing
 # 1 = trace messages
 #
-IceSSL.Trace.Security=1
+#IceSSL.Trace.Security=1
 
 #
 # SSL Configuration
 #
-Ice.Plugin.IceSSL=IceSSL:createIceSSL
-IceSSL.Ciphers=KRB5
-IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
-IceSSL.ServiceName=host
+#Ice.Plugin.IceSSL=IceSSL:createIceSSL
+#IceSSL.Ciphers=KRB5
+#IceSSL.ServiceHost=service.f.q.d.n.org
+#IceSSL.ServiceName=host
 #IceSSL.DefaultDir=../../../certs
 #IceSSL.CertAuthFile=cacert.pem
 #IceSSL.CertFile=c_rsa1024_pub.pem

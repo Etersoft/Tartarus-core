@@ -3,7 +3,20 @@
 # "Hello". The following line sets the endpoints for this
 # adapter.
 #
-TartarusAdapter.Endpoints=ssl -h evilistiq.saratov.etersoft.ru -p 12345
+TartarusAdapter.Endpoints=tcp -p 12345
+
+#
+# Tartarus configuration:
+#
+Tartarus.addSlicePath.Test = ../slice
+Tartarus.addModulePath.Test = ../Tartarus
+
+Tartarus.import.Trace = 1
+Tartarus.modules.Trace = 1
+Tartarus.module.Kadmin5 = Kadmin5
+Tartarus.Kadmin5.deploy = 1
+#Tartarus.Hello.Trace = 255
+
 
 #
 # Warn about connection exceptions
@@ -39,13 +52,13 @@ Ice.ACM.Server=10
 # 0 = no security tracing
 # 1 = trace messages
 #
-IceSSL.Trace.Security=1
+#IceSSL.Trace.Security=1
 
 #
 # SSL Configuration
 #
 #Ice.InitPlugins=0
-Ice.Plugin.IceSSL=IceSSL:createIceSSL
+#Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
 IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
 IceSSL.ServiceName=host
@@ -55,15 +68,5 @@ IceSSL.Keytab=/etc/krb5.keytab
 #IceSSL.CertFile=s_rsa1024_pub.pem
 #IceSSL.KeyFile=s_rsa1024_priv.pem
 
-
-#
-# Tartarus configuration:
-#
-#Tartarus.addSlicePath.Test = ../slice
-#Tartarus.addModulePath.Test = ../Tartarus
-
-Tartarus.import.Trace = 255
-Tartarus.modules.Trace = 255
-Tartarus.Hello.Trace = 255
 
 

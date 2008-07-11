@@ -60,6 +60,9 @@ interface Kadmin
 
     void setPrincEnabled(string name, bool enable)
         throws KadminException;
+
+    void reGenerateDatabase(string password)
+        throws KadminException;
 };
 };
 
