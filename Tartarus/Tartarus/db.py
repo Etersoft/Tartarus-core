@@ -56,7 +56,7 @@ _translator_map = {
 
 class _Helper(object):
     engine = None       # database angine (a string) as defined in options
-    options = {}        # database options
+    options = None      # database options
     module = None       # module corresponding to database engine
     modname = None      # name of database module
     trace = 0           # if if > 16 trace queries (quite slow)
@@ -85,7 +85,7 @@ class _Helper(object):
 
         self.Error = self.module.Error
 
-
+        self.options = {}
         for k in ['dsn', 'user', 'password', 'port', 'host', 'database']:
             if k in opts:
                 self.options[k] = opts[k]
