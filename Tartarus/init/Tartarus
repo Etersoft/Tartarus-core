@@ -19,6 +19,7 @@ LOCKFILE=/var/lock/subsys/tartarus-srv1
 RETVAL=0
 TARTARUS_SRV=/usr/sbin/tartarus-srv1
 CONFIG=/etc/Tartarus/Tartarus.conf
+CONFIG_DEPLOY=/etc/Tartarus/Tartarus-deploy.conf
 msg=
 
 start()
@@ -26,6 +27,20 @@ start()
 	msg="Starting Tartarus services"
 	echo -n "$msg"
 	"$TARTARUS_SRV" --pidfile "$PIDFILE" --jfile "$JFILE" --config "$CONFIG" start
+	RETVAL=$?
+	[ $RETVAL == 0 ] && touch $LOCKFILE
+	[ $RETVAL == 0 ] && success "$msg" \
+			 || failure "$msg"
+	echo
+	return $RETVAL
+}
+
+#differs from start() only in config file
+start_deploy()
+{
+	msg="Starting Tartarus services in deployment mode"
+	echo -n "$msg"
+	"$TARTARUS_SRV" --pidfile "$PIDFILE" --jfile "$JFILE" --config "$CONFIG_DEPLOY" start
 	RETVAL=$?
 	[ $RETVAL == 0 ] && touch $LOCKFILE
 	[ $RETVAL == 0 ] && success "$msg" \
@@ -65,6 +80,12 @@ case "$1" in
 	start)
 		start
 		;;
+	deploy)
+		if [ -e "$LOCKFILE" ]; then
+			stop
+		fi
+		start_deploy
+		;;
 	stop)
 		stop
 		;;
@@ -90,3 +111,4 @@ case "$1" in
 esac
 
 exit $RETVAL
+
