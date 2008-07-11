@@ -7,6 +7,10 @@ import Tartarus.iface.Kadmin5 as I # I stands for Interface
 __all__ = [ "KadminI" ]
 
 class KadminI(I.Kadmin):
+    def __init__(self):
+        # test configuration:
+        self.make_kadmin(None)
+
     def make_kadmin(self,ctx):
         try:
             princ = IceSSL.getConnectionInfo(ctx.con).krb5Princ

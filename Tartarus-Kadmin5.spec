@@ -48,12 +48,17 @@ Interface definisions for %name.
 %__cp -R Tartarus/* %buildroot/%_libdir/Tartarus/modules
 %__mkdir_p %buildroot/%_datadir/Tartarus
 %__cp -R slice %buildroot/%_datadir/Tartarus
+
 %__mkdir_p %buildroot%_sysconfdir/Tartarus/modules
-%__cp config/* %buildroot%_sysconfdir/Tartarus/modules
+%__cp config/%tmodname.conf %buildroot%_sysconfdir/Tartarus/modules
+
+%__mkdir_p %buildroot%_sysconfdir/Tartarus/deploy
+%__cp config/%tmodname-deploy.conf %buildroot%_sysconfdir/Tartarus/deploy/%tmodname.conf
 
 %files
 %_libdir/Tartarus/modules/*
-%_sysconfdir/Tartarus/modules/*
+%config(noreplace) %_sysconfdir/Tartarus/modules/%tmodname.conf
+%config %_sysconfdir/Tartarus/deploy/%tmodname.conf
 
 
 %files slice
