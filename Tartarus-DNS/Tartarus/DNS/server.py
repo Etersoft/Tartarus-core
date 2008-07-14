@@ -117,8 +117,6 @@ class ServerI(I.Server):
 
     def setOptions(self, opts, current):
         try:
-            if len(opts) < 1:
-                return
             new_opts = [ self._convert_option(opt) for opt in opts ]
             # save all extra options
             old_opts = [ pair
