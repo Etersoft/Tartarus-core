@@ -2,6 +2,8 @@
 
 import Tartarus, IceSSL, kadmin5
 
+from Tartarus import logging
+
 import Tartarus.iface.Kadmin5 as I # I stands for Interface
 
 __all__ = [ "KadminI" ]
@@ -91,8 +93,11 @@ class KadminI(I.Kadmin):
             raise I.KadminException(-1,
                     "Failed to create new database",
                     "This function was disabled")
-        run_command(["kdb5_util", "destroy", "-f"],
-                "Failed to destroy existing database")
+        try:
+            run_command(["kdb5_util", "destroy", "-f"],
+                    "Failed to destroy existing database")
+        except I.KadminException, e:
+            logging.warning("Kadmin5: failed to destroy old database")
 
         run_command(["kdb5_util", "create", "-s", "-P", password],
                 "Failed to create database")
