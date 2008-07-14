@@ -15,8 +15,7 @@ class ServerI(I.Server):
             raise I.ConfigError("Bad config file specified", cfg_file_name)
         self._config_file = cfg_file_name
         # enshure server is here and works with actual config file
-        if self._do_reload:
-            self._reload_config()
+        self._reload_config()
 
     @db.wrap("retrieving all zones")
     def getZones(self, con, current):
@@ -105,6 +104,8 @@ class ServerI(I.Server):
         return opt.name, opt.value
 
     def _reload_config(self):
+        if not self._do_reload:
+            return
         try:
             retval = os.system("pdns_control cycle &>/dev/null")
             if os.WIFEXITED(retval) and os.WEXITSTATUS(retval) == 0:
@@ -145,7 +146,6 @@ class ServerI(I.Server):
         except IOError:
             raise I.ConfigError("Failed to alter configuration file",
                                  self._config_file)
-        if self._do_reload:
-            self._reload_config()
+        self._reload_config()
 
 
