@@ -44,7 +44,7 @@ def _load_config(props, path):
         f = os.path.join(path, fi)
         if not os.path.isfile(f):
             continue
-        if not (f.endwith('.conf') or f.endswith('.config')):
+        if not (f.endswith('.conf') or f.endswith('.config')):
             continue
         try:
             props.load(f)
