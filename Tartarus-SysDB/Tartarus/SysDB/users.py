@@ -26,7 +26,7 @@ class UserManagerI(I.UserManager):
     def getById(self, con, uid, current):
         cur = self._dbh.execute(con,
                 _user_query +
-                " AND user.id == %s", uid - self._uo)
+                " AND users.id == %s", uid - self._uo)
         res = cur.fetchall()
         if len(res) == 1:
             return self._db2users(res)[0]
