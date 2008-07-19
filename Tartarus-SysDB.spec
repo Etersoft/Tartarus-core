@@ -3,7 +3,7 @@
 %define modulename SysDB
 
 Version: 0.0.1
-Release: alt1
+Release: alt2
 
 
 Summary: Tartarus example servant
@@ -16,6 +16,7 @@ Packager: Ivan A. Melnikov <iv@altlinux.org>
 BuildArchitectures: noarch
 
 Requires: %name-slice = %version-%release, Tartarus
+Requires: python-modules-sqlite3
 
 
 BuildRequires(pre): rpm-build-licenses
@@ -67,6 +68,10 @@ Interface definisions for %name.
 %_datadir/Tartarus/slice/%modulename/*
 
 %changelog
+* Sat Jul 19 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.1-alt2
+- new snapshot
+- imporved requirements
+
 * Wed Jul 09 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.1-alt1
 - inital build
 
