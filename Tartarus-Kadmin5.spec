@@ -3,7 +3,7 @@
 %define tmodname Kadmin5
 
 Version: 0.0.2
-Release: eter1
+Release: eter2
 
 
 Summary: Tartarus example servant
@@ -15,7 +15,9 @@ Url: http://www.tartarus.ru
 
 BuildArchitectures: noarch
 
-Requires: %name-slice = %version-%release
+Requires: %name-slice = %version-%release, Tartarus
+Requires: python-module-kadmin5 >= 0.0.2
+Requires: krb5-server
 
 Packager: Ivan A. Melnikov <iv@altlinux.org>
 BuildRequires(pre): rpm-build-licenses
@@ -65,6 +67,10 @@ Interface definisions for %name.
 %_datadir/Tartarus/slice/*/*
 
 %changelog
+* Sat Jul 19 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter2
+- new snapshot
+- improved requirements
+
 * Thu Jun 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter1
 - new version: enabling and disabling of principals implemented
 

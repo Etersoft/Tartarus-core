@@ -4,7 +4,7 @@ import Ice, kadmin5, sys, Tartarus
 import Tartarus.iface.Kadmin5 as I
 
 c = Ice.initialize()
-a = I.KadminPrx.checkedCast(c.propertyToProxy("Kadmin.Proxy"))
+a = I.KadminPrx.checkedCast(c.propertyToProxy("Tartarus.Kadmin5.Prx"))
 
 t = kadmin5.keytab()
 
