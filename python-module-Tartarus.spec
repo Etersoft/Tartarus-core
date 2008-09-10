@@ -2,8 +2,8 @@
 
 %define srvname tartarus-srv1
 
-Version: 0.0.2
-Release: eter2
+Version: 0.0.3
+Release: alt1
 
 %setup_python_module Tartarus
 
@@ -18,6 +18,7 @@ Packager: Ivan A. Melnikov <iv@altlinux.org>
 
 BuildArch: noarch
 
+Requires: python-module-Ice
 
 BuildRequires(pre): rpm-build-licenses
 # Automatically added by buildreq on Fri Mar 21 2008
@@ -75,6 +76,10 @@ Install %srvname if you need to run tartarus servants written in python.
 %_initdir/Tartarus
 
 %changelog
+* Wed Sep 10 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.3-alt1
+- new snapshot
+- fixed build dependencies
+
 * Wed Jul 09 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter2
 - new snapshot:
     - added Tartarus.db submodule
