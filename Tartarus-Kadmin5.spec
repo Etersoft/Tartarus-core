@@ -2,8 +2,8 @@
 
 %define tmodname Kadmin5
 
-Version: 0.0.2
-Release: eter2
+Version: 0.0.3
+Release: alt1
 
 
 Summary: Tartarus example servant
@@ -67,6 +67,9 @@ Interface definisions for %name.
 %_datadir/Tartarus/slice/*/*
 
 %changelog
+* Thu Sep 11 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.3-alt1
+- new version: fixed database regeneration
+
 * Sat Jul 19 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter2
 - new snapshot
 - improved requirements
