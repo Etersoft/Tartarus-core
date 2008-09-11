@@ -26,8 +26,10 @@ class KadminI(I.Kadmin):
     def __init__(self, enable_deploy=False):
         self.enable_deploy = enable_deploy
         # test configuration:
-        if not enable_deploy:
-            self.make_kadmin(None)
+        try:
+            self.realm = self.make_kadmin().get_realm()
+        except Exception:
+            self.realm = None
 
     def make_kadmin(self,ctx):
         try:
@@ -43,8 +45,12 @@ class KadminI(I.Kadmin):
         except:
             princ = "Tartarus/admin"
 
-        return kadmin5.kadmin(exc_type = I.KadminException,
-                                princname=princ)
+        result = kadmin5.kadmin(exc_type = I.KadminException,
+                                princname=princ, realm=self.realm)
+        if not self.realm:
+            self.realm = result.get_realm()
+
+        return result
 
     def getPrincKeys(self, name, ctx):
         adm = self.make_kadmin(ctx)
@@ -94,12 +100,15 @@ class KadminI(I.Kadmin):
                     "Failed to create new database",
                     "This function was disabled")
         try:
-            run_command(["kdb5_util", "destroy", "-f"],
-                    "Failed to destroy existing database")
+            command = ["kdb5_util", "destroy", "-f"]
+            if self.realm:
+                command += ["-r", self.realm]
+            run_command(command, "Failed to destroy existing database")
         except I.KadminException, e:
             logging.warning("Kadmin5: failed to destroy old database")
 
         run_command(["kdb5_util", "create", "-s", "-P", password],
                 "Failed to create database")
+        self.realm = None
 
 
