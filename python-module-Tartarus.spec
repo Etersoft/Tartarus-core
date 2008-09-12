@@ -3,7 +3,7 @@
 %define srvname tartarus-srv1
 
 Version: 0.0.3
-Release: alt1
+Release: alt2
 
 %setup_python_module Tartarus
 
@@ -76,6 +76,9 @@ Install %srvname if you need to run tartarus servants written in python.
 %_initdir/Tartarus
 
 %changelog
+* Fri Sep 12 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.3-alt2
+- new snapshot: added support for deffered plugins initialization
+
 * Wed Sep 10 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.3-alt1
 - new snapshot
 - fixed build dependencies
