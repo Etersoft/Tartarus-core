@@ -16,8 +16,12 @@ class _App(daemon.Daemon):
 
     def __init__(self, comm, args):
         self.adapter = comm.createObjectAdapter("TartarusAdapter")
-        self.apply_properties(comm.getProperties())
+        props = comm.getProperties()
+        self.apply_properties(props)
         modules.load_modules1(self.adapter)
+        if props.getPropertyAsIntWithDefault('Ice.InitPlugins',1) == 0:
+            import IceSSL
+            IceSSL.initializePlugins(comm)
         self.adapter.activate()
 
 
