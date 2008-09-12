@@ -3,7 +3,7 @@
 # "Hello". The following line sets the endpoints for this
 # adapter.
 #
-TartarusAdapter.Endpoints=tcp -p 12345
+TartarusAdapter.Endpoints=ssl -p 12345
 
 #
 # Tartarus configuration:
@@ -18,6 +18,7 @@ Tartarus.module.SysDB = SysDB
 Tartarus.SysDB.db.engine = sqlite3
 Tartarus.SysDB.db.database = ./test.db
 Tartarus.SysDB.db.trace = 255
+Tartarus.SysDB.SetupVerifierForGroup = group1
 
 #
 # Warn about connection exceptions
@@ -59,7 +60,7 @@ Ice.ACM.Server=10
 # SSL Configuration
 #
 #Ice.InitPlugins=0
-#Ice.Plugin.IceSSL=IceSSL:createIceSSL
+Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
 IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
 IceSSL.ServiceName=host

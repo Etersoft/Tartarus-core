@@ -8,6 +8,7 @@ CREATE TABLE users (
 INSERT INTO "users" VALUES(1,'user1','user1','/bin/bash');
 INSERT INTO "users" VALUES(2,'user2','user2','/bin/bash');
 INSERT INTO "users" VALUES(3,'user3','user3','/bin/bash');
+INSERT INTO "users" VALUES(4,'imelnikov','imelnikov','/bin/bash');
 DELETE FROM sqlite_sequence;
 INSERT INTO "sqlite_sequence" VALUES('groups',3);
 INSERT INTO "sqlite_sequence" VALUES('users',7);
@@ -32,5 +33,6 @@ INSERT INTO "group_entries" VALUES(2,2,1,1);
 INSERT INTO "group_entries" VALUES(3,3,3,1);
 INSERT INTO "group_entries" VALUES(4,3,2,NULL);
 INSERT INTO "group_entries" VALUES(5,1,2,NULL);
+INSERT INTO "group_entries" VALUES(6,4,1,1);
 COMMIT;
 
