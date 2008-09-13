@@ -28,12 +28,8 @@ def init(adapter):
     adapter.add(groups.GroupManagerI(dbh, uo, go),
             com.stringToIdentity("SysDB-Manager/Groups"))
 
-    group = props.getProperty("Tartarus.SysDB.SetupVerifierForGroup")
-    try:
-        if len(group) > 0:
-            import sslverify
-            sslverify.setup(com,dbh,group)
-    except Exception, e:
-        print e
-
+    vname = props.getProperty('Tartarus.SysDB.SSLVerifier')
+    if len(vname) > 0:
+        import sslverify
+        sslverify.setup(com, dbh, vname, props)
 

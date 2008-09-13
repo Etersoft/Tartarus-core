@@ -18,7 +18,8 @@ Tartarus.module.SysDB = SysDB
 Tartarus.SysDB.db.engine = sqlite3
 Tartarus.SysDB.db.database = ./test.db
 Tartarus.SysDB.db.trace = 255
-Tartarus.SysDB.SetupVerifierForGroup = group1
+Tartarus.SysDB.SSLVerifier = simple
+Tartarus.SysDB.SSLVerifier.AllowGroups = group1:group2:nosuchgroup
 
 #
 # Warn about connection exceptions
