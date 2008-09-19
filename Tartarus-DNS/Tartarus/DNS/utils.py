@@ -31,3 +31,9 @@ def str2soar(arg):
     (pr, hm, s, ref, ret, exp, ttl) = arg.split()
     return (pr, hm, long(s), long(ref), long(ret), long(exp), long(ttl))
 
+def rev_zone_entry(addr):
+    v = addr.split('.')
+    if len(v) != 4:
+        raise I.ValueError('Wrong IP address', addr)
+    v.reverse()
+    return '.'.join(v) + '.in-addr.arpa'

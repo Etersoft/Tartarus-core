@@ -31,6 +31,12 @@ exception ConfigError extends Error
     string property;
 };
 
+exception PermissionDenied extends Error
+{
+    string who;
+    string operation;
+};
+
 
 enum RecordType
 {
@@ -145,8 +151,15 @@ interface Server
     idempotent ServerOptionSeq getOptions() throws Error;
     void setOptions(ServerOptionSeq opts) throws Error;
     void changeOptions(ServerOptionSeq opts) throws Error;
-};
 
+    // update or replace information in database
+    // adds entries to zone and reverse zone
+    void updateHost(string hostname, string addr) throws Error;
+
+    // the same, but adress and hostname are taken from connection info
+    void updateThisHost() throws Error;
+
+};
 
 };// module DNS
 

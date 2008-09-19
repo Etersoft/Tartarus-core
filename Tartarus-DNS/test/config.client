@@ -2,7 +2,7 @@
 # The client reads this property to create the reference to the
 # object in the server.
 #
-Tartarus.DNS.Prx=DNS-Server/Server:tcp -p 12345
+Tartarus.DNS.Prx=DNS-Server/Server:ssl -p 12345 -h evilistiq.saratov.etersoft.ru
 
 #
 # Warn about connection exceptions
@@ -38,7 +38,7 @@ Tartarus.DNS.Prx=DNS-Server/Server:tcp -p 12345
 #
 # SSL Configuration
 #
-#Ice.Plugin.IceSSL=IceSSL:createIceSSL
+Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
 #IceSSL.ServiceHost=service.f.q.d.n.org
 IceSSL.ServiceName=host

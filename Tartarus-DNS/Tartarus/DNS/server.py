@@ -1,9 +1,11 @@
 
-import Tartarus, os
+
+import Tartarus, os, IceSSL, socket
 from Tartarus import logging, db
 import Tartarus.iface.DNS as I
 
 import deploy, utils, cfgfile
+
 
 class ServerI(I.Server):
     def __init__(self, cfg_file_name, dbh, do_reload=True):
@@ -145,5 +147,93 @@ class ServerI(I.Server):
             raise I.ConfigError("Failed to alter configuration file",
                                  self._config_file)
         self._reload_config()
+
+
+    def _rev_zone_name(self, con, addr):
+        v = addr.split('.')
+        if len(v) != 4:
+            raise I.ValueError('Wrong address', addr)
+        z1 = v[0] + '.in-addr.arpa'
+        z2 = v[1] + '.' + z1
+        z3 = v[2] + '.' + z2
+        cur = self._dbh.execute(con,
+                "SELECT name FROM domains "
+                "WHERE name IN (%s, %s, %s) "
+                "ORDER BY length(name) LIMIT 1",
+                z1,z2,z3)
+        res = cur.fetchall()
+        if len(res) != 1:
+            raise utils.NoSuchObject
+        return res[0][0]
+
+
+    def _set_machine(self, con, hostname, addr, rzone):
+        query = ("INSERT OR REPLACE INTO records "
+                 "(domain_id, name, type, content)"
+                 "SELECT id, %s, %s, %s FROM domains "
+                 "WHERE name == %s ")
+        idx = hostname.find('.')
+        if idx < 0:
+            raise ValueError('Wrong hostname: ' , hostname)
+        domainname = hostname[idx+1:]
+
+        cur = self._dbh.execute(con, query,
+                hostname, 'A', addr, domainname)
+        if cur.rowcount != 1:
+            raise I.ValueError('Zone update failure', hostname)
+
+        cur2 = self._dbh.execute(con, query,
+                utils.rev_zone_entry(addr), 'PTR', hostname, rzone)
+        if cur2.rowcount != 1:
+            raise I.ValueError('Reverse zone update failure', addr)
+        con.commit()
+
+    @db.wrap("updating host information")
+    def updateHost(self, con, hostname, addr, current):
+        props = current.adapter.getCommunicator().getProperties()
+        rzone = props.getProperty('Tartarus.DNS.reverseZones')
+        if len(rzone) == 0:
+            rzone = self._rev_zone_name(con, addr)
+        self._set_machine(con, hostname, addr, rzone)
+
+
+
+    @db.wrap("updating information for a host")
+    def updateThisHost(self, con, current):
+        try:
+            info = IceSSL.getConnectionInfo(current.con)
+        except TypeError:
+            raise I.PermissionDenied("Permission denied",
+                    "<non-krb connection>", 'updateHost')
+        if not info.krb5Princ.startswith('host/'):
+            raise I.PermissionDenied("Permission denied",
+                    info.krb5Princ, 'updateHost')
+        # krb5princ = 'host/f.q.d.n@REALM.NAME
+        # we remove host/ part
+        hostname = info.krb5Princ[5:]
+        # and then @REALM.NAME part, if any
+        idx = hostname.rfind('@')
+        if idx > 0:
+            hostname = hostname[:idx]
+
+        addr = info.remoteAddr
+
+        # simple check that it is ipv4:
+        try:
+            socket.inet_aton(addr)
+        except socket_error:
+            raise I.ValueError('Could not get IP address', addr)
+
+        props = current.adapter.getCommunicator().getProperties()
+        rzone = props.getProperty('Tartarus.DNS.reverseZone')
+        if len(rzone) == 0:
+            rzone = self._rev_zone_name(con, addr)
+        self._set_machine(con, hostname, addr, rzone)
+
+
+
+
+
+
 
 
