@@ -9,6 +9,7 @@ from such modules.
 
 import sys
 from Tartarus import logging
+from Tartarus.iface import core as ICore
 
 def _engine2module(engine):
     _engines_mapping = {
@@ -62,9 +63,9 @@ class _Helper(object):
     trace = 0           # if if > 16 trace queries (quite slow)
     trans = None
 
-    def __init__(self, opts, iface):
-        self.ConfigError = iface.ConfigError
-        self.DBError = iface.DBError
+    def __init__(self, opts):
+        self.ConfigError = ICore.ConfigError
+        self.DBError = ICore.DBError
 
         if 'trace' in opts:
             self.trace = int(opts['trace'])
@@ -92,6 +93,15 @@ class _Helper(object):
 
     def get_connection(self):
         return self.module.connect(**self.options)
+
+    def remove(self):
+        """Destroy database permanently"""
+        if self.engine.startswith('sqlite'):
+            import os
+            os.remove(self.options['database'])
+        else:
+           raise ICore.RuntimeError('Database removal unimplemented for %s', engine)
+
 
     def execute(self, con, query, *params):
         cur = con.cursor()
@@ -156,8 +166,8 @@ def wrap(msg = None):
         return wrapper
     return decor
 
-def make_helper(opts, prefix, iface):
+def make_helper(opts, prefix):
     d = _strip_prefix(prefix, opts)
     d['prefix'] = prefix
-    return _Helper(d, iface)
+    return _Helper(d)
 
