@@ -16,7 +16,6 @@ def init(adapter):
     do_reload = True
 
     if props.getPropertyAsInt('Tartarus.DNS.db.deploy') > 0:
-        deploy.do_deploy(dbh, cfg_file_name)
         do_reload = False
 
     #minimal test whether configuration works

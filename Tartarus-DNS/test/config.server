@@ -9,6 +9,7 @@ TartarusAdapter.Endpoints=ssl -p 12345
 # Tartarus configuration:
 #
 Tartarus.addSlicePath.Test = ../slice
+Tartarus.addSlicePath.core = /usr/share/Tartarus/slice
 Tartarus.addModulePath.Test = ../Tartarus
 
 Tartarus.import.Trace = 1

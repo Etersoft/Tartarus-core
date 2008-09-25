@@ -2,6 +2,8 @@
 import Tartarus
 
 import utils, cfgfile
+from Tartarus.iface.core import Deployer
+from Tartarus import db
 
 _sqlite_db_create = [
 """
@@ -155,14 +157,47 @@ def db_pararms(d, dbh):
         raise dbh.ConfigError('Database engine not supported', dbn.engine)
 
 
+def DNSDeployer(Deployer):
+    def __init__(self, dbh, config_file):
+        self._dbh = dbh
+        self._cfg_file = config_file
 
-def do_deploy(dbh, config_file):
-    opt_dict = dict(cfgfile.parse(config_file))
-    db_pararms(opt_dict, dbh)
-    try:
-        cfgfile.gen(config_file, opt_dict.iteritems())
-    except IOError:
-        raise I.ConfigError("Failed to alter configuration file",
-                             config_file)
-    create_db(dbh)
+
+    def do_deploy(self):
+        opt_dict = dict(cfgfile.parse(self._cfg_file))
+        db_pararms(opt_dict, self._dbh)
+        try:
+            cfgfile.gen(self._cfg_file, opt_dict.iteritems())
+        except IOError:
+            raise I.ConfigError("Failed to alter configuration file",
+                                 self._cfg_file)
+        create_db(self._dbh)
+
+
+    @db.wrap("checking configuration")
+    def isConfigured(self, con, current):
+        #a bit heuristic...
+        try:
+            self._dbh.execute(con,
+                    "SELECT count(*) FROM records")
+            self._dbh.execute(con,
+                    "SELECT count(*) FROM domains")
+            return True
+        except:
+            pass
+        return False
+
+    def configure(self, force, current):
+        if force > 0:
+            self._dbh.remove()
+        do_deploy()
+
+    def serviceName(self, current):
+        return "DNS"
+
+
+
+
+
+
 
