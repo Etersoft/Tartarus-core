@@ -1,5 +1,6 @@
 
-from Tartarus import logging
+from Tartarus import logging, db
+from Tartarus.iface import core as ICore
 
 _create_sqlite3 = [
 """
@@ -34,20 +35,47 @@ _creator_map = {
         'sqlite3' : _create_sqlite3
         }
 
-def create_db(dbh):
-    logging.trace(__name__, 'Initializing empty database', dbh.trace)
-    try:
-        create = _creator_map[dbh.modname]
-    except KeyError:
-        raise dbh.ConfigError('Database engine not supported', dbh.engine)
+class SysDBDeployer(ICore.Deployer):
+    def __init__(self, dbh):
+        self._dbh = dbh
 
-    try:
-        con = dbh.get_connection()
-        for q in create:
-            dbh.execute(con, q)
-        con.commit()
-    except dbh.Error, e:
-        raise dbh.DBError(
-                'Database failure while initializing new database',
-                e.message)
+
+    def create_db(self):
+        dbh = self._dbh
+        logging.trace(__name__, 'Initializing empty database', dbh.trace)
+        try:
+            create = _creator_map[dbh.modname]
+        except KeyError:
+            raise dbh.ConfigError('Database engine not supported', dbh.engine)
+
+        try:
+            con = dbh.get_connection()
+            for q in create:
+                dbh.execute(con, q)
+            con.commit()
+        except dbh.Error, e:
+            raise dbh.DBError(
+                    'Database failure while initializing new database',
+                    e.message)
+
+
+    @db.wrap("checking configuration")
+    def isConfigured(self, con, current):
+        try:
+            self._dbh.execute("SELECT count(*) FROM users")
+            self._dbh.execute("SELECT count(*) FROM groups")
+            self._dbh.execute("SELECT count(*) FROM group_entries")
+            return True
+        except:
+            return False
+
+    def configure(self, force, current):
+        if force > 0:
+            self._dbh.remove()
+        self.create_db()
+
+    def serviceName(self, current):
+        return 'SysDB'
+
+
 

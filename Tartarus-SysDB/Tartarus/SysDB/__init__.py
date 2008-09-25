@@ -11,7 +11,7 @@ def init(adapter):
     dbh = db.make_helper(props.getPropertiesForPrefix(prefix), prefix, I)
 
     if props.getPropertyAsInt(prefix + 'deploy') > 0:
-        deploy.create_db(dbh)
+        pass
 
     #check that database parameters are valid
     try:
