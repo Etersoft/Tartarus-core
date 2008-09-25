@@ -2,6 +2,7 @@
 import Tartarus
 from Tartarus import db, logging
 from Tartarus.iface import SysDB as I
+from Tartarus.iface import core as ICore
 
 _user_query = ("SELECT users.id, groupid, name, fullname, shell "
                "FROM users , group_entries "
@@ -31,7 +32,8 @@ class UserManagerI(I.UserManager):
         if len(res) == 1:
             return self._db2users(res)[0]
         #XXX: RETURN USER WITH gid=-1
-        raise I.UserNotFound("User not found", uid)
+        raise I.UserNotFound("User not found",
+                "retrieving user by id", uid)
 
 
     @db.wrap("retrieving user by name")
@@ -43,7 +45,8 @@ class UserManagerI(I.UserManager):
         if len(res) == 1:
             return self._db2users(res)[0]
         #XXX: RETURN USER WITH gid=-1
-        raise I.NotFound("User not found %s" % name)
+        raise I.UserNotFound("User not found",
+                "retrieving data for user %s" % name, -1)
 
 
     @db.wrap("retrieving multiple users")
@@ -58,7 +61,8 @@ class UserManagerI(I.UserManager):
             retrieved = set( (u.uid for u in res) )
             for i in userIds:
                 if i not in retrieved:
-                    raise I.UserNotFound("User not found", i)
+                    raise I.UserNotFound("User not found",
+                            "retrieving multiple users", i)
         return res
 
 
@@ -81,7 +85,7 @@ class UserManagerI(I.UserManager):
                 "SELECT count(name) FROM users")
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.DBError(
+            raise ICore.DBError(
                 "Database failure while counting users.",
                 "No count fetched!")
         return long(res[0][0])
@@ -103,7 +107,8 @@ class UserManagerI(I.UserManager):
                 "WHERE id == %s",
                 user.name, user.fullName, user.shell, uid)
         if cur.rowcount != 1:
-            raise I.UserNotFound("User not found", user.uid)
+            raise I.UserNotFound("User not found",
+                    "changing user record", user.uid)
         cur = self._dbh.execute(con,
                 "UPDATE group_entries SET groupid=%s"
                 "WHERE userid == %s AND is_primary",
@@ -126,7 +131,7 @@ class UserManagerI(I.UserManager):
                 "SELECT id FROM users WHERE name = %s", newUser.name)
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.DBError("Failed to add user",
+            raise ICore.DBError("Failed to add user",
                     "User not found after insertion")
         uid = res[0][0]
         cur = self._dbh.execute(con,
@@ -134,8 +139,8 @@ class UserManagerI(I.UserManager):
                 "SELECT groups.id, %s, %s FROM groups WHERE groups.id=%s",
                 uid, 1, newUser.gid - self._go)
         if (cur.rowcount != 1):
-            raise I.GroupNotFound(
-                    "Not found primary group for new user", newUser.gid)
+            raise I.GroupNotFound("Group not found",
+                    "Could not find primary group for new user", newUser.gid)
         con.commit()
         return uid + self._uo
 
@@ -144,7 +149,7 @@ class UserManagerI(I.UserManager):
         cur = self._dbh.execute(con,
                 "DELETE FROM users WHERE id=%s", id - self._uo)
         if cur.rowcount != 1:
-            raise I.UserNotFound("User not found", id)
+            raise I.UserNotFound("User not found", "deleting user", id)
         self._dbh.execute(con,
                 "DELETE FROM group_entries WHERE userid=%s",
                 id - self._uo)

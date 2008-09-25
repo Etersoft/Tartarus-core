@@ -26,14 +26,16 @@ class GroupManagerI(I.GroupManager):
                 "SELECT name FROM groups WHERE id == %s",
                 gid - self._go)
         if len(cur.fetchall()) != 1:
-            raise I.GroupNotFound("Group not found", gid)
+            raise I.GroupNotFound("Group not found",
+                    "searching for group in database", gid)
 
     def _user_exists(self, con, uid):
         cur = self._dbh.execute(con,
                 "SELECT name FROM users WHERE id == %s",
                 uid - self._uo)
         if len(cur.fetchall()) != 1:
-            raise I.UserNotFound("User not found", uid)
+            raise I.UserNotFound("User not found",
+                    "searching for user in database", uid)
 
     @db.wrap("retrieving group by id")
     def getById(self, con, gid, current):
@@ -42,7 +44,8 @@ class GroupManagerI(I.GroupManager):
                 "WHERE id == %s", gid - self._go)
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.GroupNotFound("Group not found", gid)
+            raise I.GroupNotFound("Group not found",
+                    "retrieving group by id" ,gid)
         return self._db2groups(res)[0]
 
     @db.wrap("retrieving group by name")
@@ -52,7 +55,8 @@ class GroupManagerI(I.GroupManager):
                 "WHERE name == %s", name)
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.NotFound("Group not found: %s" % name)
+            raise I.GroupNotFound("Group not found",
+                    "Could not get group information for  %s" % name, -1)
         return self._db2groups(res)[0]
 
     @db.wrap("retrieving groups for user id")
@@ -66,7 +70,8 @@ class GroupManagerI(I.GroupManager):
         res = cur.fetchall()
         if len(res) == 0:
             #user definitly has primary group...
-            raise I.UserNotFound("User not found", uid)
+            raise I.UserNotFound("User not found",
+                    "retrieving groups for user id", uid)
         return [ x[0] + self._go for x in res ]
 
     @db.wrap("retrieving groups for user name")
@@ -81,7 +86,8 @@ class GroupManagerI(I.GroupManager):
         res = cur.fetchall()
         if len(res) == 0:
             #user definitly has primary group...
-            raise I.NotFound("User not found: %s" % name)
+            raise I.UserNotFound("User not found",
+                    "Could not find user %s" % name, -1)
         return [ x[0] + self._go for x in res ]
 
 
@@ -98,7 +104,8 @@ class GroupManagerI(I.GroupManager):
             retrieved = set( (g.gid for g in res) )
             for i in groupIds:
                 if i not in retrieved:
-                    raise I.GroupNotFound("Group not found", i)
+                    raise I.GroupNotFound("Group not found",
+                            "retrieving multiple groups", i)
         return res
 
     @db.wrap("retrieving users for group")
@@ -131,7 +138,7 @@ class GroupManagerI(I.GroupManager):
                 "SELECT count(name) FROM groups")
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.DBError(
+            raise ICore.DBError(
                 "Database failure while counting groups.",
                 "No count fetched!")
         return long(res[0][0])
@@ -181,12 +188,13 @@ class GroupManagerI(I.GroupManager):
                     "AND userid IN " + ps, gid - self._go, *ids)
             res = cur.fetchall()
             if len(res) > 0:
-                raise I.DBError(
+                raise ICore.DBError(
                         "Cannot delete users from primary group",
                         str(res))
             if current.ctx.get("PartialStrategy") != "Partial":
                 #XXX: search for wrong uid and raise I.UserNotFound
-                raise I.NotFound("Some users were not found")
+                raise I.UserNotFound("User not found",
+                        "Some users were not found", -1)
         con.commit()
 
     @db.wrap("modifying group")
@@ -197,7 +205,8 @@ class GroupManagerI(I.GroupManager):
                 "WHERE id == %s",
                 group.name, group.description, group.gid - self._go)
         if cur.rowcount != 1:
-            raise I.GroupNotFound("Group not found!", group.gid)
+            raise I.GroupNotFound("Group not found",
+                    "modifying group", group.gid)
         con.commit()
 
     @db.wrap("creating group")
@@ -211,7 +220,7 @@ class GroupManagerI(I.GroupManager):
                 newGroup.name)
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.DBError("Failed to create group",
+            raise ICore.DBError("Failed to create group",
                     "Group not found after insertion")
         con.commit()
         return res[0][0] + self._go
@@ -225,14 +234,15 @@ class GroupManagerI(I.GroupManager):
                     gid)
         res = cur.fetchall()
         if len(res) > 0:
-            raise I.DBError("Cannot delete group which is primary for users",
+            raise ICore.DBError("Cannot delete group which is primary for users",
                     str(res))
         self._dbh.execute(con,
                 "DELETE FROM group_entries WHERE groupid == %s", gid)
         cur = self._dbh.execute(con,
                 "DELETE FROM groups WHERE id == %s", gid)
         if cur.rowcount != 1:
-            raise I.GroupNotFound("Group not found", id)
+            raise I.GroupNotFound("Group not found",
+                    "deleting group", id)
         con.commit()
 
     @db.wrap("adding user to multiple groups")
@@ -262,12 +272,13 @@ class GroupManagerI(I.GroupManager):
                     uid - self._uo)
             res = cur.fetchall()
             if len(res) > 0 and res[0][0] in ids:
-                raise I.DBError(
+                raise ICore.DBError(
                         "Cannot delete users from primary group",
                         '@' + str(res[0]))
             if current.ctx.get("PartialStrategy") != "Partial":
                 #XXX: search for wrong uid and raise I.GroupNotFound
-                raise I.NotFound("Some groups were not found")
+                raise I.GroupNotFound("Group not found",
+                        "Some groups were not found", -1)
         con.commit()
 
 
