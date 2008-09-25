@@ -10,7 +10,7 @@ class setUsersGroupTest(TestWithGroup):
         ids = self.gm.getUsers(gr.gid)
         self.assertEqual(ids, [])
 
-        self.assertRaises(self.I.NotFound,
+        self.assertRaises(self.ICore.NotFoundError
                 self.gm.delUsers,
                 gr.gid, [1,2,3,4,5])
 

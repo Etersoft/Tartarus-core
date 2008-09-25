@@ -12,7 +12,7 @@ class getGroupTest(TestBase):
         self.gm.get(2, 2)
 
     def testNameUnknown(self):
-        self.assertRaises(self.I.NotFound,
+        self.assertRaises(self.ICore.NotFoundError,
                 self.gm.getByName,
                 "Test group that doesn't exist")
 

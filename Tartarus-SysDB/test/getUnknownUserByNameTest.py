@@ -4,7 +4,7 @@ from testbase import *
 
 class getUnknownUserByNameTest(TestBase):
     def runTest(self):
-        self.assertRaises(self.I.NotFound, self.um.getByName,
+        self.assertRaises(self.ICore.NotFoundError, self.um.getByName,
                 'NonExistentUser12')
 
 tests = load(getUnknownUserByNameTest)

@@ -5,7 +5,7 @@ __all__ = ['TestBase', 'TestWithGroup', 'TestWithUser', 'main', 'load']
 
 Tartarus.modules.trace = 0
 Tartarus.slices.trace = 0
-Tartarus.slices.path += ["../slice"]
+Tartarus.slices.path += ["../slice", "/usr/share/Tartarus/slice"]
 
 class TestBase(unittest.TestCase):
     def setUp(self):
@@ -14,6 +14,7 @@ class TestBase(unittest.TestCase):
             args.append('--Ice.Config=./config.client')
         self.com = Ice.initialize(args)
         self.I = Tartarus.iface.SysDB
+        self.ICore = Tartarus.iface.core
         pr = self.com.propertyToProxy("Tartarus.SysDB.UserManagerPrx")
         self.um = self.I.UserManagerPrx.checkedCast(pr)
         pr = self.com.propertyToProxy("Tartarus.SysDB.GroupManagerPrx")

@@ -33,21 +33,21 @@ class userToGroupsTest(TestWithUser):
 
     def testDeleteUserFromStrangeGroup(self):
         uid = self.um.create(self.ur)
-        self.assertRaises(self.I.NotFound,
+        self.assertRaises(self.ICore.NotFoundError,
                 self.gm.delUserFromGroups,
                 uid, [self.ngid])
         self.um.delete(uid)
 
     def testDeleteUserFromGroupsPrimary(self):
         uid = self.um.create(self.ur)
-        self.assertRaises(self.I.DBError,
+        self.assertRaises(self.ICore.DBError,
                 self.gm.delUserFromGroups,
                 uid, [self.gid])
         self.um.delete(uid)
 
     def testDeleteUserPrimary(self):
         uid = self.um.create(self.ur)
-        self.assertRaises(self.I.DBError,
+        self.assertRaises(self.ICore.DBError,
                 self.gm.delUsers,
                 self.gid, [uid])
         self.um.delete(uid)
