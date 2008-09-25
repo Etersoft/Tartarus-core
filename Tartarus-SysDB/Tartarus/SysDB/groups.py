@@ -2,6 +2,7 @@
 import Tartarus
 from Tartarus import db, logging
 from Tartarus.iface import SysDB as I
+from Tartarus.iface import core as ICore
 
 
 class GroupManagerI(I.GroupManager):

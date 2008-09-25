@@ -8,7 +8,7 @@ def init(adapter):
     props = com.getProperties()
 
     prefix = 'Tartarus.SysDB.db.' # with terminating dot!
-    dbh = db.make_helper(props.getPropertiesForPrefix(prefix), prefix, I)
+    dbh = db.make_helper(props.getPropertiesForPrefix(prefix), prefix)
 
     if props.getPropertyAsInt(prefix + 'deploy') > 0:
         pass

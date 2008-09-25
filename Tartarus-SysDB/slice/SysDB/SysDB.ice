@@ -131,5 +131,5 @@ interface GroupManager extends GroupReader
 };
 };};
 
-#endif TARTARUS_IFACE_SYSDB_ICE
+#endif // TARTARUS_IFACE_SYSDB_ICE
 
