@@ -169,7 +169,7 @@ def DNSDeployer(Deployer):
         try:
             cfgfile.gen(self._cfg_file, opt_dict.iteritems())
         except IOError:
-            raise I.ConfigError("Failed to alter configuration file",
+            raise self.dbh_.ConfigError("Failed to alter configuration file",
                                  self._cfg_file)
         create_db(self._dbh)
 
@@ -194,10 +194,5 @@ def DNSDeployer(Deployer):
 
     def serviceName(self, current):
         return "DNS"
-
-
-
-
-
 
 

@@ -6,6 +6,7 @@ from Ice import ObjectNotExistException as NoSuchObject
 
 import Tartarus
 from Tartarus.iface import DNS as I
+from Tartarus.iface import core as ICore
 
 def proxy(cls, ad, cat, name):
     if isinstance(ad, IcePy.Current):
@@ -34,6 +35,6 @@ def str2soar(arg):
 def rev_zone_entry(addr):
     v = addr.split('.')
     if len(v) != 4:
-        raise I.ValueError('Wrong IP address', addr)
+        raise ICore.ValueError('Wrong IP address', addr)
     v.reverse()
     return '.'.join(v) + '.in-addr.arpa'

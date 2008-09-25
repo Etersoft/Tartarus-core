@@ -14,7 +14,7 @@ class ServerI(I.Server):
         I.Server.__init__(self)
         dir, name = os.path.split(cfg_file_name)
         if len(name) < 1 or not os.path.isdir(dir):
-            raise I.ConfigError("Bad config file specified", cfg_file_name)
+            raise ICore.ConfigError("Bad config file specified", cfg_file_name)
         self._config_file = cfg_file_name
         # enshure server is here and works with actual config file
         self._reload_config()
@@ -32,7 +32,7 @@ class ServerI(I.Server):
                 'SELECT id FROM domains WHERE name=%s',name)
         result = cur.fetchall()
         if len(result) != 1:
-            raise I.ObjectNotFound("Could not locate zone in the database")
+            raise ICore.NotFoundError("Could not locate zone in the database")
         return utils.proxy(I.ZonePrx, current, "DNS-Zone", str(result[0][0]))
 
     @db.wrap("creating a zone")
@@ -45,7 +45,7 @@ class ServerI(I.Server):
                 'SELECT id FROM domains WHERE name=%s',name)
         result = cur.fetchall()
         if len(result) != 1:
-            raise I.DBError("Zone creation failed"
+            raise ICore.DBError("Zone creation failed"
                     "Could not locate zone in the database")
         id = str(result[0][0])
         cur = self._dbh.execute(con,
@@ -53,7 +53,7 @@ class ServerI(I.Server):
                 "VALUES (%s, %s, 'SOA', %s)",
                 id, name, utils.soar2str(soar))
         if  cur.rowcount != 1:
-            raise I.DBError("Zone creation failed",
+            raise ICore.DBError("Zone creation failed",
                     "Failed to add SOA Record.")
         con.commit()
         return utils.proxy(I.ZonePrx, current, "DNS-Zone", id)
@@ -63,7 +63,7 @@ class ServerI(I.Server):
         cur = self._dbh.execute(con,
                 "DELETE FROM domains WHERE id=%s", id)
         if cur.rowcount != 1:
-            raise I.ObjectNotFound("Zone not found in database.")
+            raise ICore.NotFoundError("Zone not found in database.")
         self._dbh.execute(con,
                 "DELETE FROM records WHERE domain_id=%s", id)
         con.commit()
@@ -75,7 +75,7 @@ class ServerI(I.Server):
                 "SELECT id FROM domains WHERE name=%s", name)
         res = cur.fetchall()
         if len(res) != 1:
-            raise I.ObjectNotFound("No such zone.")
+            raise ICore.NotFoundError("No such zone.")
         id = res[0][0]
         self._dropZone(con, id)
 
@@ -97,12 +97,12 @@ class ServerI(I.Server):
                      if pair[0] in self._supported_options]
 
         except IOError:
-            raise I.ConfigError("Failed to read configuration file",
+            raise ICore.ConfigError("Failed to read configuration file",
                                  self._config_file)
 
     def _convert_option(self, opt):
         if opt.name not in self._supported_options:
-            raise I.ValueError("Unsupported option", opt.name)
+            raise ICore.ValueError("Unsupported option", opt.name)
         return opt.name, opt.value
 
     def _reload_config(self):
@@ -114,7 +114,7 @@ class ServerI(I.Server):
                 return
         except:
             pass
-        raise I.Error('Failed to reload configuration file. '
+        raise ICore.RuntimeError('Failed to reload configuration file. '
                       'All changes will be applied on next server restart.')
 
     def setOptions(self, opts, current):
@@ -127,7 +127,7 @@ class ServerI(I.Server):
             new_opts += old_opts
             cfgfile.gen(self._config_file, new_opts)
         except IOError:
-            raise I.ConfigError("Failed to alter configuration file",
+            raise ICore.ConfigError("Failed to alter configuration file",
                                  self._config_file)
         self._reload_config()
 
@@ -144,7 +144,7 @@ class ServerI(I.Server):
             new_opts.extend(opts_dict.iteritems())
             cfgfile.gen(self._config_file, new_opts)
         except IOError:
-            raise I.ConfigError("Failed to alter configuration file",
+            raise ICore.ConfigError("Failed to alter configuration file",
                                  self._config_file)
         self._reload_config()
 
@@ -152,7 +152,7 @@ class ServerI(I.Server):
     def _rev_zone_name(self, con, addr):
         v = addr.split('.')
         if len(v) != 4:
-            raise I.ValueError('Wrong address', addr)
+            raise ICore.ValueError('Wrong address', addr)
         z1 = v[0] + '.in-addr.arpa'
         z2 = v[1] + '.' + z1
         z3 = v[2] + '.' + z2
@@ -180,12 +180,12 @@ class ServerI(I.Server):
         cur = self._dbh.execute(con, query,
                 hostname, 'A', addr, domainname)
         if cur.rowcount != 1:
-            raise I.ValueError('Zone update failure', hostname)
+            raise ICore.ValueError('Zone update failure', hostname)
 
         cur2 = self._dbh.execute(con, query,
                 utils.rev_zone_entry(addr), 'PTR', hostname, rzone)
         if cur2.rowcount != 1:
-            raise I.ValueError('Reverse zone update failure', addr)
+            raise ICore.ValueError('Reverse zone update failure', addr)
         con.commit()
 
     @db.wrap("updating host information")
@@ -203,10 +203,10 @@ class ServerI(I.Server):
         try:
             info = IceSSL.getConnectionInfo(current.con)
         except TypeError:
-            raise I.PermissionDenied("Permission denied",
+            raise ICore.PermissionError("Permission denied",
                     "<non-krb connection>", 'updateHost')
         if not info.krb5Princ.startswith('host/'):
-            raise I.PermissionDenied("Permission denied",
+            raise ICore.PermissionError("Permission denied",
                     info.krb5Princ, 'updateHost')
         # krb5princ = 'host/f.q.d.n@REALM.NAME
         # we remove host/ part
@@ -222,7 +222,7 @@ class ServerI(I.Server):
         try:
             socket.inet_aton(addr)
         except socket_error:
-            raise I.ValueError('Could not get IP address', addr)
+            raise ICore.ValueError('Could not get IP address', addr)
 
         props = current.adapter.getCommunicator().getProperties()
         rzone = props.getProperty('Tartarus.DNS.reverseZone')

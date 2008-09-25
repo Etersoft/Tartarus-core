@@ -1,41 +1,13 @@
 #ifndef TARTARUS_DNS_ICE
 #define TARTARUS_DNS_ICE
 
+
+#include <core/exceptions.ice>
+
 module Tartarus { module iface {
 
 module DNS
 {
-
-
-exception Error
-{
-    string message;
-};
-
-exception DBError extends Error
-{
-    string response;
-};
-
-exception ObjectNotFound extends DBError
-{
-};
-
-exception ValueError extends Error
-{
-    string value;
-};
-
-exception ConfigError extends Error
-{
-    string property;
-};
-
-exception PermissionDenied extends Error
-{
-    string who;
-    string operation;
-};
 
 
 enum RecordType
@@ -112,24 +84,24 @@ struct SOARecord
 
 interface Zone
 {
-    idempotent string getName() throws Error;
+    idempotent string getName() throws core::Error;
 
-    void addRecord(Record r) throws Error;
-    void addRecords(RecordSeq rs) throws Error;
-    idempotent void clearAll() throws Error;
+    void addRecord(Record r) throws core::Error;
+    void addRecords(RecordSeq rs) throws core::Error;
+    idempotent void clearAll() throws core::Error;
 
     // replace oldr with newr. ignores ttl and prio fields of oldr.
-    void replaceRecord(Record oldr, Record newr) throws Error;
+    void replaceRecord(Record oldr, Record newr) throws core::Error;
 
     // removes record r. ignores ttl and prio fields of r.
-    void dropRecord(Record r) throws Error;
+    void dropRecord(Record r) throws core::Error;
 
-    long countRecords() throws Error;
-    RecordSeq getRecords(long limit, long offset) throws Error;
-    RecordSeq findRecords(string phrase, long limit) throws Error;
+    long countRecords() throws core::Error;
+    RecordSeq getRecords(long limit, long offset) throws core::Error;
+    RecordSeq findRecords(string phrase, long limit) throws core::Error;
 
-    idempotent SOARecord getSOA() throws Error;
-    idempotent void setSOA(SOARecord soar) throws Error;
+    idempotent SOARecord getSOA() throws core::Error;
+    idempotent void setSOA(SOARecord soar) throws core::Error;
 };
 sequence<Zone*> ZoneSeq;
 
@@ -142,22 +114,22 @@ sequence<ServerOption> ServerOptionSeq;
 
 interface Server
 {
-    idempotent ZoneSeq getZones() throws Error;
-    idempotent Zone* getZone(string name) throws Error;
-    Zone* createZone(string name, SOARecord soar) throws Error;
-    void deleteZone(string name) throws Error;
-    void deleteZoneByRef(Zone* proxy) throws Error;
+    idempotent ZoneSeq getZones() throws core::Error;
+    idempotent Zone* getZone(string name) throws core::Error;
+    Zone* createZone(string name, SOARecord soar) throws core::Error;
+    void deleteZone(string name) throws core::Error;
+    void deleteZoneByRef(Zone* proxy) throws core::Error;
 
-    idempotent ServerOptionSeq getOptions() throws Error;
-    void setOptions(ServerOptionSeq opts) throws Error;
-    void changeOptions(ServerOptionSeq opts) throws Error;
+    idempotent ServerOptionSeq getOptions() throws core::Error;
+    void setOptions(ServerOptionSeq opts) throws core::Error;
+    void changeOptions(ServerOptionSeq opts) throws core::Error;
 
     // update or replace information in database
     // adds entries to zone and reverse zone
-    void updateHost(string hostname, string addr) throws Error;
+    void updateHost(string hostname, string addr) throws core::Error;
 
     // the same, but adress and hostname are taken from connection info
-    void updateThisHost() throws Error;
+    void updateThisHost() throws core::Error;
 
 };
 

@@ -49,7 +49,7 @@ class ZoneI(I.Zone):
         if r.name.endswith('.'):
             r.name = r.name[:-1]
         #if not r.name.endswith(domain):
-        #    raise I.ValueError('Invalid record name.', r.name)
+        #    raise ICore.ValueError('Invalid record name.', r.name)
         return (id, r.name, str(r.type), r.data,
                 (r.ttl if r.ttl > 0 else None),
                 (r.prio if r.prio >= 0 else None))
@@ -97,7 +97,7 @@ class ZoneI(I.Zone):
         if cur.rowcount == 0:
             self._check_existance(con, current)
             #no exception raised - zone exists, but no such record
-            raise I.ObjectNotFound("No such record.")
+            raise ICore.NotFoundError("No such record.")
         con.commit()
 
     @db.wrap("replacing record")
@@ -114,7 +114,7 @@ class ZoneI(I.Zone):
                 *args)
         if cur.rowcount != 1:
             # domain already exists, so there is no such record
-            raise I.ObjectNotFound("Failed to replace record",
+            raise ICore.NotFoundError("Failed to replace record",
                     "Record not found")
         con.commit()
 
