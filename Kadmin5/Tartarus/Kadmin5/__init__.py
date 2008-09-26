@@ -1,5 +1,6 @@
 
-import Tartarus, KadminI
+import Tartarus
+import KadminI, kdb
 
 from Tartarus import logging
 
@@ -13,5 +14,9 @@ def init(adapter):
             log_to = c, cond = "Tartarus.Kadmin5.trace")
     d = c.getProperties().getPropertyAsInt('Tartarus.Kadmin5.deploy')
 
-    adapter.add(KadminI.KadminI(d > 0), c.stringToIdentity("Kadmin5"))
+    kdb_common = kdb.Kdb(d)
+
+    adapter.add(kdb.KadminService(kdb_common),
+        c.stringToIdentity("Service/Kadmin"))
+    adapter.add(KadminI.KadminI(kdb_common), c.stringToIdentity("Kadmin"))
 

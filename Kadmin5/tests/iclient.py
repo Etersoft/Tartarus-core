@@ -1,7 +1,7 @@
 
 import user
 import Tartarus, Ice
-Tartarus.slices.path=['../slice']
+Tartarus.slices.path=['../slice', '/usr/share/Tartarus/slice']
 import Tartarus.iface.Kadmin5 as I
 
 c = Ice.initialize()
