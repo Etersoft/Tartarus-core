@@ -2,7 +2,7 @@
 
 %define tmodname Kadmin5
 
-Version: 0.0.3
+Version: 0.0.4
 Release: alt1
 
 
@@ -67,8 +67,8 @@ Interface definisions for %name.
 %_datadir/Tartarus/slice/*/*
 
 %changelog
-* Thu Sep 11 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.3-alt1
-- new version: fixed database regeneration
+* Sat Sep 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.4-alt1
+- new version
 
 * Sat Jul 19 2008 Ivan A. Melnikov <iv@altlinux.org> 0.0.2-eter2
 - new snapshot
