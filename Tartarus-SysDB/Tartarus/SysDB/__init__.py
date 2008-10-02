@@ -10,14 +10,9 @@ def init(adapter):
     prefix = 'Tartarus.SysDB.db.' # with terminating dot!
     dbh = db.make_helper(props.getPropertiesForPrefix(prefix), prefix)
 
-    if props.getPropertyAsInt(prefix + 'deploy') > 0:
-        pass
-
-    #check that database parameters are valid
-    try:
-        dbh.get_connection()
-    except dbh.Error, e:
-        raise I.DBError("Could not connect to database", e.message)
+    enable_deploy = props.getPropertyAsInt(prefix + 'deploy') > 0
+    adapter.add(deploy.SysDBService(dbh, enable_deploy),
+            com.stringToIdentity('Service/SysDB'))
 
     uo = props.getPropertyAsIntWithDefault(
             "Tartarus.SysDB.UserIDOffset", 65536)

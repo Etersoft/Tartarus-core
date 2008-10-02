@@ -35,10 +35,13 @@ _creator_map = {
         'sqlite3' : _create_sqlite3
         }
 
-class SysDBDeployer(ICore.Deployer):
-    def __init__(self, dbh):
+class SysDBService(ICore.Service):
+    def __init__(self, dbh, enable_deploy):
         self._dbh = dbh
+        self.enable_deploy = enable_deploy
 
+    def getName():
+        return 'SysDB'
 
     def create_db(self):
         dbh = self._dbh
@@ -69,13 +72,12 @@ class SysDBDeployer(ICore.Deployer):
         except:
             return False
 
-    def configure(self, force, current):
-        if force > 0:
+    def configure(self, opts, current):
+        if not self.enable_deploy:
+            raise ICore.RunimeError("Deployment was disabled")
+        if 'force' in opts:
             self._dbh.remove()
         self.create_db()
-
-    def serviceName(self, current):
-        return 'SysDB'
 
 
 
