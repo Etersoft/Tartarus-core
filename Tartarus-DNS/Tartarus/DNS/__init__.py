@@ -15,8 +15,12 @@ def init(adapter):
 
     do_reload = True
 
-    if props.getPropertyAsInt('Tartarus.DNS.db.deploy') > 0:
+    enable_deploy =  props.getPropertyAsInt('Tartarus.DNS.db.deploy') > 0
+    if enable_deploy:
         do_reload = False
+
+    adapter.add(deploy.DNSService(dbh, cfg_file_name, enable_deploy),
+            com.stringToIdentity('Service/DNS'))
 
     #minimal test whether configuration works
     dbh.get_connection()

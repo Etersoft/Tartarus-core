@@ -4,7 +4,7 @@ import traceback, sys, os, Ice, Tartarus
 
 Tartarus.modules.trace = 0
 Tartarus.slices.trace = 0
-Tartarus.slices.path += ["../slice"]
+Tartarus.slices.path += ["../slice", "/usr/share/Tartarus/slice"]
 
 def run(test, args):
     try:

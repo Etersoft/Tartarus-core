@@ -2,7 +2,7 @@
 import Tartarus
 
 import utils, cfgfile
-from Tartarus.iface.core import Deployer
+from Tartarus.iface import core as ICore
 from Tartarus import db
 
 _sqlite_db_create = [
@@ -157,8 +157,8 @@ def db_pararms(d, dbh):
         raise dbh.ConfigError('Database engine not supported', dbn.engine)
 
 
-def DNSDeployer(Deployer):
-    def __init__(self, dbh, config_file):
+class DNSService(ICore.Service):
+    def __init__(self, dbh, config_file, enabe_deploy):
         self._dbh = dbh
         self._cfg_file = config_file
 
@@ -187,12 +187,12 @@ def DNSDeployer(Deployer):
             pass
         return False
 
-    def configure(self, force, current):
-        if force > 0:
+    def configure(self, opts, current):
+        if 'force' in opts:
             self._dbh.remove()
-        do_deploy()
+        self.do_deploy()
 
-    def serviceName(self, current):
+    def getName(self, current):
         return "DNS"
 
 
