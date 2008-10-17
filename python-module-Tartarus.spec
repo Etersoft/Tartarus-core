@@ -30,7 +30,7 @@ This module is built for python %__python_version
 
 %install
 %__mkdir_p  %buildroot%python_sitelibdir/Tartarus
-%__cp -Rp Tartarus/System %buildroot%python_sitelibdir/Tartarus
+%__cp -Rp System %buildroot%python_sitelibdir/Tartarus
 
 
 %files
