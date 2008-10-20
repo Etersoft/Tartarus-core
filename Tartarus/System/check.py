@@ -2,8 +2,9 @@ from hostname import getdomain
 from dns.resolver import query,NXDOMAIN
 from dns.exception import DNSException
 
-def check_krb5_lookup():
-    domain = getdomain()
+def check_krb5_lookup(domain = None):
+    if not domain:
+        domain = getdomain()
 
     try:
         realm_query = '_kerberos.' + domain

@@ -1,5 +1,5 @@
 Version: 0.0.1
-Release: alt1
+Release: alt2
 
 %setup_python_module Tartarus-System
 
@@ -37,6 +37,9 @@ This module is built for python %__python_version
 %python_sitelibdir/*
 
 %changelog
+* Mon Oct 20 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.0.1-alt2
+- Fixed krb5 check for default domain
+
 * Fri Oct 17 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.0.1-alt1
 - Initial first build
 

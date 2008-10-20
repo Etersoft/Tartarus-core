@@ -20,7 +20,7 @@ def service_command(service, command):
 def service_switch(service, state):
     try:
         command = get_switch_command()
-        subprocess.check_call([script, service, state])
+        subprocess.check_call([command, service, state])
     except subprocess.CalledProcessError, e:
         raise 'switch state for service "%s" to "%s" failed: %s' % (service,
                                                                     state,
