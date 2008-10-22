@@ -2,7 +2,7 @@ import subprocess
 from os import path
 
 def get_control_command():
-    return '/usr/sbin/control'
+    return 'control'
 
 def control_command(facility, status):
     try:

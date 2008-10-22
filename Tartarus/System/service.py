@@ -5,7 +5,7 @@ def get_service_script(name):
     return path.join('/etc/init.d/', name)
 
 def get_switch_command():
-    return '/sbin/chkconfig'
+    return 'chkconfig'
 
 def service_command(service, command):
     try:
@@ -15,8 +15,8 @@ def service_command(service, command):
         subprocess.check_call([script, command])
     except subprocess.CalledProcessError, e:
         raise 'command "%s" for service "%s" failed: %s' % (command,
-                                                          service,
-                                                          e.message)
+                                                            service,
+                                                            e.message)
 def service_switch(service, state):
     try:
         command = get_switch_command()

@@ -1,5 +1,5 @@
 Version: 0.0.1
-Release: alt2
+Release: alt3
 
 %setup_python_module Tartarus-System
 
@@ -37,6 +37,13 @@ This module is built for python %__python_version
 %python_sitelibdir/*
 
 %changelog
+* Wed Oct 22 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.0.1-alt3
+- hostname improvwements:
++ added getname() for getting short name
++ renamed gethostname() to more understandle getfqdn()
++ added system gethostname()
+- remove path names for control and chkconfig utils
+
 * Mon Oct 20 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.0.1-alt2
 - Fixed krb5 check for default domain
 

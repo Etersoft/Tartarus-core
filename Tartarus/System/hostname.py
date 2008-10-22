@@ -2,13 +2,16 @@ from dns.resolver import query,NXDOMAIN
 from dns.exception import DNSException
 import socket
 
-def gethostname():
+def getname():
+    return socket.gethostname().split('.')[0]
+
+def getfqdn():
     return socket.getfqdn()
 
 def getdomain(fqdn = None):
     if not fqdn:
         try:
-            fqdn = gethostname()
+            fqdn = getfqdn()
         except AttributeError:
             hostname = socket.gethostname()
             byaddr = socket.gethostbyaddr(socket.gethostbyname(hostname))
@@ -25,5 +28,8 @@ def getdomain(fqdn = None):
         raise 'domain not found for fqdn: "%s"' % fqdn
     return '.'.join(parts)
 
-def sethostname():
-    pass
+def gethostname():
+    return socket.gethostname()
+
+def sethostname(hostname):
+    raise 'set hostname failed for "%s" (method not implemented yet)' % hostname
