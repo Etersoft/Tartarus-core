@@ -29,7 +29,7 @@ def load_module(modname, adapter):
         return False
 
 
-def _load_config(props, path):
+def load_config(props, path):
     if len(path) == 0:
         logging.warning("Tartarus configuration path not specified")
         return

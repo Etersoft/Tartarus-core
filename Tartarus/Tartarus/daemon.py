@@ -13,7 +13,7 @@ from Tartarus import logging
 _msg_len = 10000
 
 
-verbose = False
+_verbose = False
 
 
 def _report_result(fd, code, msg):
@@ -45,7 +45,7 @@ def _format_exception():
     Returns a pair (code, description).
     """
     (et, ev, tb) = sys.exc_info()
-    if not verbose:
+    if not _verbose:
         tb = None
 
     if et is exceptions.SystemExit:
@@ -61,7 +61,7 @@ def _format_exception():
         msg = "OS Error: %s" % ev.strerror
     else:
         code =  -1
-        msg = str().join(traceback.format_exception(et,ev,tb))
+        msg = str().join(traceback. format_exception(et, ev, tb))
 
     if not msg.endswith('\n'):
         msg += '\n'
@@ -79,11 +79,11 @@ def _report_exception(fd = None):
     return code
 
 
-class DaemonError(exceptions.Exception):
+class DaemonError(Exception):
     """Basic class for exceptions connected with daemon startup."""
     def __init__(self, code, msg):
+        Exception.__init__(self, msg)
         self.code = code
-        self.message = msg
     def __repr__(self):
         return "%s: %s (%d)" % (
                 self.__class__.__name__ , self.message, self.code)
@@ -101,13 +101,13 @@ class Daemon(object):
     is considered to be ready to work, so success will be reported to user
     and/or syslog.
     """
-    def __init__(self, comm, args):
+    def __init__(self, comm_, args):
         if type(self) is Daemon:
             raise RuntimeError("Tartarus Daemon cannot be summoned directly!"
                     " It is abstract class.")
-        pass
+
     def run(self):
-        raise RuntimeError("run() not implemented")
+        raise NotImplementedError("run() not implemented")
 
 
 class DaemonWrapper(object):
@@ -115,12 +115,13 @@ class DaemonWrapper(object):
         self.daemon = daemon
         self.mutex = None
         self.instance = None
-        self.condVar = threading.Condition()
+        self._cond_var = threading.Condition()
         self._communicator = None
+        self._signal_handler = None
 
-    def interruptCallback(self, sig):
+    def interruptCallback(self, sig_):
         try:
-            with self.condVar:
+            with self._cond_var:
                 try:
                     if self._communicator:
                         self._communicator.shutdown()
@@ -129,30 +130,30 @@ class DaemonWrapper(object):
                 except:
                     _report_exception()
                 self._communicator = None
-                self.condVar.notify()
+                self._cond_var.notify()
         except:
             pass
 
     def main(self, args, fd=None, cfgfile=None, syslog=False):
         try:
-            with self.condVar:
+            with self._cond_var:
                 # initialize runtime
-                self._signalHandler = Ice.CtrlCHandler()
-                self._signalHandler.setCallback(self.interruptCallback)
+                self._signal_handler = Ice.CtrlCHandler()
+                self._signal_handler.setCallback(self.interruptCallback)
 
-                initData = Ice.InitializationData()
-                initData.properties = Ice.createProperties([args[0]])
+                init_data = Ice.InitializationData()
+                init_data.properties = Ice.createProperties([args[0]])
 
                 if cfgfile:
-                    initData.properties.load(cfgfile)
+                    init_data.properties.load(cfgfile)
 
-                args = initData.properties.parseIceCommandLineOptions(args)
+                args = init_data.properties.parseIceCommandLineOptions(args)
 
                 if syslog:
-                    initData.properties.setProperty("Ice.UseSyslog", "1")
+                    init_data.properties.setProperty("Ice.UseSyslog", "1")
 
 
-                self._communicator = Ice.initialize([args[0]], initData)
+                self._communicator = Ice.initialize([args[0]], init_data)
 
                 Ice.setProcessLogger(self._communicator.getLogger())
 
@@ -170,11 +171,11 @@ class DaemonWrapper(object):
             status =  self.instance.run()
 
             #cleanup
-            with self.condVar:
+            with self._cond_var:
                 while self._communicator is not None:
-                    self.condVar.wait()
-                self._signalHandler.destroy()
-                self._signalHandler = None
+                    self._cond_var.wait()
+                self._signal_handler.destroy()
+                self._signal_handler = None
                 return status
         except Exception:
             return _report_exception()
@@ -227,16 +228,16 @@ class DaemonController(object):
 
     def _check_and_get_pid(self):
         if self.pidfile is None:
-            raise DaemonError, (2, "please specify pidfile")
+            raise DaemonError(2, "please specify pidfile")
         if not os.path.isfile(self.pidfile):
-            raise DaemonError, (-1, "service is not running")
+            raise DaemonError(-1, "service is not running")
         with open(self.pidfile) as f:
             pid = int(f.readline())
         if not os.path.isdir("/proc/%d" % pid):
-            raise DaemonError, (1, "service is not running, but pidfile exists")
+            raise DaemonError(1, "service is not running, but pidfile exists")
 
         if self.jfile is not None and not self._check_jfile(pid):
-            raise DaemonError, (1, "service is not running, but pidfile exists")
+            raise DaemonError(1, "service is not running, but pidfile exists")
 
         return pid
 
@@ -249,12 +250,12 @@ class DaemonController(object):
             os.kill(pid, 15)
             # We'll wait for 10 seconds, periodically checking wheter killed
             # process have terminated. If it had, kill(pid, 0) fails and
-            # raises OSError. If target process is still alive after 10 seconds,
-            # it is considered to be error.
+            # raises OSError. If target process is still alive after
+            # 10 seconds, it is considered to be error.
             try:
                 sleep(0.25)
                 os.kill(pid, 0)
-                for i in range(1,20):
+                for _ in xrange(1, 20):
                     sleep(0.5)
                     os.kill(pid, 0)
             except OSError:
@@ -280,21 +281,22 @@ class DaemonController(object):
 
             if self.closefds:
                 devnull = os.open("/dev/null", os.O_RDWR, 0)
-                os.dup2(devnull,0)
-                os.dup2(devnull,1)
-                os.dup2(devnull,2)
+                os.dup2(devnull, 0)
+                os.dup2(devnull, 1)
+                os.dup2(devnull, 2)
 
             if os.fork() > 0:
                 sys.exit(0)
 
-            sys.exit(self.what.main(self.args, parent_fd, self.cfgfile, self.syslog))
+            sys.exit(self.what.main(self.args, parent_fd,
+                                    self.cfgfile, self.syslog))
         except Exception:
             sys.exit(_report_exception(parent_fd))
 
     def start(self):
         """Start an application as a daemon."""
 
-        (rfd,wfd) = os.pipe()
+        rfd, wfd = os.pipe()
 
         if os.fork() == 0:
             os.close(rfd)
@@ -306,12 +308,12 @@ class DaemonController(object):
         res = os.read(rfd, _msg_len)
         ind = res.find(':')
         if ind <= 0:
-            raise DaemonError, (-1, "Failed to get daemon initialization status")
+            raise DaemonError(-1, "Failed to get daemon initialization status")
 
         code = int(res[:ind])
         msg = res[(ind+1):]
         if (code != 0):
-            raise DaemonError, (code, msg)
+            raise DaemonError(code, msg)
 
         pid = int(msg)
         if self.printpid:
@@ -389,7 +391,8 @@ def _parse_options():
         args = []
 
     (opts, action) = parser.parse_args(our_args)
-    if len(action) != 1 or action[0] not in ['start','stop','status','run']:
+    action_names = set(['start', 'stop', 'status', 'run'])
+    if len(action) != 1 or action[0] not in action_names:
         parser.error("Don't know what to do!")
 
     if action[0] == 'status':
@@ -399,8 +402,8 @@ def _parse_options():
     if opts.closefds is None:
         opts.closefds = not opts.stderr
 
-    global verbose
-    verbose = opts.verbose
+    global _verbose
+    _verbose = opts.verbose
 
     return (opts, action[0], [sys.argv[0]] + args)
 
@@ -427,7 +430,7 @@ def main(daemon):
                 print "service is running"
                 return 0
 
-        raise DaemonError, (-1, "This can't happen!")
+        raise DaemonError(-1, "This can't happen!")
     except Exception:
         (code, msg) = _format_exception()
         if err is None:
@@ -437,7 +440,7 @@ def main(daemon):
         else:
             try:
                 err.write(msg)
-            except:
+            except Exception:
                 pass
 
         return code

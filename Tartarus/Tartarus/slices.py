@@ -27,7 +27,7 @@ def load(name):
     if period > 0:
         modname = name[:period]
     else:
-        modname = name;
+        modname = name
 
     if "Tartarus.iface." + modname in sys.modules:
         return
@@ -45,8 +45,9 @@ def load(name):
             "In path %s found dir %s" % (path, mpath), trace >= 16)
 
     if mpath is None:
-        raise RuntimeError,\
-                "Could not find module '%s' in path %s" % (modname, path)
+        raise RuntimeError(
+                "Could not find module '%s' in path %s" %
+                (modname, path))
 
     files = glob.glob(os.path.join(mpath, "*.ice"))
     logging.trace(__name__, "Loading slices: %s" % files, trace >= 16)
@@ -73,7 +74,7 @@ def tartarus_import(*args):
                 # len("Tartarus.iface.") == 15
                 mname = name[15:]
                 load(mname)
-            except:
+            except Exception:
                 pass
 
     elif name == "Tartarus.iface" and fromlist is not None:
