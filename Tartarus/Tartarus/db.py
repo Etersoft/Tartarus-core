@@ -8,6 +8,7 @@ from such modules.
 """
 
 import sys
+from functools import wraps
 from Tartarus import logging
 from Tartarus.iface import core as ICore
 
@@ -22,36 +23,49 @@ def _engine2module(engine):
     return _engines_mapping[engine]
 
 
-def _strip_prefix(prefix, d):
+def _strip_prefix(prefix, dic):
     l = len(prefix)
     gen = ( (key[l:], val)
-            for key, val in d.iteritems()
+            for key, val in dic.iteritems()
             if key.startswith(prefix) )
     return dict(gen)
 
-def _query2string(q,p):
-    return q % tuple(("'%s'" % x for x in p))
+def _query2string(query, params):
+    return query % tuple(("'%s'" % x for x in params))
 
-class _dict_translator(object):
+class _Translator(object):
+    def params(self, params):
+        raise NotImplemented('Method not implemented: %s.%s.%s'
+                % self.__module__, self.__class__, 'params')
+
+    def query(self, template, params):
+        raise NotImplemented('Method not implemented: %s.%s.%s'
+                % self.__module__, self.__class__, 'query')
+
+class _DictTranslator(_Translator):
     def params(self, params):
         l = len(params)
-        gen = ( ("p%d" % i, params[i]) for i in xrange(0,l) )
+        gen = ( ("p%d" % i, params[i]) for i in xrange(0, l) )
         return dict(gen)
 
-    def query(self, q, l):
-        psubst = tuple( ("%%(p%d)s" % i for i in xrange(0,l)) )
-        w = q % psubst
+    def query(self, template, param_num):
+        psubst = tuple( ("%%(p%d)s" % i
+                         for i in xrange(0, param_num)) )
+        w = template % psubst
         return w
 
-class _qmark_translator(object):
+
+class _QmarkTranslator(_Translator):
     def params(self, params):
         return params
-    def query(self, q, l):
-        return q % tuple( ('?' for x in xrange(0,l)) )
+
+    def query(self, template, param_num):
+        return template % tuple( ('?' for x in xrange(0, param_num)) )
+
 
 _translator_map = {
-        'pyformat'      : _dict_translator,
-        'qmark'         : _qmark_translator
+        'pyformat'      : _DictTranslator,
+        'qmark'         : _QmarkTranslator
         }
 
 
@@ -100,7 +114,8 @@ class _Helper(object):
             import os
             os.remove(self.options['database'])
         else:
-           raise ICore.RuntimeError('Database removal unimplemented for %s', engine)
+            raise ICore.RuntimeError(
+                   'Database removal unimplemented for %s', self.engine)
 
 
     def execute(self, con, query, *params):
@@ -148,6 +163,7 @@ class _Helper(object):
 
 def wrap(msg = None):
     def decor(method):
+        @wraps(method)
         def wrapper(self, *pargs, **kwargs):
             h = self._dbh
             try:
