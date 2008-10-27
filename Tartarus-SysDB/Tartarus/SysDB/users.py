@@ -50,16 +50,16 @@ class UserManagerI(I.UserManager):
 
 
     @db.wrap("retrieving multiple users")
-    def getUsers(self, con, userIds, current):
-        ids = tuple((i - self._uo for i in userIds))
+    def getUsers(self, con, userids, current):
+        ids = tuple((i - self._uo for i in userids))
         ps = '(' + ', '.join(('%s' for x in ids)) +')'
         cur = self._dbh.execute(con,
                 _user_query + " AND users.id IN " + ps, *ids)
         res = self._db2users(cur.fetchall())
-        if (len(res) != len(userIds)
+        if (len(res) != len(userids)
                 and current.ctx.get("PartialStrategy") != "Partial"):
             retrieved = set( (u.uid for u in res) )
-            for i in userIds:
+            for i in userids:
                 if i not in retrieved:
                     raise I.UserNotFound("User not found",
                             "retrieving multiple users", i)
@@ -122,13 +122,13 @@ class UserManagerI(I.UserManager):
 
 
     @db.wrap("creating user")
-    def create(self, con, newUser, current):
+    def create(self, con, newuser, current):
         self._dbh.execute(con,
                 "INSERT INTO users (name, fullname, shell) "
                 "VALUES (%s, %s, %s)",
-                newUser.name, newUser.fullName, newUser.shell)
+                newuser.name, newuser.fullName, newuser.shell)
         cur = self._dbh.execute(con,
-                "SELECT id FROM users WHERE name = %s", newUser.name)
+                "SELECT id FROM users WHERE name = %s", newuser.name)
         res = cur.fetchall()
         if len(res) != 1:
             raise ICore.DBError("Failed to add user",
@@ -137,22 +137,22 @@ class UserManagerI(I.UserManager):
         cur = self._dbh.execute(con,
                 "INSERT INTO group_entries (groupid, userid, is_primary) "
                 "SELECT groups.id, %s, %s FROM groups WHERE groups.id=%s",
-                uid, 1, newUser.gid - self._go)
+                uid, 1, newuser.gid - self._go)
         if (cur.rowcount != 1):
             raise I.GroupNotFound("Group not found",
-                    "Could not find primary group for new user", newUser.gid)
+                    "Could not find primary group for new user", newuser.gid)
         con.commit()
         return uid + self._uo
 
     @db.wrap("deleting user")
-    def delete(self, con, id, current):
+    def delete(self, con, uid, current):
         cur = self._dbh.execute(con,
-                "DELETE FROM users WHERE id=%s", id - self._uo)
+                "DELETE FROM users WHERE id=%s", uid - self._uo)
         if cur.rowcount != 1:
-            raise I.UserNotFound("User not found", "deleting user", id)
+            raise I.UserNotFound("User not found", "deleting user", uid)
         self._dbh.execute(con,
                 "DELETE FROM group_entries WHERE userid=%s",
-                id - self._uo)
+                uid - self._uo)
         con.commit()
 
 

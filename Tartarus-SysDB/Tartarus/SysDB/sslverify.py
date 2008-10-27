@@ -64,6 +64,6 @@ def setup(com, dbh, vtype, props):
     gs = props.getProperty('Tartarus.SysDB.SSLVerifier.AllowGroups')
     groups = [ s for s in gs.split(':') if len(s) > 0 ]
     v = SimpleGroupVerifier(dbh, groups)
-    IceSSL.setCertificateVerifier(com,v)
+    IceSSL.setCertificateVerifier(com, v)
 
 

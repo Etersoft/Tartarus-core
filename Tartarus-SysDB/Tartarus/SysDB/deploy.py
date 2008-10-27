@@ -40,7 +40,7 @@ class SysDBService(ICore.Service):
         self._dbh = dbh
         self.enable_deploy = enable_deploy
 
-    def getName():
+    def getName(self, current):
         return 'SysDB'
 
     def create_db(self):
@@ -65,11 +65,11 @@ class SysDBService(ICore.Service):
     @db.wrap("checking configuration")
     def isConfigured(self, con, current):
         try:
-            self._dbh.execute("SELECT count(*) FROM users")
-            self._dbh.execute("SELECT count(*) FROM groups")
-            self._dbh.execute("SELECT count(*) FROM group_entries")
+            self._dbh.execute(con, "SELECT count(*) FROM users")
+            self._dbh.execute(con, "SELECT count(*) FROM groups")
+            self._dbh.execute(con, "SELECT count(*) FROM group_entries")
             return True
-        except:
+        except Exception:
             return False
 
     def configure(self, opts, current):

@@ -93,17 +93,17 @@ class GroupManagerI(I.GroupManager):
 
 
     @db.wrap("retrieving multiple groups")
-    def getGroups(self, con, groupIds, current):
-        ids = tuple((i - self._go for i in groupIds))
+    def getGroups(self, con, groupids, current):
+        ids = tuple((i - self._go for i in groupids))
         ps = '(' + ', '.join(('%s' for x in ids)) +')'
         cur = self._dbh.execute(con,
                 "SELECT id, name, description FROM groups "
                 + "WHERE id IN " + ps, *ids)
         res = self._db2groups(cur.fetchall())
-        if (len(res) != len(groupIds)
+        if (len(res) != len(groupids)
                 and current.ctx.get("PartialStrategy") != "Partial"):
             retrieved = set( (g.gid for g in res) )
-            for i in groupIds:
+            for i in groupids:
                 if i not in retrieved:
                     raise I.GroupNotFound("Group not found",
                             "retrieving multiple groups", i)
@@ -152,36 +152,36 @@ class GroupManagerI(I.GroupManager):
         return self._db2groups(cur.fetchall())
 
     @db.wrap("setting users for group")
-    def setUsers(self, con, gid, userIds, current):
-        cur = self._dbh.execute(con,
+    def setUsers(self, con, gid, userids, current):
+        self._dbh.execute(con,
                 "DELETE FROM group_entries "
                 "WHERE groupid == %s AND is_primary IS NULL",
                 gid - self._go)
-        self._addUsers(con, gid, userIds, current)
+        self._addUsers(con, gid, userids, current)
 
     @db.wrap("adding users to group")
-    def addUsers(self, con, gid, userIds, current):
-        self._addUsers(con, gid, userIds, current)
+    def addUsers(self, con, gid, userids, current):
+        self._addUsers(con, gid, userids, current)
 
-    def _addUsers(self, con, gid, userIds, current):
+    def _addUsers(self, con, gid, userids, current):
         self._group_exists(con, gid)
-        gen = ( (gid - self._go, uid - self._uo) for uid in userIds )
-        cur = self._dbh.execute_many(con,
+        gen = ( (gid - self._go, uid - self._uo) for uid in userids )
+        self._dbh.execute_many(con,
                 "INSERT INTO group_entries (userid, groupid) "
                 "SELECT users.id, %s FROM users WHERE users.id == %s",
                 gen)
         con.commit()
 
     @db.wrap("deleting users")
-    def delUsers(self, con, gid, userIds, current):
-        ids = tuple((i - self._uo for i in userIds))
+    def delUsers(self, con, gid, userids, current):
+        ids = tuple((i - self._uo for i in userids))
         ps = '(' + ', '.join(('%s' for x in ids)) +')'
         cur = self._dbh.execute(con,
                 "DELETE FROM group_entries "
                 "WHERE groupid == %s AND is_primary IS NULL "
                 "AND userid IN " + ps,
                 gid - self._go, *ids)
-        if cur.rowcount != len(userIds):
+        if cur.rowcount != len(userids):
             self._group_exists(con, gid)
             cur = self._dbh.execute(con,
                     "SELECT userid FROM group_entries "
@@ -211,14 +211,14 @@ class GroupManagerI(I.GroupManager):
         con.commit()
 
     @db.wrap("creating group")
-    def create(self, con, newGroup, current):
+    def create(self, con, newgroup, current):
         self._dbh.execute(con,
                 "INSERT INTO groups (name, description) "
                 "VALUES (%s, %s)",
-                newGroup.name, newGroup.description)
+                newgroup.name, newgroup.description)
         cur = self._dbh.execute(con,
                 "SELECT id FROM groups WHERE name=%s",
-                newGroup.name)
+                newgroup.name)
         res = cur.fetchall()
         if len(res) != 1:
             raise ICore.DBError("Failed to create group",
@@ -227,30 +227,31 @@ class GroupManagerI(I.GroupManager):
         return res[0][0] + self._go
 
     @db.wrap("deleting group")
-    def delete(self, con, id, current):
-        gid = id - self._go
+    def delete(self, con, gid, current):
+        n = gid - self._go
         cur = self._dbh.execute(con,
                     "SELECT userid FROM group_entries "
                     "WHERE groupid == %s AND is_primary ",
-                    gid)
+                    n)
         res = cur.fetchall()
         if len(res) > 0:
-            raise ICore.DBError("Cannot delete group which is primary for users",
+            raise ICore.DBError(
+                    "Cannot delete group which is primary for users",
                     str(res))
         self._dbh.execute(con,
-                "DELETE FROM group_entries WHERE groupid == %s", gid)
+                "DELETE FROM group_entries WHERE groupid == %s", n)
         cur = self._dbh.execute(con,
-                "DELETE FROM groups WHERE id == %s", gid)
+                "DELETE FROM groups WHERE id == %s", n)
         if cur.rowcount != 1:
             raise I.GroupNotFound("Group not found",
-                    "deleting group", id)
+                    "deleting group", gid)
         con.commit()
 
     @db.wrap("adding user to multiple groups")
     def addUserToGroups(self, con, uid, groups, current):
         self._user_exists(con, uid)
         gen = ( (uid - self._uo, gid - self._go) for gid in groups )
-        cur = self._dbh.execute_many(con,
+        self._dbh.execute_many(con,
                 "INSERT INTO group_entries (userid, groupid) "
                 "SELECT %s, groups.id FROM groups WHERE groups.id == %s",
                 gen)
