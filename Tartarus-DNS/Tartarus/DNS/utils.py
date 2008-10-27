@@ -2,27 +2,27 @@
 
 import Ice, IcePy
 
-from Ice import ObjectNotExistException as NoSuchObject
+class NoSuchObject(Ice.ObjectNotExistException):
+    pass
 
 import Tartarus
-from Tartarus.iface import DNS as I
 from Tartarus.iface import core as ICore
 
-def proxy(cls, ad, cat, name):
-    if isinstance(ad, IcePy.Current):
-        ad = ad.adapter
-    id = Ice.Identity(name, cat)
-    pr = ad.createProxy(id)
+def proxy(cls, adapter, category, obj_name):
+    if isinstance(adapter, IcePy.Current):
+        adapter = adapter.adapter
+    iden = Ice.Identity(obj_name, category)
+    pr = adapter.createProxy(iden)
     return cls.uncheckedCast(pr)
 
-def name(current, id=None):
+def name(current, identity=None):
     """Get object name from current.
 
     Maybe later we'll want to apply some string convertions to it.
     """
-    if id:
-        return id.name
-    return current.id.name
+    if identity:
+        return identity.name
+    return current.identity.name
 
 def soar2str(soar):
     return ('%(nameserver)s %(hostmaster)s %(serial)d %(refresh)d '

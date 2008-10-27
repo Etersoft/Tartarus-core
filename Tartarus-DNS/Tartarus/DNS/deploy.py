@@ -1,7 +1,7 @@
 
 import Tartarus
 
-import utils, cfgfile
+import cfgfile
 from Tartarus.iface import core as ICore
 from Tartarus import db
 
@@ -114,14 +114,14 @@ def create_db(dbh):
         raise dbh.DBError("Database creation failure", e.message)
 
 
-def _get_sqlite_database(d, dbh):
+def _get_sqlite_database(opts, dbh):
     try:
         dbpath = dbh.options['database']
-    except KeyError:
+    except KeyError, e:
         raise dbh.ConfigError('Database parameter undefined',
                             'Tartarus.DNS.db.' + e.message)
     try:
-        chroot = d['chroot']
+        chroot = opts['chroot']
     except KeyError:
         return dbpath
 
@@ -131,15 +131,15 @@ def _get_sqlite_database(d, dbh):
 
     return dbpath[len(chroot):]
 
-def _sqlite_db_params(d, dbh):
+def _sqlite_db_params(opts, dbh):
     return [ ('launch' , 'gsqlite'),
-             ('gsqlite-database', _get_sqlite_database(d, dbh)) ]
+             ('gsqlite-database', _get_sqlite_database(opts, dbh)) ]
 
-def _sqlite3_db_params(d, dbh):
+def _sqlite3_db_params(opts, dbh):
     return [ ('launch' , 'gsqlite3'),
-             ('gsqlite3-database', _get_sqlite_database(d, dbh)) ]
+             ('gsqlite3-database', _get_sqlite_database(opts, dbh)) ]
 
-def _psycopg2_db_params(d, dbh):
+def _psycopg2_db_params(opts, dbh):
     raise dbh.ConfigError('Database initialization unimplemented',
                         'Tartarus.DNS.db.engine')
 
@@ -149,12 +149,12 @@ _params_mapping = {
         'psycopg2'      : _psycopg2_db_params
         }
 
-def db_pararms(d, dbh):
+def db_pararms(opts, dbh):
     try:
-        d.update(_params_mapping[dbh.modname](d, dbh))
-        return d
+        opts.update(_params_mapping[dbh.modname](opts, dbh))
+        return opts
     except KeyError:
-        raise dbh.ConfigError('Database engine not supported', dbn.engine)
+        raise dbh.ConfigError('Database engine not supported', dbh.engine)
 
 
 class DNSService(ICore.Service):
@@ -169,7 +169,7 @@ class DNSService(ICore.Service):
         try:
             cfgfile.gen(self._cfg_file, opt_dict.iteritems())
         except IOError:
-            raise self.dbh_.ConfigError("Failed to alter configuration file",
+            raise self._dbh.ConfigError("Failed to alter configuration file",
                                  self._cfg_file)
         create_db(self._dbh)
 
@@ -183,9 +183,8 @@ class DNSService(ICore.Service):
             self._dbh.execute(con,
                     "SELECT count(*) FROM domains")
             return True
-        except:
-            pass
-        return False
+        except Exception:
+            return False
 
     def configure(self, opts, current):
         if 'force' in opts:

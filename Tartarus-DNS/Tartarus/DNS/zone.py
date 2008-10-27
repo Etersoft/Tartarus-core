@@ -1,15 +1,15 @@
 
-import Tartarus
-from Ice import ServantLocator
+import Ice, Tartarus
 from Tartarus import logging, db
 
 import Tartarus.iface.DNS as I
+import Tartarus.iface.core as ICore
 
 import utils
 
-class Locator(ServantLocator):
+class Locator(Ice.ServantLocator):
     def __init__(self, dbh):
-        self.obj = ZoneI(dbh);
+        self.obj = ZoneI(dbh)
     def locate(self, current):
         return self.obj, None
     def finished(self, current, obj, cookie):
@@ -45,22 +45,22 @@ class ZoneI(I.Zone):
     VALUES (%s, %s, %s, %s, %s, %s)
     """
 
-    def _unpack_record(self, r, id, domain):
-        if r.name.endswith('.'):
-            r.name = r.name[:-1]
+    def _unpack_record(self, record, zone_id, domain_):
+        if record.name.endswith('.'):
+            record.name = record.name[:-1]
         #if not r.name.endswith(domain):
         #    raise ICore.ValueError('Invalid record name.', r.name)
-        return (id, r.name, str(r.type), r.data,
-                (r.ttl if r.ttl > 0 else None),
-                (r.prio if r.prio >= 0 else None))
+        return (zone_id, record.name, str(record.type), record.data,
+                (record.ttl if record.ttl > 0 else None),
+                (record.prio if record.prio >= 0 else None))
 
     @db.wrap("adding record")
-    def addRecord(self, con, r, current):
+    def addRecord(self, con, record, current):
         domain = self._get_name(con, current)
-        id = utils.name(current)
+        zone_id = utils.name(current)
         cur = self._dbh.execute(con,
                 self._add_record_query,
-                *self._unpack_record(r, id, domain)
+                *self._unpack_record(record, zone_id, domain)
                )
         if cur.rowcount != 1:
             raise utils.NoSuchObject
@@ -71,9 +71,9 @@ class ZoneI(I.Zone):
         domain = self._get_name(con, current)
         if len(rs) < 1:
             return
-        id = utils.name(current)
-        rgen = (self._unpack_record(r,id, domain) for r in rs)
-        cur = self._dbh.execute_many(con, self._add_record_query, rgen)
+        zone_id = utils.name(current)
+        rgen = (self._unpack_record(r, zone_id, domain) for r in rs)
+        self._dbh.execute_many(con, self._add_record_query, rgen)
         con.commit()
 
     @db.wrap("removing all records of a zone")
@@ -87,13 +87,14 @@ class ZoneI(I.Zone):
         con.commit()
 
     @db.wrap("removing record")
-    def dropRecord(self, con, r, current):
-        if r.name.endswith('.'):
-            r.name = r.name[:-1]
+    def dropRecord(self, con, record, current):
+        if record.name.endswith('.'):
+            record.name = record.name[:-1]
         cur = self._dbh.execute(con,
                 "DELETE FROM records "
                 "WHERE domain_id=%s AND name=%s AND type=%s AND content=%s",
-                utils.name(current), r.name, str(r.type), r.data)
+                utils.name(current), record.name,
+                str(record.type), record.data)
         if cur.rowcount == 0:
             self._check_existance(con, current)
             #no exception raised - zone exists, but no such record
@@ -187,6 +188,6 @@ class ZoneI(I.Zone):
                 "WHERE type='SOA' and domain_id=%s",
                 utils.soar2str(soar), utils.name(current))
         if cur.rowcount != 1:
-            raise db.NoSuchObject
+            raise self._dbh.NoSuchObject
         con.commit()
 

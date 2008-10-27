@@ -8,7 +8,7 @@ def parse(filename):
         pline = pline.rstrip()
 
         if len(pline) > 0 and pline[-1]=='\\':
-            line += l[:-1]
+            line += pline[:-1]
             continue
 
         line += pline
@@ -28,7 +28,7 @@ def parse(filename):
         yield line[:eq], line[eq+1:]
         line = ''
 
-HEADER="""#
+HEADER = """#
 # This is configuration file for powerdns server.
 #
 # It is generated automatically. Note that all your formatting and comments

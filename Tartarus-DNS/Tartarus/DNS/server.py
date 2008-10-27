@@ -3,8 +3,9 @@
 import Tartarus, os, IceSSL, socket
 from Tartarus import logging, db
 import Tartarus.iface.DNS as I
+import Tartarus.iface.core as ICore
 
-import deploy, utils, cfgfile
+import utils, cfgfile
 
 
 class ServerI(I.Server):
@@ -12,8 +13,8 @@ class ServerI(I.Server):
         self._dbh = dbh
         self._do_reload = do_reload
         I.Server.__init__(self)
-        dir, name = os.path.split(cfg_file_name)
-        if len(name) < 1 or not os.path.isdir(dir):
+        path, name = os.path.split(cfg_file_name)
+        if len(name) < 1 or not os.path.isdir(path):
             raise ICore.ConfigError("Bad config file specified", cfg_file_name)
         self._config_file = cfg_file_name
         # enshure server is here and works with actual config file
@@ -23,7 +24,7 @@ class ServerI(I.Server):
     def getZones(self, con, current):
         cur = self._dbh.execute(con, 'SELECT id FROM domains')
         result = [ utils.proxy(I.ZonePrx, current, "DNS-Zone", str(x[0]))
-                   for x in cur.fetchall() ];
+                   for x in cur.fetchall() ]
         return result
 
     @db.wrap("retrieving zone by name")
@@ -47,42 +48,41 @@ class ServerI(I.Server):
         if len(result) != 1:
             raise ICore.DBError("Zone creation failed"
                     "Could not locate zone in the database")
-        id = str(result[0][0])
+        n = str(result[0][0])
         cur = self._dbh.execute(con,
                 "INSERT INTO records (domain_id, name, type, content)"
                 "VALUES (%s, %s, 'SOA', %s)",
-                id, name, utils.soar2str(soar))
+                n, name, utils.soar2str(soar))
         if  cur.rowcount != 1:
             raise ICore.DBError("Zone creation failed",
                     "Failed to add SOA Record.")
         con.commit()
-        return utils.proxy(I.ZonePrx, current, "DNS-Zone", id)
+        return utils.proxy(I.ZonePrx, current, "DNS-Zone", n)
 
 
-    def _dropZone(self, con, id):
+    def _dropZone(self, con, key):
         cur = self._dbh.execute(con,
-                "DELETE FROM domains WHERE id=%s", id)
+                "DELETE FROM domains WHERE id=%s", key)
         if cur.rowcount != 1:
             raise ICore.NotFoundError("Zone not found in database.")
         self._dbh.execute(con,
-                "DELETE FROM records WHERE domain_id=%s", id)
+                "DELETE FROM records WHERE domain_id=%s", key)
         con.commit()
 
     @db.wrap("Deleting a zone")
     def deleteZone(self, con, name, current):
-        id = None
         cur = self._dbh.execute(con,
                 "SELECT id FROM domains WHERE name=%s", name)
         res = cur.fetchall()
         if len(res) != 1:
             raise ICore.NotFoundError("No such zone.")
-        id = res[0][0]
-        self._dropZone(con, id)
+        key = res[0][0]
+        self._dropZone(con, key)
 
     @db.wrap("Deleting a zone")
     def deleteZoneByRef(self, con, proxy, current):
-        id = utils.name(current, proxy.ice_getIdentity())
-        self._dropZone(con, id)
+        key = utils.name(current, proxy.ice_getIdentity())
+        self._dropZone(con, key)
 
 
     _supported_options = set((
@@ -112,7 +112,7 @@ class ServerI(I.Server):
             retval = os.system("pdns_control cycle &>/dev/null")
             if os.WIFEXITED(retval) and os.WEXITSTATUS(retval) == 0:
                 return
-        except:
+        except Exception:
             pass
         raise ICore.RuntimeError('Failed to reload configuration file. '
                       'All changes will be applied on next server restart.')
@@ -221,7 +221,7 @@ class ServerI(I.Server):
         # simple check that it is ipv4:
         try:
             socket.inet_aton(addr)
-        except socket_error:
+        except socket.error:
             raise ICore.ValueError('Could not get IP address', addr)
 
         props = current.adapter.getCommunicator().getProperties()
