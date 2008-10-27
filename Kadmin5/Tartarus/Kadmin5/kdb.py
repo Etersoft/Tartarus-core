@@ -1,7 +1,7 @@
 
 from __future__ import with_statement
 
-import kadmin5, Tartarus, threading, functools, subprocess
+import kadmin5, Tartarus, threading, functools, subprocess, IceSSL
 
 import Tartarus.iface.Kadmin5 as I
 import Tartarus.iface.core as ICore
@@ -38,7 +38,7 @@ class Kdb(object):
                     princ = princ[:ind] + "/admin" + princ[ind:]
             else:
                 princ = "unknown/admin"
-        except:
+        except Exception:
             princ = "Tartarus/admin"
 
         result = kadmin5.kadmin(exc_type = I.KadminException,
@@ -82,11 +82,11 @@ class Kdb(object):
         self.realm = None
 
 
-def wrap(m):
-    @functools.wraps(m)
+def wrap(method):
+    @functools.wraps(method)
     def wrapper(self, *args):
         with self._kdb.lock:
-            return m(self, self._kdb.kadmin(args[-1]), *args)
+            return method(self, self._kdb.kadmin(args[-1]), *args)
     return wrapper
 
 
@@ -103,7 +103,7 @@ class KadminService(ICore.Service):
         try:
             self._kdb.kadmin(None)
             return True
-        except:
+        except Exception:
             return False
 
     def configure(self, params, current):
