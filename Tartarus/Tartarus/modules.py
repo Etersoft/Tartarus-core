@@ -10,25 +10,23 @@ def load_module(modname, adapter):
 
     logging.trace(__name__, "Loading module %s." % modname, trace)
 
+    modname = "Tartarus.%s" % modname
     try:
-        modname = "Tartarus.%s" % modname
         __import__(modname)
         module = sys.modules[modname]
         module.init(adapter)
         return True
-    except (ImportError, KeyError):
-        logging.error("Failed to load module %s, skipping." % modname)
-        return False
     except Exception:
         et, ev, tb = sys.exc_info()
+        if et is ImportError and ev.args[0] == modname:
+            logging.error("Failed to load module %s, skipping." % modname)
+            return False
         if trace <= 16:
             tb = None
         msg = str().join(traceback.format_exception(et, ev, tb))
-        logging.error("Failed to load module %s:\n%s" %
-                (modname, msg))
+        logging.error("Failed to load module %s: %s" %
+                (modname, msg.strip()))
         return False
-
-
 
 
 def _load_config(props, path):
@@ -52,7 +50,7 @@ def _load_config(props, path):
             logging.error("Failed to load configuration file: %s" % f)
 
 
-def load_modules1(adapter):
+def update_module_path():
     #if no value specified yet, append the default
     global path
     if len(path) == 0:
@@ -65,24 +63,5 @@ def load_modules1(adapter):
             continue
         if p not in Tartarus.__path__:
             Tartarus.__path__.append(p)
-
-    props = adapter.getCommunicator().getProperties()
-
-    conf_dir = props.getProperty("Tartarus.configDir")
-    _load_config(props, conf_dir)
-
-    d = props.getPropertiesForPrefix("Tartarus.module.") #note '.' at the end
-    a = props.getPropertyAsInt("Tartarus.modules.LoadAll")
-
-    for m in d.itervalues():
-        # we load only modules which names start with big latin letters
-        if m[0] < 'A' or m[0] > 'Z':
-            if trace > 5:
-                logging.warning("Skipping module %s" % m)
-        else:
-            res = load_module(m, adapter)
-            if not res and a > 0:
-                raise RuntimeError("Modules initialization failed")
-
 
 

@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+import Tartarus
+
+from Tartarus import daemon, modules, logging
+
+class _App(daemon.Daemon):
+
+    def apply_properties(self):
+        def _int(name):
+            return self.props.getPropertyAsInt(name)
+        def _prefixed(name):
+            return self.props.getPropertiesForPrefix(name).itervalues()
+        Tartarus.modules.trace = _int("Tartarus.modules.Trace")
+        Tartarus.slices.trace = _int("Tartarus.import.Trace")
+        Tartarus.modules.path += _prefixed('Tartarus.addModulePath.')
+        Tartarus.slices.path += _prefixed('Tartarus.addSlicePath.')
+        modules.update_module_path()
+
+
+    def load_modules(self):
+        conf_dir = self.props.getProperty("Tartarus.configDir")
+        modules.load_config(self.props, conf_dir)
+
+        d = self.props.getPropertiesForPrefix("Tartarus.module.")
+        a = self.props.getPropertyAsInt("Tartarus.modules.LoadAll")
+
+        for m in d.itervalues():
+            # we load only modules which names start with big latin letters
+            if m[0] < 'A' or m[0] > 'Z':
+                if Tartarus.modules.trace > 5:
+                    logging.warning("Skipping module %s" % m)
+            else:
+                res = modules.load_module(m, self.adapter)
+                if not res and a > 0:
+                    raise RuntimeError("Modules initialization failed")
+
+
+    def __init__(self, comm, _):
+        self.adapter = comm.createObjectAdapter("TartarusAdapter")
+        self.props = comm.getProperties()
+        self.apply_properties()
+        self.load_modules()
+        if self.props.getPropertyAsIntWithDefault('Ice.InitPlugins', 1) == 0:
+            import IceSSL
+            IceSSL.initializePlugins(comm)
+        self.adapter.activate()
+
+    def run(self):
+        self.adapter.waitForDeactivate()
+        return 0
+
+
+def main():
+    import sys
+    sys.exit(daemon.main(_App))
+
+if __name__ == '__main__':
+    main()
+
