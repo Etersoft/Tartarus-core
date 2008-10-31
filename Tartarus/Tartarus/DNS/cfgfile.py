@@ -23,7 +23,7 @@ def parse(filename):
 
         eq = line.find('=')
         if eq <= 0 or len(line) == eq+1:
-            raise ValueError, line
+            raise ValueError(line)
 
         yield line[:eq], line[eq+1:]
         line = ''

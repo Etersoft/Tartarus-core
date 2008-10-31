@@ -85,8 +85,9 @@ def _do_test(comm, cond):
         i = comm.getProperties().getPropertyAsInt(cond)
         return i > 0
     else:
-        raise TypeError,\
-                "Could not determine logging condition form object %s" % obj
+        raise TypeError(
+                "Could not determine logging condition form object %s"
+                % obj)
 
 
 def test(cond, log_to):
@@ -145,7 +146,7 @@ def _logger(obj, cond):
     elif isinstance(obj, Ice.Current):
         return _logger_from_communicator(obj.adapter.getCommunicator(), cond)
     else:
-        raise TypeError, "Could not get logger from object %s" % obj
+        raise TypeError("Could not get logger from object %s" % obj)
 
 
 
