@@ -107,6 +107,8 @@ class KadminService(ICore.Service):
             return False
 
     def configure(self, params, current):
+        if not self._kdb.enable_deploy:
+            raise ICore.RunimeError("Deployment was disabled")
         with self._kdb.lock:
             if 'force' in params:
                 try:

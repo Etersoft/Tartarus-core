@@ -161,6 +161,7 @@ class DNSService(ICore.Service):
     def __init__(self, dbh, config_file, enabe_deploy):
         self._dbh = dbh
         self._cfg_file = config_file
+        self._deploy = enable_deploy
 
 
     def do_deploy(self):
@@ -187,6 +188,8 @@ class DNSService(ICore.Service):
             return False
 
     def configure(self, opts, current):
+        if not self._deploy:
+            raise ICore.RunimeError("Deployment was disabled")
         if 'force' in opts:
             self._dbh.remove()
         self.do_deploy()
