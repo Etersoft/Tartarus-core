@@ -7,6 +7,20 @@ import Tartarus.iface.core as ICore
 
 import utils, cfgfile
 
+def _get_princ_and_addr(current):
+    try:
+        info = IceSSL.getConnectionInfo(current.con)
+    except TypeError:
+        raise ICore.PermissionError("Permission denied",
+                "<non-krb connection>", 'updateHost')
+    # simple check that it is ipv4:
+    try:
+        socket.inet_aton(info.remoteAddr)
+    except socket.error:
+        raise ICore.ValueError('Could not get IP address', info.remoteAddr)
+
+    return info.krb5Princ, info.remoteAddr
+
 
 class ServerI(I.Server):
     def __init__(self, cfg_file_name, dbh, do_reload=True):
@@ -177,14 +191,19 @@ class ServerI(I.Server):
             raise ValueError('Wrong hostname: ' , hostname)
         domainname = hostname[idx+1:]
 
+        self._dbh.execute(con,
+                "DELETE FROM records WHERE"
+                " (type == 'PTR' AND content == %s) OR"
+                " (type == 'A' AND name == %s)",
+                hostname, hostname)
         cur = self._dbh.execute(con, query,
                 hostname, 'A', addr, domainname)
         if cur.rowcount != 1:
             raise ICore.ValueError('Zone update failure', hostname)
 
-        cur2 = self._dbh.execute(con, query,
+        cur = self._dbh.execute(con, query,
                 utils.rev_zone_entry(addr), 'PTR', hostname, rzone)
-        if cur2.rowcount != 1:
+        if cur.rowcount != 1:
             raise ICore.ValueError('Reverse zone update failure', addr)
         con.commit()
 
@@ -192,48 +211,30 @@ class ServerI(I.Server):
     def updateHost(self, con, hostname, addr, current):
         props = current.adapter.getCommunicator().getProperties()
         rzone = props.getProperty('Tartarus.DNS.reverseZones')
+        if len(addr) == 0:
+            _, addr = _get_princ_and_addr(current)
         if len(rzone) == 0:
             rzone = self._rev_zone_name(con, addr)
         self._set_machine(con, hostname, addr, rzone)
 
-
-
     @db.wrap("updating information for a host")
     def updateThisHost(self, con, current):
-        try:
-            info = IceSSL.getConnectionInfo(current.con)
-        except TypeError:
+        princ, addr = _get_princ_and_addr(current)
+        if not princ.startswith('host/'):
             raise ICore.PermissionError("Permission denied",
-                    "<non-krb connection>", 'updateHost')
-        if not info.krb5Princ.startswith('host/'):
-            raise ICore.PermissionError("Permission denied",
-                    info.krb5Princ, 'updateHost')
+                    princ, 'updateHost')
         # krb5princ = 'host/f.q.d.n@REALM.NAME
         # we remove host/ part
-        hostname = info.krb5Princ[5:]
+        hostname = princ[5:]
         # and then @REALM.NAME part, if any
         idx = hostname.rfind('@')
         if idx > 0:
             hostname = hostname[:idx]
-
-        addr = info.remoteAddr
-
-        # simple check that it is ipv4:
-        try:
-            socket.inet_aton(addr)
-        except socket.error:
-            raise ICore.ValueError('Could not get IP address', addr)
 
         props = current.adapter.getCommunicator().getProperties()
         rzone = props.getProperty('Tartarus.DNS.reverseZone')
         if len(rzone) == 0:
             rzone = self._rev_zone_name(con, addr)
         self._set_machine(con, hostname, addr, rzone)
-
-
-
-
-
-
 
 
