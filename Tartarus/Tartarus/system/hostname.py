@@ -1,5 +1,4 @@
-from dns.resolver import query,NXDOMAIN
-from dns.exception import DNSException
+from Tartarus.system import Error
 import socket
 
 def getname():
@@ -22,14 +21,16 @@ def getdomain(fqdn = None):
                 if '.' in fqdn:
                     break
             else:
-                raise 'domain not found for hostanme: "%s"' % hostname
+                raise Error('domain not found for hostanme: "%s"' % hostname)
     parts = fqdn.split('.')[1:]
     if parts == 0:
-        raise 'domain not found for fqdn: "%s"' % fqdn
+        raise Error('domain not found for fqdn: "%s"' % fqdn)
     return '.'.join(parts)
 
 def gethostname():
     return socket.gethostname()
 
 def sethostname(hostname):
-    raise 'set hostname failed for "%s" (method not implemented yet)' % hostname
+    raise Error('set hostname failed for "%s" (method not implemented yet)'
+            % hostname)
+
