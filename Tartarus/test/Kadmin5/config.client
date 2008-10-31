@@ -2,7 +2,7 @@
 # The client reads this property to create the reference to the
 # object in the server.
 #
-Tartarus.Kadmin5.Prx=Kadmin:tcp -p 12345
+Tartarus.Kadmin5.Prx=Kadmin:ssl -h evilistiq -p 12345
 
 
 Tartarus.import.Trace = 255
@@ -40,10 +40,10 @@ Tartarus.import.Trace = 255
 #
 # SSL Configuration
 #
-#Ice.Plugin.IceSSL=IceSSL:createIceSSL
-#IceSSL.Ciphers=KRB5
+Ice.Plugin.IceSSL=IceSSL:createIceSSL
+IceSSL.Ciphers=KRB5
 #IceSSL.ServiceHost=service.f.q.d.n.org
-#IceSSL.ServiceName=host
+IceSSL.ServiceName=host
 #IceSSL.DefaultDir=../../../certs
 #IceSSL.CertAuthFile=cacert.pem
 #IceSSL.CertFile=c_rsa1024_pub.pem

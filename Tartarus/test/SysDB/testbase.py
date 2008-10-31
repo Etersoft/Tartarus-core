@@ -5,7 +5,7 @@ __all__ = ['TestBase', 'TestWithGroup', 'TestWithUser', 'main', 'load']
 
 Tartarus.modules.trace = 0
 Tartarus.slices.trace = 0
-Tartarus.slices.path += ["../slice", "/usr/share/Tartarus/slice"]
+Tartarus.slices.path += ["../../slice"]
 
 class TestBase(unittest.TestCase):
     def setUp(self):

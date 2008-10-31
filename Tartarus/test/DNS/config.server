@@ -8,15 +8,16 @@ TartarusAdapter.Endpoints=ssl -p 12345
 #
 # Tartarus configuration:
 #
-Tartarus.addSlicePath.Test = ../slice
-Tartarus.addSlicePath.core = /usr/share/Tartarus/slice
-Tartarus.addModulePath.Test = ../Tartarus
+Tartarus.addSlicePath.Test = ../../slice
+#Tartarus.addSlicePath.core = /usr/share/Tartarus/slice
+#Tartarus.addModulePath.Test = ../Tartarus
 
 Tartarus.import.Trace = 1
 Tartarus.modules.Trace = 1
 Tartarus.module.DNS = DNS
 Tartarus.DNS.db.engine = sqlite2
-Tartarus.DNS.db.database = /var/lib/powerdns/sqlite.db
+Tartarus.DNS.db.database = ./test.db
+Tartarus.DNS.db.trace = 255
 #Tartarus.Hello.Trace = 255
 
 
@@ -62,7 +63,7 @@ Ice.ACM.Server=10
 #Ice.InitPlugins=0
 Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
-IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
+#IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
 IceSSL.ServiceName=host
 IceSSL.Keytab=/etc/krb5.keytab
 #IceSSL.DefaultDir=../../../certs

@@ -2,8 +2,8 @@
 # The client reads this property to create the reference to the
 # object in the server.
 #
-Tartarus.SysDB.UserManagerPrx=SysDB-Manager/Users:ssl -h evilistiq -p 12345
-Tartarus.SysDB.GroupManagerPrx=SysDB-Manager/Groups:ssl -h evilistiq -p 12345
+Tartarus.SysDB.UserManagerPrx=SysDB-Manager/Users:ssl -p 12345
+Tartarus.SysDB.GroupManagerPrx=SysDB-Manager/Groups:ssl -p 12345
 
 #
 # Warn about connection exceptions
@@ -41,7 +41,7 @@ Tartarus.SysDB.GroupManagerPrx=SysDB-Manager/Groups:ssl -h evilistiq -p 12345
 #
 Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
-#IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
+IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
 #IceSSL.ServiceName=host
 #IceSSL.DefaultDir=../../../certs
 #IceSSL.CertAuthFile=cacert.pem

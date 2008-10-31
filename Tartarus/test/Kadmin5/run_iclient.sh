@@ -1,2 +1,2 @@
 #!/bin/bash -x
-env ICE_CONFIG=./config.client python -i iclient.py
+env ICE_CONFIG=./config.client PYTHONPATH=../../ python -i iclient.py

@@ -3,32 +3,12 @@
 # "Hello". The following line sets the endpoints for this
 # adapter.
 #
-TartarusAdapter.Endpoints=ssl -h evilistiq -p 12345
-
-#
-# Tartarus configuration:
-#
-Tartarus.addSlicePath.Test = ../../slice
-
-Tartarus.import.Trace = 1
-Tartarus.modules.Trace = 1
-Tartarus.module.SysDB = SysDB
-#Tartarus.SysDB.db.deploy = 1
-Tartarus.SysDB.db.engine = sqlite3
-Tartarus.SysDB.db.database = ./test.db
-Tartarus.SysDB.db.trace = 255
-#Tartarus.SysDB.SSLVerifier = simple
-#Tartarus.SysDB.SSLVerifier.AllowGroups = group1:group2:nosuchgroup
+TartarusAdapter.Endpoints=ssl -p 12345
 
 #
 # Warn about connection exceptions
 #
-Ice.Warn.Connections=1
-
-#
-# We want a faster ACM for this demo.
-#
-Ice.ACM.Server=10
+#Ice.Warn.Connections=1
 
 #
 # Network Tracing
@@ -62,13 +42,20 @@ Ice.ACM.Server=10
 #Ice.InitPlugins=0
 Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
-IceSSL.ServiceHost=evilistiq.saratov.etersoft.ru
+#IceSSL.ServiceHost=fqdn
 IceSSL.ServiceName=host
-IceSSL.Keytab=/etc/krb5.keytab
+#IceSSL.Keytab=/etc/krb5.keytab
 #IceSSL.DefaultDir=../../../certs
 #IceSSL.CertAuthFile=cacert.pem
 #IceSSL.CertFile=s_rsa1024_pub.pem
 #IceSSL.KeyFile=s_rsa1024_priv.pem
 
 
+#
+# Tartarus configuration:
+#
+Tartarus.import.Trace = 1
+Tartarus.modules.Trace = 2
+
+Tartarus.configDir = ./config
 
