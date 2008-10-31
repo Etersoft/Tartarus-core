@@ -22,7 +22,7 @@ def name(current, identity=None):
     """
     if identity:
         return identity.name
-    return current.identity.name
+    return current.id.name
 
 def soar2str(soar):
     return ('%(nameserver)s %(hostmaster)s %(serial)d %(refresh)d '
