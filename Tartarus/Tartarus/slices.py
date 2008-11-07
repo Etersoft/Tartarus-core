@@ -29,9 +29,6 @@ def load(name):
     else:
         modname = name
 
-    if "Tartarus.iface." + modname in sys.modules:
-        return
-
     logging.trace(__name__, "Loading %s interface" % modname, trace)
 
     mpath = None
@@ -68,14 +65,13 @@ def tartarus_import(*args):
                 % (name, fromlist),
             trace >= 16)
     if name.startswith("Tartarus.iface."):
-        if name not in sys.modules:
-            try:
-                # Strip a prefix from argument.
-                # len("Tartarus.iface.") == 15
-                mname = name[15:]
-                load(mname)
-            except Exception:
-                pass
+        try:
+            # Strip a prefix from argument.
+            # len("Tartarus.iface.") == 15
+            mname = name[15:]
+            load(mname)
+        except Exception:
+            pass
 
     elif name == "Tartarus.iface" and fromlist is not None:
         # import in form "from Tartarus.iface import ModuleName1, ModuleName2"
