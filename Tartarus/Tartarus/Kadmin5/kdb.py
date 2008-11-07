@@ -4,7 +4,47 @@ from __future__ import with_statement
 import kadmin5, Tartarus, threading, functools, subprocess, IceSSL
 
 import Tartarus.iface.Kadmin5 as I
-import Tartarus.iface.core as ICore
+import Tartarus.iface.core as C
+
+from os import errno
+from kadmin5 import kadm_errors as ke
+
+_AUTH_ERRORS = set([
+        errno.EACCES,
+        errno.EPERM,
+        ke.KADM5_AUTH_ADD,
+        ke.KADM5_AUTH_CHANGEPW,
+        ke.KADM5_AUTH_DELETE,
+        ke.KADM5_AUTH_GET,
+        ke.KADM5_AUTH_INSUFFICIENT,
+        ke.KADM5_AUTH_LIST,
+        ke.KADM5_AUTH_MODIFY,
+        ke.KADM5_AUTH_SETKEY
+    ])
+
+_NOTFOUND_ERRORS = set([
+        ke.KADM5_UNK_POLICY,
+        ke.KADM5_UNK_PRINC
+    ])
+
+_ALREADYEXISTS_ERRORS = [
+        ke.KADM5_DUP
+        ]
+
+
+class KadmExcCallback(object):
+    def __init__(self, princ):
+        self.princ = princ
+
+    def __call__(self, code, where, message):
+        if code in _ALREADYEXISTS_ERRORS:
+            raise C.AlreadyExistsError(message, where)
+        if code in _AUTH_ERRORS:
+            raise C.PermissionError(message, where, self.princ)
+        if code in _NOTFOUND_ERRORS:
+            raise C.NotFoundError(message, where)
+        raise I.KadminError(message, where, code)
+
 
 
 def _run_command(args, msg):
@@ -15,9 +55,9 @@ def _run_command(args, msg):
         res = p.wait()
         s = p.communicate()[1]
         if res != 0:
-            raise ICore.RuntimeError(s)
+            raise C.RuntimeError(s)
     except OSError, e:
-        raise ICore.RuntimeError(msg + ': ' + e.strerror)
+        raise C.RuntimeError(msg + ': ' + e.strerror)
 
 
 class Kdb(object):
@@ -26,23 +66,24 @@ class Kdb(object):
         self.realm = realm
         self.enable_deploy = enable_deploy
 
-    def kadmin(self, ctx):
+    def kadmin(self, current):
         try:
-            princ = IceSSL.getConnectionInfo(ctx.con).krb5Princ
+            princ = IceSSL.getConnectionInfo(current.con).krb5Princ
             # we need to transform princ@REALM to princ/admin@REALM
             # for simplicity, we assume REALM part does not contain
             # '@' character
             ind = princ.rfind('@')
             if ind > 0:
                 if not princ[:ind].endswith("/admin"):
-                    princ = princ[:ind] + "/admin" + princ[ind:]
+                    aprinc = princ[:ind] + "/admin" + princ[ind:]
             else:
-                princ = "unknown/admin"
+                aprinc = "unknown/admin"
         except Exception:
-            princ = "Tartarus/admin"
+            princ = "unknown"
+            aprinc = "Tartarus/admin"
 
-        result = kadmin5.kadmin(exc_type = I.KadminException,
-                                princname=princ, realm=self.realm)
+        result = kadmin5.kadmin(error_cb=KadmExcCallback(princ),
+                                princname=aprinc, realm=self.realm)
         if not self.realm:
             self.realm = result.get_realm()
 
@@ -90,8 +131,7 @@ def wrap(method):
     return wrapper
 
 
-
-class KadminService(ICore.Service):
+class KadminService(C.Service):
     def __init__(self, kdb):
         self._kdb = kdb
 
@@ -108,16 +148,16 @@ class KadminService(ICore.Service):
 
     def configure(self, params, current):
         if not self._kdb.enable_deploy:
-            raise ICore.RunimeError("Deployment was disabled")
+            raise C.RunimeError("Deployment was disabled")
         with self._kdb.lock:
             if 'force' in params:
                 try:
                     self._kdb.remove()
-                except ICore.Error:
+                except C.Error:
                     self._kdb.kill()
             p = params.get('password')
             if not p:
-                raise ICore.ConfigError(
+                raise C.ConfigError(
                         'Mandatory parameter not supplied', 'password')
             self._kdb.reGenerate(p)
 

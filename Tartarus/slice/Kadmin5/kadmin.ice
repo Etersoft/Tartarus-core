@@ -1,13 +1,16 @@
 
+#ifndef TARTARUS_IFACE_KADMIN5_KADMIN_ICE
+#define TARTARUS_IFACE_KADMIN5_KADMIN_ICE
+
+#include <core/exceptions.ice>
+
 module Tartarus { module iface {
 
 module Kadmin5 {
 
-exception KadminException
+exception KadminError extends core::DBError
 {
     int code;
-    string where;
-    string what;
 };
 
 sequence<byte> KeyData;
@@ -35,36 +38,38 @@ struct PrincKeys
 interface Kadmin
 {
     PrincKeys getPrincKeys(string name)
-        throws KadminException;
+        throws core::Error;
 
     PrincKeys createServicePrincipal(string service, string host)
-        throws KadminException;
+        throws core::Error;
 
     string createPrincipal(string name, string password)
-        throws KadminException;
+        throws core::Error;
 
     string changePrincPassword(string  name, string password)
-        throws KadminException;
+        throws core::Error;
 
     void deletePrincipal(string name)
-        throws KadminException;
+        throws core::Error;
 
     PrincSeq listPrincs(string expr)
-        throws KadminException;
+        throws core::Error;
 
     PrincSeq listAllPrincs()
-        throws KadminException;
+        throws core::Error;
 
     bool isPrincEnabled(string name)
-        throws KadminException;
+        throws core::Error;
 
     void setPrincEnabled(string name, bool enable)
-        throws KadminException;
+        throws core::Error;
 
     void reGenerateDatabase(string password)
-        throws KadminException;
+        throws core::Error;
 };
 };
 
 }; };
+
+#endif // TARTARUS_IFACE_KADMIN5_KADMIN_ICE
 
