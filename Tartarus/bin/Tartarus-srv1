@@ -44,9 +44,10 @@ class _App(daemon.Daemon):
         if self.props.getPropertyAsIntWithDefault('Ice.InitPlugins', 1) == 0:
             import IceSSL
             IceSSL.initializePlugins(comm)
-        self.adapter.activate()
 
     def run(self):
+        logging.trace("Tartarus", "Successfully started Tartarus daemon")
+        self.adapter.activate()
         self.adapter.waitForDeactivate()
         return 0
 
