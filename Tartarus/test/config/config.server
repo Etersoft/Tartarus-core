@@ -1,44 +1,6 @@
-#
-# The server creates one single object adapter with the name
-# "Hello". The following line sets the endpoints for this
-# adapter.
-#
 TartarusAdapter.Endpoints=ssl -p 12345
 
-#
-# Warn about connection exceptions
-#
-#Ice.Warn.Connections=1
-
-#
-# Network Tracing
-#
-# 0 = no network tracing
-# 1 = trace connection establishment and closure
-# 2 = like 1, but more detailed
-# 3 = like 2, but also trace data transfer
-#
-#Ice.Trace.Network=3
-
-#
-# Protocol Tracing
-#
-# 0 = no protocol tracing
-# 1 = trace protocol messages
-#
-#Ice.Trace.Protocol=1
-
-#
-# Security Tracing
-#
-# 0 = no security tracing
-# 1 = trace messages
-#
-#IceSSL.Trace.Security=1
-
-#
-# SSL Configuration
-#
+# SSL Config
 #Ice.InitPlugins=0
 Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5
@@ -50,12 +12,9 @@ IceSSL.ServiceName=host
 #IceSSL.CertFile=s_rsa1024_pub.pem
 #IceSSL.KeyFile=s_rsa1024_priv.pem
 
-
-#
-# Tartarus configuration:
-#
-Tartarus.import.Trace = 1
-Tartarus.modules.Trace = 2
+Tartarus.import.Trace = 8
+Tartarus.modules.Trace = 8
 
 Tartarus.configDir = ./config
+Tartarus.addSlicePath.Test = ../slice
 
