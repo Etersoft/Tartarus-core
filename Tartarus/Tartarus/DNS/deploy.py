@@ -158,7 +158,7 @@ def db_pararms(opts, dbh):
 
 
 class DNSService(ICore.Service):
-    def __init__(self, dbh, config_file, enabe_deploy):
+    def __init__(self, dbh, config_file, enable_deploy):
         self._dbh = dbh
         self._cfg_file = config_file
         self._deploy = enable_deploy
