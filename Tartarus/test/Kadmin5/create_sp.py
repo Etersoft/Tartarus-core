@@ -1,7 +1,7 @@
 
 import Ice, kadmin5, sys, Tartarus
 
-import Tartarus.iface.Kadmin5 as I
+import Tartarus.iface.Kerberos as I
 
 c = Ice.initialize()
 a = I.KadminPrx.checkedCast(c.propertyToProxy("Tartarus.Kadmin5.Prx"))

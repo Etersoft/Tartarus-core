@@ -2,7 +2,7 @@
 # The client reads this property to create the reference to the
 # object in the server.
 #
-Tartarus.Kadmin5.Prx=Kadmin:ssl -h evilistiq -p 12345
+Tartarus.Kadmin.Prx=Kadmin:ssl -h evilistiq -p 12345
 
 
 Tartarus.import.Trace = 255

@@ -3,7 +3,7 @@ from __future__ import with_statement
 
 import kadmin5, Tartarus, threading, functools, subprocess, IceSSL
 
-import Tartarus.iface.Kadmin5 as I
+import Tartarus.iface.Kerberos as I
 import Tartarus.iface.core as C
 
 from os import errno

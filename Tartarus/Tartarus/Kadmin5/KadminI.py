@@ -1,6 +1,6 @@
 
 import Tartarus, kadmin5
-import Tartarus.iface.Kadmin5 as I # I stands for Interface
+import Tartarus.iface.Kerberos as I # I stands for Interface
 
 import kdb
 

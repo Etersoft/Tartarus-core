@@ -6,7 +6,7 @@
 
 module Tartarus { module iface {
 
-module Kadmin5 {
+module Kerberos {
 
 exception KadminError extends core::DBError
 {
