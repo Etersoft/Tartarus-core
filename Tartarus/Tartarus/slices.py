@@ -7,6 +7,11 @@ path = []
 trace = 0
 
 _orig_import = __import__
+_loaded_modules = {}
+
+# Trailing dot reqiured:
+_MOD_PREFIX = "Tartarus.iface."
+_MOD_PREFIX_LEN = len(_MOD_PREFIX)
 
 def load(name):
     """Load Tartarus interface.
@@ -29,11 +34,16 @@ def load(name):
     else:
         modname = name
 
+    if modname in _loaded_modules:
+        logging.trace(__name__,
+                "Found %s interface in cache" % modname, trace >= 4)
+        return
+
     logging.trace(__name__, "Loading %s interface" % modname, trace)
 
     mpath = None
-    for dir in path:
-        test = os.path.join(dir, modname)
+    for p in path:
+        test = os.path.join(p, modname)
         if os.path.isdir(test):
             mpath = test
             break
@@ -49,6 +59,7 @@ def load(name):
     files = glob.glob(os.path.join(mpath, "*.ice"))
     logging.trace(__name__, "Loading slices: %s" % files, trace >= 16)
     Ice.loadSlice("--all -I%s"  % mpath, [ "-I%s" % d for d in path ] + files)
+    _loaded_modules[ modname ] = sys.modules[_MOD_PREFIX + modname]
 
 
 def tartarus_import(*args):
@@ -64,21 +75,19 @@ def tartarus_import(*args):
             "Import hook invoked for name '%s', fromlist = %s"
                 % (name, fromlist),
             trace >= 16)
-    if name.startswith("Tartarus.iface."):
+    if name.startswith(_MOD_PREFIX):
         try:
-            # Strip a prefix from argument.
-            # len("Tartarus.iface.") == 15
-            mname = name[15:]
+            mname = name[_MOD_PREFIX_LEN:]
             load(mname)
         except Exception:
             pass
 
-    elif name == "Tartarus.iface" and fromlist is not None:
-        # import in form "from Tartarus.iface import ModuleName1, ModuleName2"
+    elif name == _MOD_PREFIX[:-1] and fromlist is not None:
+        # import in form "from $_MOD_PREFIX import ModuleName1, ModuleName2"
         for mname in fromlist:
             try:
                 load(mname)
-            except:
+            except Exception:
                 pass
 
     return _orig_import(*args)
@@ -91,7 +100,6 @@ def setup_import_hook():
     which enables autoloading slice files from Tartarus.
     """
     import __builtin__
-    _orig_import = __builtin__.__import__
     __builtin__.__import__ = tartarus_import
 
 
