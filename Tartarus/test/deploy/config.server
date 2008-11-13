@@ -1,0 +1,22 @@
+TartarusAdapter.Endpoints=tcp -p 12345
+
+# SSL Config
+#Ice.InitPlugins=0
+Ice.Plugin.IceSSL=IceSSL:createIceSSL
+IceSSL.Ciphers=KRB5
+#IceSSL.ServiceHost=fqdn
+IceSSL.ServiceName=host
+#IceSSL.Keytab=/etc/krb5.keytab
+#IceSSL.DefaultDir=../../../certs
+#IceSSL.CertAuthFile=cacert.pem
+#IceSSL.CertFile=s_rsa1024_pub.pem
+#IceSSL.KeyFile=s_rsa1024_priv.pem
+
+Tartarus.import.Trace = 8
+Tartarus.modules.Trace = 8
+
+Tartarus.configDir = .
+Tartarus.addSlicePath.Test = ../../slice
+
+
+Tartarus.modules.LoadAll = 1
