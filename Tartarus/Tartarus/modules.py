@@ -29,17 +29,17 @@ def load_module(modname, adapter):
         return False
 
 
-def load_config(props, path):
-    if len(path) == 0:
+def load_config(props, cfg_path):
+    if len(cfg_path) == 0:
         logging.warning("Tartarus configuration path not specified")
         return
-    logging.trace(__name__, "Loading configuration from %s" % path, trace)
-    if not os.path.isdir(path):
-        logging.error("Invalid path to configuration files: %s" % path)
+    logging.trace(__name__, "Loading configuration from %s" % cfg_path, trace)
+    if not os.path.isdir(cfg_path):
+        logging.error("Invalid cfg_path to configuration files: %s" % cfg_path)
         return
 
-    for fi in os.listdir(path):
-        f = os.path.join(path, fi)
+    for fi in os.listdir(cfg_path):
+        f = os.path.join(cfg_path, fi)
         if not os.path.isfile(f):
             continue
         if not (f.endswith('.conf') or f.endswith('.config')):
