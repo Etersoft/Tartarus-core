@@ -17,6 +17,6 @@ def init(adapter):
     kdb_common = kdb.Kdb(d)
 
     adapter.add(kdb.KadminService(kdb_common),
-        c.stringToIdentity("Service/Kadmin"))
-    adapter.add(KadminI.KadminI(kdb_common), c.stringToIdentity("Kadmin"))
+        c.stringToIdentity("Service/Kerberos"))
+    adapter.add(KadminI.KadminI(kdb_common), c.stringToIdentity("Kerberos/Kadmin"))
 

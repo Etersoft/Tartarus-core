@@ -26,6 +26,6 @@ def init(adapter):
     dbh.get_connection()
 
     adapter.add(server.ServerI(cfg_file_name, dbh, do_reload),
-            com.stringToIdentity("DNS-Server/Server"))
+            com.stringToIdentity("DNS/Server"))
     adapter.addServantLocator(zone.Locator(dbh), "DNS-Zone")
 
