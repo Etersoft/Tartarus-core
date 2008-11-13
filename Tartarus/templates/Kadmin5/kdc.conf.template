@@ -1,0 +1,9 @@
+[kdcdefaults]
+ acl_file = %(path)s/kadm5.acl
+ dict_file = /usr/share/dict/words
+ admin_keytab = %(path)s/kadm5.keytab
+
+[realms]
+ %(realm)s = {
+  master_key_type = des-cbc-crc
+ }

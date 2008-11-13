@@ -1,0 +1,24 @@
+[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ ticket_lifetime = 24000
+ default_realm = %(realm)s
+ dns_lookup_realm = false
+ dns_lookup_kdc = false
+
+[realms]
+ %(realm)s = {
+  kdc = kerberos.%(domain)s:%(kdc_port)s
+  admin_server = kerberos.%(domain)s:%(kadmin_port)s
+  default_domain = %(domain)s
+ }
+
+[domain_realm]
+ %(domain)s = %(realm)s
+ .%(domain)s = %(realm)s
+
+[kdc]
+ profile = %(path)s/kdc.conf
