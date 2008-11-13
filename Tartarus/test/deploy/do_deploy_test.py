@@ -26,15 +26,12 @@ Options
   name         string M
   password     string M
 
-Forces:
-  dns_{force, skip}
-  sysdb_{force, skip}
-  krb_{force, skip}
+Forces: dns_force, sysdb_force, krb_force
 """
 
 import sys, os, Ice, Tartarus
 
-Tartarus.slices.path=['../../slice']
+Tartarus.slices.path = ['../../slice']
 
 from Tartarus.deploy import *
 
@@ -45,6 +42,9 @@ def init():
 
 def make_options():
     return {
+         'sysdb_force': 'True',
+         'krb_force'  : 'True',
+         'dns_force': 'True',
          'domainname' : 'tartarus.test.local',
          'hostname'   : 'server.tartarus.test.local',
          'ip'         : '192.168.44.2',
@@ -79,13 +79,10 @@ def main():
 
     for name, todo in variants.iteritems():
         print "Deploing", name
-        res = todo(comm, opts)
-        if res != 0:
-            sys.exit(res)
+        todo(comm, opts)
     sys.exit(0)
 
 
 if __name__ == '__main__':
     main()
-
 
