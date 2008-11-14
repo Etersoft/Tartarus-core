@@ -54,7 +54,12 @@ def update_module_path():
     #if no value specified yet, append the default
     global path
     if len(path) == 0:
-        path += [os.path.join(sys.prefix, 'lib', 'Tartarus', 'modules')]
+        p = os.path.join(sys.prefix, 'lib', 'Tartarus', 'modules')
+        if os.path.isdir(p):
+            path.append(p)
+        p = os.path.join(sys.prefix, 'lib64', 'Tartarus', 'modules')
+        if os.path.isdir(p):
+            path.append(p)
 
     #update module search path
     for p in path:
