@@ -59,6 +59,7 @@ def ask_user(prompt, default):
             continue
         return ans
 
+SUPPORTED_MASKS = ['8', '16', '24']
 
 def deploy_options():
     if os.getuid() != 0:
@@ -67,23 +68,26 @@ def deploy_options():
     opts['domainname'] = system.hostname.getdomain()
     if not ask.yesno("Deploy Tartarus server for domain %s?"
                     % opts['domainname']):
-        return
+        sys.exit(0)
     try:
         opts['hostname'] = ".".join([system.hostname.getname(),
                                      opts['domainname']])
-        _, _, addresses = socket.gethostbyname_ex(opts['hostname'])
+        addr2mask = dict(system.hostname.getsystemnets())
     except socket.error, e:
-        print e
         fail("Faild to get address information for this host.\n"
              "The error was: %s\n"
              "Please check your network configuration."
              % e.args[1])
-    # remove localhost
-    addresses = [ i for i in addresses if not i.startswith('127.') ]
-    opts['ip'] = ask.choice("The ip address of server will be", addresses)
-    fail_unless(opts['ip'], "Deployment canceled!")
+
+    ip = ask.choice("The ip address of server will be", addr2mask.keys())
+    fail_unless(ip, "Deployment canceled!")
+    opts['ip'] = ip
+    try:
+        idx = SUPPORTED_MASKS.index(addr2mask[ip])
+    except ValueError:
+        idx = SUPPORTED_MASKS.index('24')
     opts['mask'] = ask.choice("The network mask for server will be",
-                              ['8','16','24'], 2)
+                              SUPPORTED_MASKS, idx)
     fail_unless(opts['mask'], "Deployment canceled!")
     opts['name'] = ask_user("User name for system administartor", "admin")
     opts['password'] = ask.password(

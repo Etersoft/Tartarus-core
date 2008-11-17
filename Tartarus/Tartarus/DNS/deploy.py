@@ -151,6 +151,9 @@ _params_mapping = {
 
 def db_pararms(opts, dbh):
     try:
+        victims = [i for i in opts if i.endswith('database')]
+        for i in victims:
+            del opts[i]
         opts.update(_params_mapping[dbh.modname](opts, dbh))
         return opts
     except KeyError:

@@ -34,3 +34,27 @@ def sethostname(hostname):
     raise Error('set hostname failed for "%s" (method not implemented yet)'
             % hostname)
 
+
+def getsystemnets():
+    try:
+        import dnet
+    except ImportError:
+        addrs = socket.gethostbyname_ex(gethostname())[2]
+    else:
+        res = []
+        def callback(addr, mas):
+            mas.append(addr)
+        dnet.intf().loop(callback, res)
+        addrs = ( x.get('addr') for x in res )
+        addrs = ( repr(x) for x in addrs if x )
+    for a in addrs:
+        if a.startswith('127.'):
+            continue
+        x = a.split('/')
+        if len(x) == 2:
+            yield x[0], x[1]
+        else:
+            yield x[0], None
+
+
+
