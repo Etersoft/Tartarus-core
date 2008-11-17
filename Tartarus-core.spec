@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.2
+Release: alt0.3
 
 %define tname Tartarus
 
@@ -233,7 +233,7 @@ cp -pR init/* %buildroot%_initdir
 mkdir -p %buildroot%tslicedir
 cp -pR slice/* %buildroot%tslicedir
 
-mkdir -p %_localstatedir/%tname/SysDB
+mkdir -p %buildroot%_localstatedir/%tname/SysDB
 
 
 # {{{1 files
@@ -293,6 +293,8 @@ mkdir -p %_localstatedir/%tname/SysDB
 %files -n %tname-SysDB
 %tconfdir/*/SysDB*
 %tmoduledir/SysDB
+%_localstatedir/%tname/SysDB
+
 
 %files -n %tname-core-slice
 %dir %tslicedir
@@ -311,6 +313,9 @@ mkdir -p %_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.3
+- fixed creating directory for SysDB database
+
 * Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.2
 - added packages related to server deployment:
   - python-module-Tartarus-deploy
