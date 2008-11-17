@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.3
+Release: alt0.4
 
 %define tname Tartarus
 
@@ -51,7 +51,7 @@ Requires: %tname-DNS = %version-%release
 Requires: %tname-Kadmin5 = %version-%release
 Requires: %tname-SysDB = %version-%release
 Requires: %tname-DNS-slice = %version-%release
-Requires: %tname-Kadmin5-slice = %version-%release
+Requires: %tname-Kerberos-slice = %version-%release
 Requires: %tname-SysDB-slice = %version-%release
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
@@ -126,7 +126,7 @@ Group: System/Configuration/Other
 Requires: python%__python_version(sqlite)
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-db = %version-%release
-Requires: %tname = %version-release
+Requires: %tname = %version-%release
 
 %description -n %tname-DNS
 %tname DNS Configurator.
@@ -139,7 +139,7 @@ Summary: %tname Kadmin5 Configurator.
 Group: System/Configuration/Other
 Requires: python-module-%tname = %version-%release
 Requires: python-module-kadmin5 >= 0.0.5
-Requires: %tname = %version-release
+Requires: %tname = %version-%release
 
 %description -n %tname-Kadmin5
 %tname Kadmin5 Configurator.
@@ -153,7 +153,7 @@ Group: System/Servers
 Requires: python%__python_version(sqlite3)
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-db = %version-%release
-Requires: %tname = %version-release
+Requires: %tname = %version-%release
 
 %description -n %tname-SysDB
 %tname SysDB service.
@@ -313,6 +313,10 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.4
+- added missed %% in dependencies
+- fixed requirements for deploy-srv
+
 * Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.3
 - fixed creating directory for SysDB database
 
