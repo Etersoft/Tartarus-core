@@ -2,7 +2,7 @@
 # The client reads this property to create the reference to the
 # object in the server.
 #
-Tartarus.DNS.Prx=DNS-Server/Server:ssl -p 12345 -h evilistiq.saratov.etersoft.ru
+Tartarus.DNS.Prx=DNS/Server:ssl -p 12345 -h evilistiq.saratov.etersoft.ru
 
 #
 # Warn about connection exceptions

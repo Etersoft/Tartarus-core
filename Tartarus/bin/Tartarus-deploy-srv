@@ -1,0 +1,160 @@
+#!/usr/bin/env python
+
+"""Simple console deployment utility.
+"""
+
+import Tartarus, Ice
+import os, sys, socket, traceback, re
+from Tartarus import system
+import Tartarus.system.consdialog as ask
+
+class Failure(RuntimeError):
+    pass
+
+def fail(msg):
+    raise Failure(msg)
+
+def fail_unless(expr, msg):
+    if not expr:
+        fail(msg)
+    return expr
+
+def check_deployment(comm, svc, force_name, opts):
+    prx = comm.propertyToProxy("Tartarus.deployPrx.%sService" % svc)
+    s = Tartarus.iface.core.ServicePrx.checkedCast(prx)
+    if not s:
+        raise Tartarus.iface.core.ValueError(
+                'Bad proxy for %s service' % svc)
+    if not s.isConfigured():
+        return
+    prompt = "%s configuration already exists. Force reinitialization?"
+    if not ask.force(prompt % s.getName()):
+        fail('Deployment canceled')
+    opts[force_name] = 'force'
+
+def check_availability(comm, svc):
+    prx = comm.propertyToProxy("Tartarus.deployPrx.%sService" % svc)
+    try:
+        s = Tartarus.iface.core.ServicePrx.checkedCast(prx)
+        if s:
+            return
+    except Exception:
+        pass
+    fail("Service not available: Tartarus.%s. "
+         "Maybe Tartarus-%s is not installed or "
+         "Tartarus service is not started in deployment mode."
+         % (svc, svc))
+
+
+
+GOOD_USER_NAME = "[A-Za-z]\w{2,30}$"
+
+
+def ask_user(prompt, default):
+    good_name = re.compile(GOOD_USER_NAME)
+    while True:
+        ans = ask.ask(prompt, default)
+        if not good_name.match(ans):
+            print 'User name should match ' + repr(GOOD_USER_NAME)
+            continue
+        return ans
+
+
+def deploy_options():
+    if os.getuid() != 0:
+        fail("Only root can do this")
+    opts = {}
+    opts['domainname'] = system.hostname.getdomain()
+    if not ask.yesno("Deploy Tartarus server for domain %s?"
+                    % opts['domainname']):
+        return
+    try:
+        opts['hostname'] = ".".join([system.hostname.getname(),
+                                     opts['domainname']])
+        _, _, addresses = socket.gethostbyname_ex(opts['hostname'])
+    except socket.error, e:
+        print e
+        fail("Faild to get address information for this host.\n"
+             "The error was: %s\n"
+             "Please check your network configuration."
+             % e.args[1])
+    # remove localhost
+    addresses = [ i for i in addresses if not i.startswith('127.') ]
+    opts['ip'] = ask.choice("The ip address of server will be", addresses)
+    fail_unless(opts['ip'], "Deployment canceled!")
+    opts['mask'] = ask.choice("The network mask for server will be",
+                              ['8','16','24'], 2)
+    fail_unless(opts['mask'], "Deployment canceled!")
+    opts['name'] = ask_user("User name for system administartor", "admin")
+    opts['password'] = ask.password(
+            "Please enter password for system administrator.")
+    return opts
+
+
+def init():
+    if len(sys.argv) > 2:
+        fail("Too many arguments.\nUsage: %s [config]" % sys.argv[0])
+    if len(sys.argv) == 2:
+        cfgfile = sys.argv[1]
+    else:
+        cfgfile = '/etc/Tartarus/clients/deploy.conf'
+    p = Ice.createProperties()
+    p.load(cfgfile)
+    d = Ice.InitializationData()
+    d.properties = p
+    sp = p.getPropertiesForPrefix("Tartarus.addSlicePath.")
+    Tartarus.slices.path += sp.values()
+    return Ice.initialize(d)
+
+def _main():
+    comm = init()
+    import Tartarus.deploy
+    services = [
+            ('DNS',      'dns_force',   Tartarus.deploy.deploy_sysdb),
+            ('SysDB',    'sysdb_force', Tartarus.deploy.deploy_dns),
+            ('Kerberos', 'krb_force',   Tartarus.deploy.deploy_kadmin)]
+    for svc, _, _ in services:
+        check_availability(comm, svc)
+    opts = deploy_options()
+    for svc, force, _ in services:
+        check_deployment(comm, svc, force, opts)
+    for svc, _, proc in services:
+        print "Configuring %s..." % svc
+        proc(comm, opts)
+
+def _format_exception():
+    et, ev, _  = sys.exc_info()
+
+    if et is Failure:
+        msg = ev.message
+        code = -1
+    elif et is Ice.InitializationException:
+        code = -1
+        msg = "Failed to initialize runtime: %s" % ev.reason
+    elif et is OSError:
+        code =  ev.errno
+        msg = "OS Error: %s" % ev.strerror
+    else:
+        code =  -1
+        msg = str().join(traceback. format_exception(et, ev, None))
+
+    if not msg.endswith('\n'):
+        msg += '\n'
+
+    return (code, msg)
+
+def main():
+    try:
+        _main()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        msg = "\n\nDeployment canceled!\n"
+        code = -1
+    except Exception:
+        code, msg = _format_exception()
+    sys.stderr.write(msg)
+    sys.exit(code)
+
+if __name__ == '__main__':
+    main()
+

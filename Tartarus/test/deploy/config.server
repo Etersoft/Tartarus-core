@@ -1,0 +1,10 @@
+TartarusAdapter.Endpoints=tcp -p 12345
+
+Tartarus.import.Trace = 8
+Tartarus.modules.Trace = 8
+
+Tartarus.configDir = .
+Tartarus.addSlicePath.Test = ../../slice
+
+
+Tartarus.modules.LoadAll = 1

@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.1
+Release: alt0.2
 
 %define tname Tartarus
 
@@ -20,7 +20,7 @@ BuildRequires: python-devel
 %description
 Core components for %tname.
 
-# Utility
+# {{{1 Utility
 
 %package -n %tname-common
 Summary: Common files for %tname
@@ -33,7 +33,7 @@ Common files required by most of %tname modules.
 %package -n %tname-srv1
 Summary: %tname python service loader
 Group: System/Servers
-Provides: %tname = %version-release
+Provides: %tname = %version-%release
 Requires: %tname-common = %version-%release
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-daemon = %version-%release
@@ -42,7 +42,27 @@ Requires: python-module-%tname-daemon = %version-%release
 %tname python service loader
 
 
-# Internal modules
+%package -n %tname-deploy-srv
+Summary: %tname server deployment utility
+Group: System/Configuration/Other
+Requires: %tname-common = %version-%release
+Requires: %tname = %version-%release
+Requires: %tname-DNS = %version-%release
+Requires: %tname-Kadmin5 = %version-%release
+Requires: %tname-SysDB = %version-%release
+Requires: %tname-DNS-slice = %version-%release
+Requires: %tname-Kadmin5-slice = %version-%release
+Requires: %tname-SysDB-slice = %version-%release
+Requires: python-module-%tname = %version-%release
+Requires: python-module-%tname-deploy = %version-%release
+Requires: python-module-%tname-system = %version-%release
+
+%description -n %tname-deploy-srv
+%tname-deploy-srv is a simple console utility which will help you to create
+inital configuration for Tartarus server.
+
+
+# {{{1 Internal modules
 
 %package -n python-module-%tname
 Summary: Core components of %tname for Python.
@@ -87,11 +107,23 @@ Database support for %tname.
 This module is built for python %__python_version
 
 
-# Configurators
+%package -n python-module-%tname-deploy
+Summary: %tname deployment internals.
+Group: Development/Python
+Requires: python-module-%tname = %version-%release
+
+%description -n python-module-%tname-deploy
+%tname deployment internals.
+
+This module is built for python %__python_version
+
+
+# {{{1 Configurators
 
 %package -n %tname-DNS
 Summary: %tname DNS Configurator.
 Group: System/Configuration/Other
+Requires: python%__python_version(sqlite)
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-db = %version-%release
 Requires: %tname = %version-release
@@ -118,6 +150,7 @@ This module is built for python %__python_version
 %package -n %tname-SysDB
 Summary: %tname SysDB service.
 Group: System/Servers
+Requires: python%__python_version(sqlite3)
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-db = %version-%release
 Requires: %tname = %version-release
@@ -128,7 +161,7 @@ Requires: %tname = %version-release
 This module is built for python %__python_version
 
 
-# Slices
+# {{{1 Slices
 
 %package -n %tname-core-slice
 Summary: Interface defenision files for %tname core objects.
@@ -164,13 +197,19 @@ Requires: %tname-core-slice = %version-%release
 Interface defenision files for %tname core objects.
 
 
+# {{{1 prep
+
 %prep
 %define tconfdir %_sysconfdir/%tname
 %define tmoduledir %_libdir/%tname/modules
 %define tslicedir %_datadir/%tname/slice
+%define ttemplatedir %_datadir/%tname/templates
 %define tpythondir %python_sitelibdir/%tname
 
 %setup  -q -n %tname-%version
+
+
+# {{{1 install
 
 %install
 mkdir -p %buildroot%tmoduledir
@@ -185,6 +224,9 @@ cp -pR bin/* %buildroot%_sbindir
 mkdir -p %buildroot%tconfdir
 cp -pR config/* %buildroot%tconfdir
 
+mkdir -p %buildroot%ttemplatedir
+cp -pR config/* %buildroot%ttemplatedir
+
 mkdir -p %buildroot%_initdir
 cp -pR init/* %buildroot%_initdir
 
@@ -194,18 +236,29 @@ cp -pR slice/* %buildroot%tslicedir
 mkdir -p %_localstatedir/%tname/SysDB
 
 
+# {{{1 files
 
 %files -n %tname-common
 %dir %tconfdir
 %dir %tconfdir/modules
 %dir %tconfdir/deploy
+%dir %tconfdir/clients
 
 %dir %tmoduledir
+%dir %_datadir/%tname
+%dir %tslicedir
+# FIXME: this should have a better place
+%ttemplatedir
+
 
 %files -n %tname-srv1
-%_sbindir/*
+%_sbindir/*1
 %tconfdir/%{tname}*.conf
 %_initdir/*
+
+%files -n %tname-deploy-srv
+%_sbindir/*deploy-srv
+%tconfdir/clients/deploy*
 
 
 %files -n python-module-%tname
@@ -224,6 +277,9 @@ mkdir -p %_localstatedir/%tname/SysDB
 
 %files -n python-module-%tname-db
 %tpythondir/db*
+
+%files -n python-module-%tname-deploy
+%tpythondir/deploy*
 
 %files -n %tname-DNS
 %tconfdir/*/DNS*
@@ -252,7 +308,15 @@ mkdir -p %_localstatedir/%tname/SysDB
 %tslicedir/SysDB
 
 
+# {{{1 changelog
+
 %changelog
+* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.2
+- added packages related to server deployment:
+  - python-module-Tartarus-deploy
+  - Tartarus-deploy-srv
+- fixed some errors in dependencies
+
 * Mon Nov 10 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.1
 - inital build from one common files
 
