@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.4
+Release: alt0.5
 
 %define tname Tartarus
 
@@ -127,6 +127,7 @@ Requires: python%__python_version(sqlite)
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-db = %version-%release
 Requires: %tname = %version-%release
+Requires: pdns-backend-sqlite3
 
 %description -n %tname-DNS
 %tname DNS Configurator.
@@ -140,6 +141,7 @@ Group: System/Configuration/Other
 Requires: python-module-%tname = %version-%release
 Requires: python-module-kadmin5 >= 0.0.5
 Requires: %tname = %version-%release
+Requires: krb5-kdc
 
 %description -n %tname-Kadmin5
 %tname Kadmin5 Configurator.
@@ -313,6 +315,12 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.5
+- new snapshot:
+    deploy-srv: better system network address detection
+    DNS: sqlite3 as default database engine
+- now modules require services they configure
+
 * Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.4
 - added missed %% in dependencies
 - fixed requirements for deploy-srv
