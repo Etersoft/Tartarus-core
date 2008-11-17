@@ -67,7 +67,7 @@ def deploy_options():
     opts['domainname'] = system.hostname.getdomain()
     if not ask.yesno("Deploy Tartarus server for domain %s?"
                     % opts['domainname']):
-        return
+        sys.exit(0)
     try:
         opts['hostname'] = ".".join([system.hostname.getname(),
                                      opts['domainname']])
