@@ -32,7 +32,11 @@ def ask(prompt, default=None):
     r"""Ask user for a string."""
     if default:
         prompt += " (ENTER will select '%s') " % default
-    prompt += ': '
+    if not prompt.endswith(': '):
+        if prompt.endswith(':'):
+            prompt += ' '
+        else:
+            prompt += ': '
     s = raw_input(prompt)
     if len(s) == 0:
         return default
@@ -61,6 +65,10 @@ def password(prompt, prompt1="Password: ",
 def choice(prompt, choices, default_num=0,
                prompt2='Enter your choice'):
     """Ask user to choose one of several items."""
+    if len(choices) == 0:
+        return ask(prompt)
+    if default_num >= len(choices) or default_num < 0:
+        default_num = 0
     print prompt
     for n, v in enumerate(choices):
         print "%s. %s" % (n+1, v)
