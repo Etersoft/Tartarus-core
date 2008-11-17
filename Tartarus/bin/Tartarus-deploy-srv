@@ -4,7 +4,7 @@
 """
 
 import Tartarus, Ice
-import os, sys, socket, traceback
+import os, sys, socket, traceback, re
 from Tartarus import system
 import Tartarus.system.consdialog as ask
 
@@ -47,17 +47,15 @@ def check_availability(comm, svc):
 
 
 
+GOOD_USER_NAME = "[A-Za-z]\w{2,30}$"
+
+
 def ask_user(prompt, default):
-    bad_syms = set(':/\\\n@')
-    bad_syms_repr = ', '.join( (repr(x) for x in bad_syms) )
+    good_name = re.compile(GOOD_USER_NAME)
     while True:
         ans = ask.ask(prompt, default)
-        if not ans[0].isalpha():
-            print 'User name should start with a letter'
-            continue
-        x = set(ans).intersection(bad_syms)
-        if len(x) > 0:
-            print 'User name should not contain ' + bad_syms_repr
+        if not good_name.match(ans):
+            print 'User name should match ' + repr(GOOD_USER_NAME)
             continue
         return ans
 
