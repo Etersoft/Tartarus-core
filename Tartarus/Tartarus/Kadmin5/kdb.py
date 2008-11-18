@@ -76,7 +76,10 @@ def _reset_configuration(opts, template_path, backup=True):
     except KeyError, e:
         raise C.ConfigError("Mandatory option not specified.", e.args[0])
     except IOError, e:
-        raise C.RuntimeError("Configuration reset failed: %s" % e.args[1])
+        msg = "Configuration reset failed: %s" % e.args[1]
+        if e.filename and len(e.filename) > 0:
+            msg += ": " + e.filename
+        raise C.RuntimeError("Configuration reset failed: %s" % msg)
     except Exception, e:
         logging.trace(__name__, "Unknown error: %s" %  e)
         raise C.RuntimeError("Configuration reset failed.")
