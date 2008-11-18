@@ -206,6 +206,6 @@ class KadminService(C.Service):
             props = current.adapter.getCommunicator().getProperties()
             template_path = props.getPropertyWithDefault(
                     "Tartarus.Kadmin5.TemplatePath",
-                    "/usr/share/Tartarus/templates/Kerberos")
+                    "/usr/share/Tartarus/templates/Kadmin5")
             self._kdb.reGenerate(params, template_path)
 
