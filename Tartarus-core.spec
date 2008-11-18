@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.5
+Release: alt0.6
 
 %define tname Tartarus
 
@@ -53,6 +53,7 @@ Requires: %tname-SysDB = %version-%release
 Requires: %tname-DNS-slice = %version-%release
 Requires: %tname-Kerberos-slice = %version-%release
 Requires: %tname-SysDB-slice = %version-%release
+Requires: python-module-dnet
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
@@ -227,7 +228,7 @@ mkdir -p %buildroot%tconfdir
 cp -pR config/* %buildroot%tconfdir
 
 mkdir -p %buildroot%ttemplatedir
-cp -pR config/* %buildroot%ttemplatedir
+cp -pR templates/* %buildroot%ttemplatedir
 
 mkdir -p %buildroot%_initdir
 cp -pR init/* %buildroot%_initdir
@@ -315,6 +316,10 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Tue Nov 18 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.6
+- fixed configuration files installation
+- added dependency on python-module-dnet
+
 * Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.5
 - new snapshot:
     deploy-srv: better system network address detection
