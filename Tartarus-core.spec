@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.7
+Release: alt0.8
 
 %define tname Tartarus
 
@@ -316,6 +316,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Tue Nov 18 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.8
+- new snapshot: improved error diagnostics and handling
+
 * Tue Nov 18 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.7
 - new snapshot: Kadmin5: fixed default path to templates
 
