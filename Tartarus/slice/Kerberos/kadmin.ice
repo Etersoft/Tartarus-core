@@ -43,6 +43,9 @@ interface Kadmin
     PrincKeys createServicePrincipal(string service, string host)
         throws core::Error;
 
+    PrincKeys randomizeServicePrincKeys(string service, string host)
+        throws core::Error;
+
     string createPrincipal(string name, string password)
         throws core::Error;
 

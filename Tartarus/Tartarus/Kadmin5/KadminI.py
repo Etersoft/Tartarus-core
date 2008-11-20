@@ -23,6 +23,15 @@ class KadminI(I.Kadmin):
         return I.PrincKeys(princ, [I.Key(*i) for i in keys])
 
     @kdb.wrap
+    def randomizeServicePrincKeys(self, adm, service, host, current):
+        princ = "%s/%s" % (service, host)
+        adm.randkey_princ(princ)
+        keys = adm.get_princ_keys(princ)
+        return I.PrincKeys("%s@%s" % (princ, adm.get_realm()),
+                           [I.Key(*i) for i in keys])
+
+
+    @kdb.wrap
     def createPrincipal(self, adm, name, password, current):
         return adm.create_princ(name, password)
 
