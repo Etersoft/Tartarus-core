@@ -123,6 +123,8 @@ class UserManagerI(I.UserManager):
 
     @db.wrap("creating user")
     def create(self, con, newuser, current):
+        if len(newuser.shell) == 0:
+            newuser.shell = "/bin/bash" # hardcoded default, yeah...
         self._dbh.execute(con,
                 "INSERT INTO users (name, fullname, shell) "
                 "VALUES (%s, %s, %s)",
