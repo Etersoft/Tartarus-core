@@ -1,13 +1,15 @@
 
-import Tartarus
+import Tartarus, re
 from Tartarus import db, logging
 from Tartarus.iface import SysDB as I
-from Tartarus.iface import core as ICore
+from Tartarus.iface import core as C
 
 _user_query = ("SELECT users.id, groupid, name, fullname, shell "
                "FROM users , group_entries "
                "WHERE users.id == group_entries.userid "
                "AND group_entries.is_primary ")
+
+_GOOD_USER_NAME = "[A-Za-z].*"
 
 
 class UserManagerI(I.UserManager):
@@ -15,6 +17,7 @@ class UserManagerI(I.UserManager):
         self._dbh = dbh
         self._uo = user_offset
         self._go = group_offset
+        self._good_name = re.compile(_GOOD_USER_NAME)
 
 
     def _db2users(self, mas):
@@ -85,7 +88,7 @@ class UserManagerI(I.UserManager):
                 "SELECT count(name) FROM users")
         res = cur.fetchall()
         if len(res) != 1:
-            raise ICore.DBError(
+            raise C.DBError(
                 "Database failure while counting users.",
                 "No count fetched!")
         return long(res[0][0])
@@ -99,6 +102,8 @@ class UserManagerI(I.UserManager):
 
     @db.wrap("changing user record")
     def modify(self, con, user, current):
+        if not self._good_name.match(user.name):
+            raise C.ValueError("Invalid user name: %s" % user.name)
         uid = user.uid - self._uo
         gid = user.gid - self._go
         cur = self._dbh.execute(con,
@@ -123,6 +128,8 @@ class UserManagerI(I.UserManager):
 
     @db.wrap("creating user")
     def create(self, con, newuser, current):
+        if not self._good_name.match(newuser.name):
+            raise C.ValueError("Invalid user name: %s" % newuser.name)
         if len(newuser.shell) == 0:
             newuser.shell = "/bin/bash" # hardcoded default, yeah...
         self._dbh.execute(con,
@@ -133,7 +140,7 @@ class UserManagerI(I.UserManager):
                 "SELECT id FROM users WHERE name = %s", newuser.name)
         res = cur.fetchall()
         if len(res) != 1:
-            raise ICore.DBError("Failed to add user",
+            raise C.DBError("Failed to add user",
                     "User not found after insertion")
         uid = res[0][0]
         cur = self._dbh.execute(con,
