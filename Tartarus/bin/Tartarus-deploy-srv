@@ -6,6 +6,7 @@
 import Tartarus, Ice
 import os, sys, socket, traceback, re
 from Tartarus import system
+import Tartarus.system.resolv as resolv
 import Tartarus.system.consdialog as ask
 
 class Failure(RuntimeError):
@@ -49,7 +50,6 @@ def check_availability(comm, svc):
 
 GOOD_USER_NAME = "[A-Za-z]\w{2,30}$"
 
-
 def ask_user(prompt, default):
     good_name = re.compile(GOOD_USER_NAME)
     while True:
@@ -58,6 +58,46 @@ def ask_user(prompt, default):
             print 'User name should match ' + repr(GOOD_USER_NAME)
             continue
         return ans
+
+def _is_valid_ip(s):
+    l = s.split('.')
+    if len(l) != 4:
+        return False
+    for x in l:
+        try:
+            i = int(x)
+            if i < 0 or i > 255:
+                return False
+        except ValueError:
+            return False
+    return True
+
+
+def configure_recursor(opts):
+    if not ask.yesno("Configure DNS server to use upper-level DNS?"):
+        return
+    ns = resolv.get_nameservers()
+    print ns
+    ns = [x for x in ns
+          if not x.startswith('127.') and not x.startswith('localhost')]
+    while True:
+        r = ask.choice("Address of upper-level DNS server:", ns)
+        if not isinstance(r, basestring):
+            continue
+        if not _is_valid_ip(r):
+            print "This is not valid IPv4 address."
+            continue
+        try:
+            if socket.inet_aton(r) == socket.inet_aton(opts['ip']):
+                print "This address should not coinside with your server"
+                continue
+        except socket.error:
+            continue
+        opts['recursor'] = r
+        opts['allow_recursion'] = '127.0.0.1/8 %s/%s' % (
+                opts['ip'], opts['mask'])
+        break
+
 
 SUPPORTED_MASKS = ['8', '16', '24']
 
@@ -89,6 +129,9 @@ def deploy_options():
     opts['mask'] = ask.choice("The network mask for server will be",
                               SUPPORTED_MASKS, idx)
     fail_unless(opts['mask'], "Deployment canceled!")
+    configure_recursor(opts)
+    if ask.yesno("Add local DNS server to resolv.conf?"):
+        opts['use_self'] = 'true'
     opts['name'] = ask_user("User name for system administartor", "admin")
     opts['password'] = ask.password(
             "Please enter password for system administrator.")
@@ -125,6 +168,8 @@ def _main():
     for svc, _, proc in services:
         print "Configuring %s..." % svc
         proc(comm, opts)
+    if 'use_self' in opts:
+        resolv.set_nameservers('127.0.0.1')
 
 def _format_exception():
     et, ev, _  = sys.exc_info()
