@@ -95,8 +95,6 @@ def _ptr_record(ip, fqdn, zone):
 
     return DNS.Record(name + zone, DNS.RecordType.PTR, fqdn, -1, -1)
 
-# 2}}}
-
 
 def deploy_dns(comm, opts):
     """Put inital data to DNS database and configure DNS server.
@@ -149,9 +147,11 @@ def deploy_dns(comm, opts):
     z.addRecords([ R(rzone, T.NS, ns, -1, -1),
                    _ptr_record(ip, fqdn, rzone) ])
 
-#    subnet = make_subnet(ip, mask)
-#    srv_opts = []
-#    if 'DNS.Recursor' in opts:
-#        srv_opts.append(DNS.ServerOption('recursor', opts['DNS.Recursor']))
-#        srv_opts.append(DNS.ServerOption('allow-recursion', subnet))
-#    srv.setOptions(srv_opts)
+    srv_opts = []
+    if 'recursor' in opts:
+        srv_opts.append(DNS.ServerOption('recursor', opts['recursor']))
+    if 'allow_recursion' in opts:
+        srv_opts.append(DNS.ServerOption('allow-recursion',
+                                         opts['allow_recursion']))
+    srv.setOptions(srv_opts)
+
