@@ -131,7 +131,7 @@ def deploy_options():
                               SUPPORTED_MASKS, idx)
     fail_unless(opts['mask'], "Deployment canceled!")
     configure_recursor(opts)
-    if ask.yesno("Add local DNS server to resolv.conf?"):
+    if ask.yesno("Use local DNS server on this host?"):
         opts['use_self'] = 'true'
     opts['name'] = ask_user("User name for system administartor", "admin")
     opts['password'] = ask.password(
