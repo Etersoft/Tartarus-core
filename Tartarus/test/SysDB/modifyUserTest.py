@@ -4,7 +4,8 @@ from testbase import *
 
 class modifyUserTest(TestWithUser):
     def runTest(self):
-        ur = self.I.UserRecord(-1, self.gid, self.name, self.name)
+        ur = self.I.UserRecord(-1, self.gid, self.name,
+                               self.name, '/bin/bash')
         ur.uid = self.um.create(ur)
 
         ur2 = self.um.getByName(self.name)

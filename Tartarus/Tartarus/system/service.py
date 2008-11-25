@@ -31,6 +31,9 @@ def service_switch(service, state):
 def service_start(service):
     service_command(service, 'start')
 
+def service_restart(service):
+    service_command(service, 'restart')
+
 def service_stop(service):
     service_command(service, 'start')
 

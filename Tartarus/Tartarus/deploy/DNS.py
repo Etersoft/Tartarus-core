@@ -1,137 +1,13 @@
 
-from __future__ import with_statement
-import kadmin5, os
-
 import Tartarus
-from Tartarus.system.config import gen_config_from_file
-from Tartarus.iface import SysDB, DNS, Kerberos
+from common import _checked_configure
+from Tartarus.iface import DNS
 from Tartarus.iface import core as C
-
-__all__ = ['deploy_sysdb', 'deploy_kadmin', 'deploy_dns']
-
-# {{{1 Common code
-
-def _checked_configure(svc_proxy, force, params = None):
-    if not params:
-        params = {}
-    if not svc_proxy:
-        raise C.RuntimeError('Proxy not found')
-
-    svc = C.ServicePrx.checkedCast(svc_proxy)
-    if not svc:
-        raise C.RuntimeError('Wrong service proxy')
-
-    if svc.isConfigured() and not force:
-        raise C.RuntimeError('Database already exists')
-    params['force'] = force
-    svc.configure(params)
-
-
-# {{{1 SysDB
-
-def deploy_sysdb(comm, opts):
-    """Put inital data to SysDB.
-
-    @param comm
-      a communicator. The following proxies should be available:
-        - Tartarus.deployPrx.UserManager of type Tartarus::SysDB::UserManager
-        - Tartarus.deployPrx.GroupManager of type Tartarus::SysDB::GroupManager
-        - Tartarys.deployPrx.SysDBService of type Tartarus::core::Service
-    @param opts
-      a dictionary { option name : option value }. The following options are used
-          *Name* *Type* *Madatory* *Comment*
-          name   String M          n/a
-    """
-    prx = comm.propertyToProxy('Tartarus.deployPrx.SysDBService')
-    _checked_configure(prx, opts.get('sysdb_force'))
-
-    prx = comm.propertyToProxy('Tartarus.deployPrx.UserManager')
-    um = SysDB.UserManagerPrx.checkedCast(prx)
-    prx = comm.propertyToProxy('Tartarus.deployPrx.GroupManager')
-    gm = SysDB.GroupManagerPrx.checkedCast(prx)
-
-    admins_gid = gm.create(SysDB.GroupRecord(-1, "admins",
-                                             "System administartors"))
-    users_gid = gm.create(SysDB.GroupRecord(-1, "users", "Users"))
-
-    uid = um.create(SysDB.UserRecord(-1, admins_gid, opts['name'],
-                                     "System administrator"))
-    gm.addUsers(users_gid, [uid])
-
-
-
-# {{{1 Kadmin5
-
-def _get_stash_password(opts):
-    """Return a string to be used as password for Kerberos database.
-
-    If a password is supplyed by user, return it. If not, try to read it from
-    /dev/urandom or return hardcoded default.
-    """
-    if 'stash_password' in opts:
-        return opts['stash_password']
-    try:
-        with open('/dev/urandom') as f:
-            s = f.read(128)
-            return s.replace('\0','Q')
-    except Exception:
-        return ';lxdfz,cmxfz45'
-
-
-def deploy_kadmin(comm, opts):
-    """Put inital data to Kerberos database.
-
-    @param comm
-      a communicator. The following proxies should be available:
-        - Tartarus.deployPrx.Kadmin of type Tartarus::Kerberos::Kadmin
-        - Tartarus.deployPrx.KerberosService of type Tartarus::core::Service
-    @param opts
-      a dictionary {option name: option value}. The following options are used:
-          *Name*       *Type* *Madatory* *Comment*
-          name         string M          n/a
-          password     string M          n/a
-          hostname     string M          n/a
-          domainname   string M          n/a
-          kdc_port     int    O          n/a
-          kadmin_port  int    O          n/a
-          kdc_cfg_path string O          n/a
-    """
-    k5opts = {
-        'realm'       : opts['domainname'].upper(),
-        'domain'      : opts['domainname'],
-        'kdc_port'    : str(opts.get('kdc_port', 88)),
-        'kadmin_port' : str(opts.get('kadmin_port', 749)),
-        'password'    : _get_stash_password(opts) }
-
-    prx = comm.propertyToProxy('Tartarus.deployPrx.KerberosService')
-    _checked_configure(prx, opts.get('krb_force'), k5opts)
-
-    prx = comm.propertyToProxy('Tartarus.deployPrx.Kadmin')
-    ka = Kerberos.KadminPrx.checkedCast(prx)
-
-    ka.createPrincipal(opts['name'], opts['password'])
-    spr = ka.createServicePrincipal('host', opts['hostname'])
-
-    keytab = kadmin5.keytab()
-
-    # remove all other keys of this principal (from previous deployments?)
-    try:
-        keytab.remove_princ(spr.name)
-    except RuntimeError, e:
-        if e.args[0] != os.errno.ENOENT:
-            raise
-
-    for k in spr.keys:
-        keytab.add_entry(spr.name, k.kvno, k.enctype, k.data)
-
-
-# {{{1 DNS
 
 SOA = DNS.SOARecord
 R = DNS.Record
 T = DNS.RecordType
 
-# {{{2 records for localhost and such stuff
 
 _LOCAL_DATA = [
         ('localhost',
@@ -165,8 +41,6 @@ _LOCAL_DATA = [
                 R('127.in-addr.arpa', T.NS, 'localhost', -1, -1)
             ])
     ]
-
-# {{{2 DNS helper functions
 
 def _process_zones(server, zonedata):
     for name, soar, records in zonedata:
@@ -221,8 +95,6 @@ def _ptr_record(ip, fqdn, zone):
 
     return DNS.Record(name + zone, DNS.RecordType.PTR, fqdn, -1, -1)
 
-# 2}}}
-
 
 def deploy_dns(comm, opts):
     """Put inital data to DNS database and configure DNS server.
@@ -234,7 +106,7 @@ def deploy_dns(comm, opts):
     @param opts
       a dictionary {name, value}. The following options are used:
           *Name*     *Type* *Madatory* *Comment*
-          domainname String M          n/a
+          domain     String M          n/a
           ip         String M          n/a
           hostname   String M          n/a
           mask       Int    M          n/a
@@ -247,7 +119,7 @@ def deploy_dns(comm, opts):
 
     _process_zones(srv, _LOCAL_DATA)
 
-    domain = opts['domainname']
+    domain = opts['domain']
     ns = 'ns.' + domain
     krb = 'kerberos.' + domain
     ip = opts['ip']
@@ -275,10 +147,11 @@ def deploy_dns(comm, opts):
     z.addRecords([ R(rzone, T.NS, ns, -1, -1),
                    _ptr_record(ip, fqdn, rzone) ])
 
-#    subnet = make_subnet(ip, mask)
-#    srv_opts = []
-#    if 'DNS.Recursor' in opts:
-#        srv_opts.append(DNS.ServerOption('recursor', opts['DNS.Recursor']))
-#        srv_opts.append(DNS.ServerOption('allow-recursion', subnet))
-#    srv.setOptions(srv_opts)
+    srv_opts = []
+    if 'recursor' in opts:
+        srv_opts.append(DNS.ServerOption('recursor', opts['recursor']))
+    if 'allow_recursion' in opts:
+        srv_opts.append(DNS.ServerOption('allow-recursion',
+                                         opts['allow_recursion']))
+    srv.setOptions(srv_opts)
 

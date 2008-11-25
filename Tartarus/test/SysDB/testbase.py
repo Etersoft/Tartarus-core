@@ -30,7 +30,7 @@ class TestBase(unittest.TestCase):
 class TestWithGroup(TestBase):
     def setUp(self):
         TestBase.setUp(self)
-        self.gname = ('Test group that does not exist, for '
+        self.gname = ('Test_group_that_does_not_exist__for_'
                         + self.__class__.__name__)
 
     def tearDown(self):
@@ -47,7 +47,7 @@ class TestWithUser(TestBase):
         TestBase.setUp(self)
         g = self.gm.get(1,-1)
         self.gid = g[0].gid
-        self.name = ('Test user that does not exist, for '
+        self.name = ('Test_user_that_does_not_exist__for_'
                         + self.__class__.__name__)
 
     def tearDown(self):

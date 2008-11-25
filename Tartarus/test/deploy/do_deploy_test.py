@@ -16,7 +16,7 @@ Needed Proxies:
 
 Options
   *Name*       *Type* *Madatory*
-  domainname   string M
+  domain       string M
   hostname     string M
   ip           string M
   kadmin_port  int    O
@@ -44,8 +44,8 @@ def make_options():
     return {
          'sysdb_force': 'True',
          'krb_force'  : 'True',
-         'dns_force': 'True',
-         'domainname' : 'tartarus.test.local',
+         'dns_force'  : 'True',
+         'domain'     : 'tartarus.test.local',
          'hostname'   : 'server.tartarus.test.local',
          'ip'         : '192.168.44.2',
          'mask'       : 24,

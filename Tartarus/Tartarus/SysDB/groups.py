@@ -1,15 +1,17 @@
 
-import Tartarus
+import Tartarus, re
 from Tartarus import db, logging
 from Tartarus.iface import SysDB as I
-from Tartarus.iface import core as ICore
+from Tartarus.iface import core as C
 
+_GOOD_GROOP_NAME = "[A-Za-z].*"
 
 class GroupManagerI(I.GroupManager):
     def __init__(self, dbh, user_offset, group_offset):
         self._dbh = dbh
         self._uo = user_offset
         self._go = group_offset
+        self._good_name = re.compile(_GOOD_GROOP_NAME)
 
 
     def _db2users(self, mas):
@@ -139,7 +141,7 @@ class GroupManagerI(I.GroupManager):
                 "SELECT count(name) FROM groups")
         res = cur.fetchall()
         if len(res) != 1:
-            raise ICore.DBError(
+            raise C.DBError(
                 "Database failure while counting groups.",
                 "No count fetched!")
         return long(res[0][0])
@@ -189,7 +191,7 @@ class GroupManagerI(I.GroupManager):
                     "AND userid IN " + ps, gid - self._go, *ids)
             res = cur.fetchall()
             if len(res) > 0:
-                raise ICore.DBError(
+                raise C.DBError(
                         "Cannot delete users from primary group",
                         str(res))
             if current.ctx.get("PartialStrategy") != "Partial":
@@ -200,6 +202,8 @@ class GroupManagerI(I.GroupManager):
 
     @db.wrap("modifying group")
     def modify(self, con, group, current):
+        if not self._good_name.match(group.name):
+            raise C.ValueError("Invalid group name: %s" % group.name)
         cur = self._dbh.execute(con,
                 "UPDATE groups SET "
                 "name=%s, description=%s "
@@ -212,6 +216,8 @@ class GroupManagerI(I.GroupManager):
 
     @db.wrap("creating group")
     def create(self, con, newgroup, current):
+        if not self._good_name.match(newgroup.name):
+            raise C.ValueError("Invalid group name: %s" % newgroup.name)
         self._dbh.execute(con,
                 "INSERT INTO groups (name, description) "
                 "VALUES (%s, %s)",
@@ -221,7 +227,7 @@ class GroupManagerI(I.GroupManager):
                 newgroup.name)
         res = cur.fetchall()
         if len(res) != 1:
-            raise ICore.DBError("Failed to create group",
+            raise C.DBError("Failed to create group",
                     "Group not found after insertion")
         con.commit()
         return res[0][0] + self._go
@@ -235,7 +241,7 @@ class GroupManagerI(I.GroupManager):
                     n)
         res = cur.fetchall()
         if len(res) > 0:
-            raise ICore.DBError(
+            raise C.DBError(
                     "Cannot delete group which is primary for users",
                     str(res))
         self._dbh.execute(con,
@@ -274,7 +280,7 @@ class GroupManagerI(I.GroupManager):
                     uid - self._uo)
             res = cur.fetchall()
             if len(res) > 0 and res[0][0] in ids:
-                raise ICore.DBError(
+                raise C.DBError(
                         "Cannot delete users from primary group",
                         '@' + str(res[0]))
             if current.ctx.get("PartialStrategy") != "Partial":

@@ -6,7 +6,9 @@
 import Tartarus, Ice
 import os, sys, socket, traceback, re
 from Tartarus import system
+import Tartarus.system.resolv as resolv
 import Tartarus.system.consdialog as ask
+import Tartarus.deploy.client
 
 class Failure(RuntimeError):
     pass
@@ -49,7 +51,6 @@ def check_availability(comm, svc):
 
 GOOD_USER_NAME = "[A-Za-z]\w{2,30}$"
 
-
 def ask_user(prompt, default):
     good_name = re.compile(GOOD_USER_NAME)
     while True:
@@ -59,19 +60,59 @@ def ask_user(prompt, default):
             continue
         return ans
 
+def _is_valid_ip(s):
+    l = s.split('.')
+    if len(l) != 4:
+        return False
+    for x in l:
+        try:
+            i = int(x)
+            if i < 0 or i > 255:
+                return False
+        except ValueError:
+            return False
+    return True
+
+
+def configure_recursor(opts):
+    if not ask.yesno("Configure DNS server to use upper-level DNS?"):
+        return
+    ns = resolv.get_nameservers()
+    print ns
+    ns = [x for x in ns
+          if not x.startswith('127.') and not x.startswith('localhost')]
+    while True:
+        r = ask.choice("Address of upper-level DNS server:", ns)
+        if not isinstance(r, basestring):
+            continue
+        if not _is_valid_ip(r):
+            print "This is not valid IPv4 address."
+            continue
+        try:
+            if socket.inet_aton(r) == socket.inet_aton(opts['ip']):
+                print "This address should not coinside with your server"
+                continue
+        except socket.error:
+            continue
+        opts['recursor'] = r
+        opts['allow_recursion'] = '127.0.0.1/8 %s/%s' % (
+                opts['ip'], opts['mask'])
+        break
+
+
 SUPPORTED_MASKS = ['8', '16', '24']
 
 def deploy_options():
     if os.getuid() != 0:
         fail("Only root can do this")
     opts = {}
-    opts['domainname'] = system.hostname.getdomain()
+    opts['domain'] = system.hostname.getdomain()
     if not ask.yesno("Deploy Tartarus server for domain %s?"
-                    % opts['domainname']):
+                    % opts['domain']):
         sys.exit(0)
     try:
         opts['hostname'] = ".".join([system.hostname.getname(),
-                                     opts['domainname']])
+                                     opts['domain']])
         addr2mask = dict(system.hostname.getsystemnets())
     except socket.error, e:
         fail("Faild to get address information for this host.\n"
@@ -89,6 +130,9 @@ def deploy_options():
     opts['mask'] = ask.choice("The network mask for server will be",
                               SUPPORTED_MASKS, idx)
     fail_unless(opts['mask'], "Deployment canceled!")
+    configure_recursor(opts)
+    if ask.yesno("Use local DNS server on this host?"):
+        opts['use_self'] = 'true'
     opts['name'] = ask_user("User name for system administartor", "admin")
     opts['password'] = ask.password(
             "Please enter password for system administrator.")
@@ -112,7 +156,6 @@ def init():
 
 def _main():
     comm = init()
-    import Tartarus.deploy
     services = [
             ('DNS',      'dns_force',   Tartarus.deploy.deploy_sysdb),
             ('SysDB',    'sysdb_force', Tartarus.deploy.deploy_dns),
@@ -125,6 +168,10 @@ def _main():
     for svc, _, proc in services:
         print "Configuring %s..." % svc
         proc(comm, opts)
+    if 'use_self' in opts:
+        resolv.set_nameservers('127.0.0.1')
+    Tartarus.deploy.client.deploy_client_for_server(opts)
+
 
 def _format_exception():
     et, ev, _  = sys.exc_info()

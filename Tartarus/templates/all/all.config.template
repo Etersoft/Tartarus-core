@@ -1,0 +1,8 @@
+Tartarus.SysDB.UserManagerPrx = SysDB-Manager/Users: ssl -h %(domain)s -p 12345
+Tartarus.SysDB.GroupManagerPrx = SysDB-Manager/Groups: ssl -h %(domain)s -p 12345
+Tartarus.Kerberos.KadminPrx = Kerberos/Kadmin: ssl -h %(domain)s -p 12345
+Tartarus.DNS.ServerPrx = DNS/Server: ssl -h %(domain)s -p 12345
+
+Ice.Plugin.IceSSL = IceSSL:createIceSSL
+IceSSL.Ciphers = KRB5
+IceSSL.ServiceName = host
