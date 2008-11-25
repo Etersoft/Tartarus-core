@@ -1,8 +1,9 @@
 from __future__ import with_statement
 
-import Tartarus, kadmin5, os
+import Tartarus, os
 from common import _checked_configure
 from Tartarus.iface import Kerberos
+from Tartarus.deploy import save_keys
 
 def _get_stash_password(opts):
     """Return a string to be used as password for Kerberos database.
@@ -52,17 +53,6 @@ def deploy_kadmin(comm, opts):
     ka = Kerberos.KadminPrx.checkedCast(prx)
 
     ka.createPrincipal(opts['name'], opts['password'])
-    spr = ka.createServicePrincipal('host', opts['hostname'])
-
-    keytab = kadmin5.keytab()
-
-    # remove all other keys of this principal (from previous deployments?)
-    try:
-        keytab.remove_princ(spr.name)
-    except RuntimeError, e:
-        if e.args[0] != os.errno.ENOENT:
-            raise
-
-    for k in spr.keys:
-        keytab.add_entry(spr.name, k.kvno, k.enctype, k.data)
+    save_keys(ka.createServicePrincipal('host', opts['hostname']))
+    save_keys(ka.createServicePrincipal('host', opts['domainname']))
 
