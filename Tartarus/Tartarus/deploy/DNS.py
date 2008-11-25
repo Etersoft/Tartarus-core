@@ -106,7 +106,7 @@ def deploy_dns(comm, opts):
     @param opts
       a dictionary {name, value}. The following options are used:
           *Name*     *Type* *Madatory* *Comment*
-          domainname String M          n/a
+          domain     String M          n/a
           ip         String M          n/a
           hostname   String M          n/a
           mask       Int    M          n/a
@@ -119,7 +119,7 @@ def deploy_dns(comm, opts):
 
     _process_zones(srv, _LOCAL_DATA)
 
-    domain = opts['domainname']
+    domain = opts['domain']
     ns = 'ns.' + domain
     krb = 'kerberos.' + domain
     ip = opts['ip']

@@ -105,13 +105,13 @@ def deploy_options():
     if os.getuid() != 0:
         fail("Only root can do this")
     opts = {}
-    opts['domainname'] = system.hostname.getdomain()
+    opts['domain'] = system.hostname.getdomain()
     if not ask.yesno("Deploy Tartarus server for domain %s?"
-                    % opts['domainname']):
+                    % opts['domain']):
         sys.exit(0)
     try:
         opts['hostname'] = ".".join([system.hostname.getname(),
-                                     opts['domainname']])
+                                     opts['domain']])
         addr2mask = dict(system.hostname.getsystemnets())
     except socket.error, e:
         fail("Faild to get address information for this host.\n"

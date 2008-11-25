@@ -34,14 +34,14 @@ def deploy_kadmin(comm, opts):
           name         string M          n/a
           password     string M          n/a
           hostname     string M          n/a
-          domainname   string M          n/a
+          domain       string M          n/a
           kdc_port     int    O          n/a
           kadmin_port  int    O          n/a
           kdc_cfg_path string O          n/a
     """
     k5opts = {
-        'realm'       : opts['domainname'].upper(),
-        'domain'      : opts['domainname'],
+        'realm'       : opts['domain'].upper(),
+        'domain'      : opts['domain'],
         'kdc_port'    : str(opts.get('kdc_port', 88)),
         'kadmin_port' : str(opts.get('kadmin_port', 749)),
         'password'    : _get_stash_password(opts) }
@@ -54,5 +54,5 @@ def deploy_kadmin(comm, opts):
 
     ka.createPrincipal(opts['name'], opts['password'])
     save_keys(ka.createServicePrincipal('host', opts['hostname']))
-    save_keys(ka.createServicePrincipal('host', opts['domainname']))
+    save_keys(ka.createServicePrincipal('host', opts['domain']))
 
