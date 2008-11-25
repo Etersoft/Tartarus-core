@@ -8,6 +8,7 @@ import os, sys, socket, traceback, re
 from Tartarus import system
 import Tartarus.system.resolv as resolv
 import Tartarus.system.consdialog as ask
+import Tartarus.deploy.client
 
 class Failure(RuntimeError):
     pass
@@ -155,7 +156,6 @@ def init():
 
 def _main():
     comm = init()
-    import Tartarus.deploy
     services = [
             ('DNS',      'dns_force',   Tartarus.deploy.deploy_sysdb),
             ('SysDB',    'sysdb_force', Tartarus.deploy.deploy_dns),
@@ -170,6 +170,8 @@ def _main():
         proc(comm, opts)
     if 'use_self' in opts:
         resolv.set_nameservers('127.0.0.1')
+    Tartarus.deploy.client.deploy_client_for_server(opts)
+
 
 def _format_exception():
     et, ev, _  = sys.exc_info()
