@@ -1,0 +1,19 @@
+#!/usr/bin/python
+
+import Tartarus.system
+from Tartarus.system import consdialog, Error
+from Tartarus.deploy import client
+
+def leave(opts):
+    client.leave_client(opts)
+
+
+def main():
+    domain = Tartarus.system.hostname.getdomain()
+
+    if (consdialog.yesno('Do you realy want to leave from Tartarus Domain: %s?' % domain)):
+        leave({ 'domain' : domain})
+
+if __name__ == '__main__':
+    main()
+

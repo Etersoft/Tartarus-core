@@ -21,3 +21,8 @@ def deploy_client_for_server(opts):
     for s in ['krb5kdc', 'powerdns', 'Tartarus']:
         service.service_restart(s)
     deploy_client_finish(opts)
+
+def leave_client(opts_):
+    service.service_off('tnscd')
+    service.service_stop('tnscd')
+    pam.set_local_auth()

@@ -8,6 +8,7 @@ import os, sys, socket, traceback, re
 from Tartarus import system
 import Tartarus.system.resolv as resolv
 import Tartarus.system.consdialog as ask
+from Tartarus.system import service
 import Tartarus.deploy.client
 
 class Failure(RuntimeError):
@@ -78,7 +79,6 @@ def configure_recursor(opts):
     if not ask.yesno("Configure DNS server to use upper-level DNS?"):
         return
     ns = resolv.get_nameservers()
-    print ns
     ns = [x for x in ns
           if not x.startswith('127.') and not x.startswith('localhost')]
     while True:
@@ -98,6 +98,14 @@ def configure_recursor(opts):
         opts['allow_recursion'] = '127.0.0.1/8 %s/%s' % (
                 opts['ip'], opts['mask'])
         break
+
+def configure_resolv(opts):
+    if ask.yesno("Use local DNS server on this host?"):
+        opts['dns_use_self'] = 'true'
+    if 'recursor' in opts:
+        if ask.yesno("Use %s on this host as a secondary nameserver?"
+                     % opts['recursor']):
+            opts['dns_use_recursor'] = 'true'
 
 
 SUPPORTED_MASKS = ['8', '16', '24']
@@ -131,8 +139,7 @@ def deploy_options():
                               SUPPORTED_MASKS, idx)
     fail_unless(opts['mask'], "Deployment canceled!")
     configure_recursor(opts)
-    if ask.yesno("Use local DNS server on this host?"):
-        opts['use_self'] = 'true'
+    configure_resolv(opts)
     opts['name'] = ask_user("User name for system administartor", "admin")
     opts['password'] = ask.password(
             "Please enter password for system administrator.")
@@ -155,6 +162,7 @@ def init():
     return Ice.initialize(d)
 
 def _main():
+    service.tartarus_start_deploy()
     comm = init()
     services = [
             ('DNS',      'dns_force',   Tartarus.deploy.deploy_sysdb),
@@ -168,8 +176,14 @@ def _main():
     for svc, _, proc in services:
         print "Configuring %s..." % svc
         proc(comm, opts)
-    if 'use_self' in opts:
-        resolv.set_nameservers('127.0.0.1')
+    nameservers = []
+    if 'dns_use_self' in opts:
+        nameservers.append('127.0.0.1')
+    if 'dns_use_recursor' in opts:
+        nameservers.append(opts['recursor'])
+    if len(nameservers):
+        resolv.set_nameservers(nameservers)
+    comm.destroy()
     Tartarus.deploy.client.deploy_client_for_server(opts)
 
 
