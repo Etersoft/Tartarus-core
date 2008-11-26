@@ -78,7 +78,6 @@ def configure_recursor(opts):
     if not ask.yesno("Configure DNS server to use upper-level DNS?"):
         return
     ns = resolv.get_nameservers()
-    print ns
     ns = [x for x in ns
           if not x.startswith('127.') and not x.startswith('localhost')]
     while True:
