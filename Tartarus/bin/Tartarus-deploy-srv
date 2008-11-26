@@ -8,6 +8,7 @@ import os, sys, socket, traceback, re
 from Tartarus import system
 import Tartarus.system.resolv as resolv
 import Tartarus.system.consdialog as ask
+from Tartarus.system import service
 import Tartarus.deploy.client
 
 class Failure(RuntimeError):
@@ -154,6 +155,7 @@ def init():
     return Ice.initialize(d)
 
 def _main():
+    service.tartarus_start_deploy()
     comm = init()
     services = [
             ('DNS',      'dns_force',   Tartarus.deploy.deploy_sysdb),
