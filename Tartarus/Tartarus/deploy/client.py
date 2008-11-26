@@ -2,7 +2,7 @@
 import os
 from Tartarus.system import config, service, pam
 
-_all_template = '/usr/share/Tartarus/templates/clients/all.config.template'
+_all_template = '/usr/share/Tartarus/templates/all/all.config.template'
 
 
 def deploy_client_start(opts):
@@ -12,7 +12,7 @@ def deploy_client_start(opts):
                                 _all_template, opts, True)
 
 def deploy_client_finish(opts_):
-    service.service_start('tnscd')
+    service.service_restart('tnscd')
     service.service_on('tnscd')
     pam.set_tartarus_auth()
 
