@@ -1,0 +1,83 @@
+#!/usr/bin/python
+
+import sys, Tartarus, Ice, krb5user
+import Tartarus.system
+from Tartarus.system import consdialog, config, Error
+from Tartarus.deploy import client, save_keys
+from Tartarus.iface import core, Kerberos
+
+class Communicator:
+    __communicator = None
+    @classmethod
+    def get(cls):
+        if cls.__communicator is None:
+            idata = Ice.InitializationData()
+            idata.properties = Ice.createProperties()
+            idata.properties.load('/etc/Tartarus/clients/all.config')
+            cls.__communicator = Ice.initialize(None, idata)
+        return cls.__communicator
+    @classmethod
+    def propertyToProxy(cls, property_name):
+        return cls.get().propertyToProxy(property_name)
+
+
+_template_dir = '/usr/share/Tartarus/templates/'
+_krb5_conf_template = _template_dir + "clients/krb5.conf.template"
+_ice_config_template = _template_dir + "all/all.config.template"
+
+def deploy(opts):
+    Tartarus.system.check.check_krb5_lookup(opts['domain'])
+    config.gen_config_from_file('/etc/krb5.conf',
+                                _krb5_conf_template, opts, True)
+
+    krb5user.kinitPasswordPromptPosix(
+            consdialog.ask('user[admin]: ', 'admin'))
+
+    client.deploy_client_start(opts)
+
+    spn = 'host/%s' % opts['fqdn']
+    krb5prx = Communicator.propertyToProxy('Tartarus.Kerberos.KadminPrx')
+    kadmin = Kerberos.KadminPrx.checkedCast(krb5prx)
+    try:
+        spr = kadmin.createServicePrincipal('host', opts['fqdn'])
+    except core.AlreadyExistsError:
+        spr = kadmin.getPrincKeys(spn)
+    save_keys(spr)
+
+    client.deploy_client_finish(opts)
+
+
+
+def get_checked_fqdn(domain, hostname):
+    fqdn = hostname
+    if not '.' in fqdn:
+        fqdn += '.'
+        fqdn += domain
+    if not fqdn.endswith(domain):
+        raise Error('Wrong domain "%s" for fqdn "%s"' % (domain, fqdn))
+    return fqdn
+
+
+def main():
+    if len(sys.argv) > 2:
+        domain = sys.argv[1]
+        fqdn = get_checked_fqdn(domain, sys.argv[2])
+        Tartarus.system.hostname.sethostname(fqdn)
+    elif len(sys.argv) > 1:
+        domain = sys.argv[1]
+        fqdn = get_checked_fqdn(domain, Tartarus.system.hostname.getname())
+        Tartarus.system.hostname.sethostname(fqdn)
+    else:
+        domain = Tartarus.system.hostname.getdomain()
+        fqdn = get_checked_fqdn(domain, Tartarus.system.hostname.getfqdn())
+    fqdn = consdialog.choice(
+            'Enter Full Qualified Domain Name (FQDN) of your host', [fqdn])
+
+    domain = consdialog.choice('Enter Tartarus Domain Name', [domain])
+
+    deploy({ 'domain' : domain, 'fqdn' : fqdn })
+
+
+if __name__ == '__main__':
+    main()
+
