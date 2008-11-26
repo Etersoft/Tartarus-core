@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.10
+Release: alt0.11
 
 %define tname Tartarus
 
@@ -107,7 +107,7 @@ This module is built for python %__python_version
 Summary: System tools for %tname.
 Group: Development/Python
 Requires: python-module-%tname = %version-%release
-Requires: python-module-karmin5
+Requires: python-module-kadmin5
 
 %description -n python-module-%tname-system
 System tools for %tname.
@@ -341,6 +341,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.11
+- fixed a typo in specfile
+
 * Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.10
 - added Tartarus-join subpackage to deploy clients
 
