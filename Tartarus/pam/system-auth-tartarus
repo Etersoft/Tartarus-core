@@ -15,4 +15,4 @@ session  optional	pam_tcb.so
 session  optional	pam_krb5.so
 #session  required	pam_mktemp.so
 session  required	pam_limits.so
-session required	pam_mkhomedir.so skel=/etc/skel umask=0022
+session required	pam_mkhomedir.so silent skel=/etc/skel umask=0022
