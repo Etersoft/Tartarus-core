@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.9
+Release: alt0.10
 
 %define tname Tartarus
 
@@ -63,6 +63,23 @@ Requires: python-module-%tname-system = %version-%release
 inital configuration for Tartarus server.
 
 
+%package -n %tname-join
+Summary: Tartarus client deployment
+Group: System/Configuration/Other
+Provides: %tname = %version-%release
+Requires: %tname-common = %version-%release
+Requires: %tname-Kerberos-slice = %version-%release
+Requires: %tname-SysDB-slice = %version-%release
+Requires: python-module-%tname = %version-%release
+Requires: python-module-%tname-deploy = %version-%release
+Requires: python-module-%tname-system = %version-%release
+Requires: %tname-dnsupdate = %version
+Requires: libnss-tartarus, krb5-workstation, pam_krb5
+
+%description -n %tname-join
+Tartarus client deployment.
+
+
 # {{{1 Internal modules
 
 %package -n python-module-%tname
@@ -90,6 +107,7 @@ This module is built for python %__python_version
 Summary: System tools for %tname.
 Group: Development/Python
 Requires: python-module-%tname = %version-%release
+Requires: python-module-karmin5
 
 %description -n python-module-%tname-system
 System tools for %tname.
@@ -236,6 +254,9 @@ cp -pR init/* %buildroot%_initdir
 mkdir -p %buildroot%tslicedir
 cp -pR slice/* %buildroot%tslicedir
 
+mkdir -p %buildroot%_sysconfdir/pam.d
+cp -pR pam/* %buildroot%_sysconfdir/pam.d
+
 mkdir -p %buildroot%_localstatedir/%tname/SysDB
 
 
@@ -252,6 +273,8 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 %dir %tslicedir
 # FIXME: this should have a better place
 %ttemplatedir
+# and this too
+%_sysconfdir/pam.d/*
 
 
 %files -n %tname-srv1
@@ -263,6 +286,8 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 %_sbindir/*deploy-srv
 %tconfdir/clients/deploy*
 
+%files -n %tname-join
+%_sbindir/*join*
 
 %files -n python-module-%tname
 %dir %tpythondir
@@ -316,6 +341,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.10
+- added Tartarus-join subpackage to deploy clients
+
 * Tue Nov 25 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.9
 - new snapshot:
   - several bug fixes
