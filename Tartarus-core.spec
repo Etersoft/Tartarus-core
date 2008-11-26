@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.12
+Release: alt0.13
 
 %define tname Tartarus
 
@@ -288,6 +288,7 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 
 %files -n %tname-join
 %_sbindir/*join*
+%_sbindir/*leave*
 
 %files -n python-module-%tname
 %dir %tpythondir
@@ -341,6 +342,11 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.13
+- new snapshot:
+  - many improvements in server deployment
+  - added Tartarus-leave: utility to remove clients from domain
+
 * Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.12
 - new snapshot: minor fixes in deployment
 
