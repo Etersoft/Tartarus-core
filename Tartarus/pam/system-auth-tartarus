@@ -1,0 +1,18 @@
+#%PAM-1.0
+auth     sufficient	pam_tcb.so shadow fork prefix=$2a$ count=8 nullok
+auth     requisite	pam_succeed_if.so uid >= 500 quiet
+auth     required	pam_krb5.so use_first_pass
+
+account  sufficient	pam_tcb.so shadow fork
+account  required	pam_krb5.so
+
+password required	pam_passwdqc.so config=/etc/passwdqc.conf
+password sufficient	pam_tcb.so use_authtok shadow fork prefix=$2a$ count=8 nullok write_to=tcb
+password requisite	pam_succeed_if.so uid >= 500 quiet
+password required	pam_krb5.so use_authtok
+
+session  optional	pam_tcb.so
+session  optional	pam_krb5.so
+#session  required	pam_mktemp.so
+session  required	pam_limits.so
+session required	pam_mkhomedir.so skel=/etc/skel umask=0022
