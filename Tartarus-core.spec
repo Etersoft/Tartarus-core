@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.14
+Release: alt0.15
 
 %define tname Tartarus
 
@@ -57,6 +57,7 @@ Requires: python-module-dnet
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
+Requires: libnss-tartarus, krb5-workstation, pam_krb5
 
 %description -n %tname-deploy-srv
 %tname-deploy-srv is a simple console utility which will help you to create
@@ -342,6 +343,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Thu Nov 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.15
+- added missed requirements to Tartarus-deploy-srv
+
 * Thu Nov 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.14
 - new snapshot: bugfixes
 
