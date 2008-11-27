@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.13
+Release: alt0.14
 
 %define tname Tartarus
 
@@ -342,6 +342,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Thu Nov 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.14
+- new snapshot: bugfixes
+
 * Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.13
 - new snapshot:
   - many improvements in server deployment
