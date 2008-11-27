@@ -115,14 +115,13 @@ class UserManagerI(I.UserManager):
             raise I.UserNotFound("User not found",
                     "changing user record", user.uid)
         cur = self._dbh.execute(con,
-                "UPDATE group_entries SET groupid=%s"
-                "WHERE userid == %s AND is_primary",
-                gid, uid)
-        if cur.rowcount != 1:
-            cur = self._dbh.execute(
-                    "INSERT INTO group_entries (userid, groupid, is_primary) "
-                    "VALUES (%s, %s, %s)",
-                    uid, gid, 1)
+                "INSERT OR REPLACE "
+                "INTO group_entries (groupid, userid, is_primary) "
+                "SELECT groups.id, %s, %s FROM groups WHERE groups.id=%s",
+                uid, 1, gid)
+        if (cur.rowcount != 1):
+            raise I.GroupNotFound("Group not found",
+                    "Could not find new primary group", user.gid)
         con.commit()
 
 
