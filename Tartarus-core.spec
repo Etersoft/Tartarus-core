@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.15
+Release: alt0.16
 
 %define tname Tartarus
 
@@ -57,7 +57,7 @@ Requires: python-module-dnet
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
-Requires: libnss-tartarus, krb5-workstation, pam_krb5
+Requires: libnss-tartarus, krb5-kinit, pam_krb5
 
 %description -n %tname-deploy-srv
 %tname-deploy-srv is a simple console utility which will help you to create
@@ -75,7 +75,7 @@ Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
 Requires: %tname-dnsupdate = %version
-Requires: libnss-tartarus, krb5-workstation, pam_krb5
+Requires: libnss-tartarus, krb5-kinit, pam_krb5
 
 %description -n %tname-join
 Tartarus client deployment.
@@ -343,6 +343,10 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Fri Nov 28 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.16
+- new snapshot: join improvements
+- dependency cleanup
+
 * Thu Nov 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.15
 - added missed requirements to Tartarus-deploy-srv
 
