@@ -115,8 +115,11 @@ def deploy_options():
         fail("Only root can do this")
     opts = {}
     opts['domain'] = system.hostname.getdomain()
-    if not ask.yesno("Deploy Tartarus server for domain %s?"
-                    % opts['domain']):
+    if not ask.yesno("This utility will deploy "
+                     "Tartarus domain for this server\n"
+                     "Domain name: %s\n"
+                     "Do you want to proceed?"
+                     % opts['domain']):
         sys.exit(0)
     try:
         opts['hostname'] = ".".join([system.hostname.getname(),
