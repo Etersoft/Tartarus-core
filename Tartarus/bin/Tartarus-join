@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
-import sys, Tartarus, Ice, krb5user
+import sys, Tartarus, Ice, krb5user, traceback
 import Tartarus.system
-from Tartarus.system import consdialog, config, Error
+from Tartarus.system import consdialog, config, hosts, Error
 from Tartarus.deploy import client, save_keys
 from Tartarus.iface import core, Kerberos
 
@@ -30,6 +30,7 @@ def deploy(opts):
     config.gen_config_from_file('/etc/krb5.conf',
                                 _krb5_conf_template, opts, True)
 
+    hosts.replace_localhost(opts['fqdn'])
     krb5user.kinitPasswordPromptPosix(
             consdialog.ask('user[admin]: ', 'admin'))
 
@@ -44,6 +45,8 @@ def deploy(opts):
         spr = kadmin.getPrincKeys(spn)
     save_keys(spr)
 
+    auto_dns_update = consdialog.yesno('Do you want to automatical start dns updater (need for dhcp from pool)?')
+    client.deploy_client_dnsupdate(opts, auto_dns_update)
     client.deploy_client_finish(opts)
 
 
@@ -58,24 +61,60 @@ def get_checked_fqdn(domain, hostname):
     return fqdn
 
 
-def main():
-    if len(sys.argv) > 2:
-        domain = sys.argv[1]
-        fqdn = get_checked_fqdn(domain, sys.argv[2])
-        Tartarus.system.hostname.sethostname(fqdn)
-    elif len(sys.argv) > 1:
-        domain = sys.argv[1]
-        fqdn = get_checked_fqdn(domain, Tartarus.system.hostname.getname())
-        Tartarus.system.hostname.sethostname(fqdn)
-    else:
-        domain = Tartarus.system.hostname.getdomain()
-        fqdn = get_checked_fqdn(domain, Tartarus.system.hostname.getfqdn())
-    fqdn = consdialog.choice(
-            'Enter Full Qualified Domain Name (FQDN) of your host', [fqdn])
+def _main():
+    fqdn_list = []
+    if len(sys.argv) > 1:
+        fqdn_list.append(sys.argv[1])
 
-    domain = consdialog.choice('Enter Tartarus Domain Name', [domain])
+    domain = Tartarus.system.hostname.getdomain()
+    fqdn = get_checked_fqdn(domain, Tartarus.system.hostname.getfqdn())
+    fqdn_list.append(fqdn)
+
+    localhosts = hosts.get_localhosts()
+    for record in localhosts:
+        for h in record.split():
+            if not h.startswith('localhost') and h.find('.') > 0:
+                fqdn_list.append(h) 
+
+    user_fqdn = consdialog.choice(
+            'Enter Full Qualified Domain Name (FQDN) of your host', fqdn_list)
+    if user_fqdn != fqdn:
+        domain = Tartarus.system.hostname.getdomain(user_fqdn)
+        fqdn = get_checked_fqdn(domain, user_fqdn)
+        Tartarus.system.hostname.sethostname(fqdn)
 
     deploy({ 'domain' : domain, 'fqdn' : fqdn })
+
+
+def _format_exception():
+    et, ev, _  = sys.exc_info()
+
+    if et is Ice.InitializationException:
+        code = -1
+        msg = "Failed to initialize runtime: %s" % ev.reason
+    elif et is OSError:
+        code =  ev.errno
+        msg = "OS Error: %s" % ev.strerror
+    else:
+        code =  -1
+        msg = str().join(traceback. format_exception(et, ev, None))
+
+    if not msg.endswith('\n'):
+        msg += '\n'
+
+    return (code, msg)
+
+def main():
+    try:
+        _main()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        msg = "\n\nJoin canceled!\n"
+        code = -1
+    except Exception:
+        code, msg = _format_exception()
+    sys.stderr.write(msg)
+    sys.exit(code)
 
 
 if __name__ == '__main__':
