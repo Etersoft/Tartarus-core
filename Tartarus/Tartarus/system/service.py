@@ -28,6 +28,9 @@ def service_switch(service, state):
                     % (service, state, e.message))
 
 
+def tartarus_start_deploy():
+    service_command('Tartarus', 'deploy')
+
 def service_start(service):
     service_command(service, 'start')
 
@@ -35,7 +38,7 @@ def service_restart(service):
     service_command(service, 'restart')
 
 def service_stop(service):
-    service_command(service, 'start')
+    service_command(service, 'stop')
 
 def service_status(service):
     service_command(service, 'status')

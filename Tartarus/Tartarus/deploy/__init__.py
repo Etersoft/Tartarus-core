@@ -19,7 +19,7 @@ def deploy_dns(comm, opts):
     Tartarus.deploy.DNS.deploy_dns(comm, opts)
 
 def save_keys(spr, keytab=None):
-    import kadmin5
+    import kadmin5, os
 
     keytab = kadmin5.keytab(keytab)
 

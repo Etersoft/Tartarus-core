@@ -45,6 +45,13 @@ class userToGroupsTest(TestWithUser):
                 uid, [self.gid])
         self.um.delete(uid)
 
+    def testChangePrimaryGroup(self):
+        self.ur.uid = self.um.create(self.ur)
+        self.gm.addUserToGroups(self.ur.uid, self.gids)
+        self.ur.gid = self.gids[0]
+        self.um.modify(self.ur)
+        self.um.delete(self.ur.uid)
+
     def testDeleteUserPrimary(self):
         uid = self.um.create(self.ur)
         self.assertRaises(self.ICore.DBError,

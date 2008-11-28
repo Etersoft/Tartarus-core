@@ -70,19 +70,11 @@ _translator_map = {
 
 
 class _Helper(object):
-    engine = None       # database angine (a string) as defined in options
-    options = None      # database options
-    module = None       # module corresponding to database engine
-    modname = None      # name of database module
-    trace = 0           # if if > 16 trace queries (quite slow)
-    trans = None
-
     def __init__(self, opts):
         self.ConfigError = ICore.ConfigError
         self.DBError = ICore.DBError
 
-        if 'trace' in opts:
-            self.trace = int(opts['trace'])
+        self.trace = opts.get('trace', 0)
 
         try:
             self.engine = opts['engine']
