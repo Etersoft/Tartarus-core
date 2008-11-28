@@ -6,10 +6,16 @@ _all_template = '/usr/share/Tartarus/templates/all/all.config.template'
 
 
 def deploy_client_start(opts):
+    service.service_stop('tnscd')
     if not os.path.exists('/etc/Tartarus/clients'):
         os.makedirs('/etc/Tartarus/clients')
     config.gen_config_from_file('/etc/Tartarus/clients/all.config',
                                 _all_template, opts, True)
+
+def deploy_client_dnsupdate(opts_, auto_update = False):
+    service.service_restart('tdnsupdate')
+    if auto_update:
+        service.service_on('tdnsupdate')
 
 def deploy_client_finish(opts_):
     service.service_restart('tnscd')
