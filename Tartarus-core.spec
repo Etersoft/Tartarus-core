@@ -1,6 +1,6 @@
 
 Version: 0.1.0
-Release: alt0.16
+Release: alt0.17
 
 %define tname Tartarus
 
@@ -343,6 +343,10 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Fri Nov 28 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.0-alt0.17
+- fixed join with missed system.hosts
+- fixed first deployment server prompt
+
 * Fri Nov 28 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.16
 - new snapshot: join improvements
 - dependency cleanup
