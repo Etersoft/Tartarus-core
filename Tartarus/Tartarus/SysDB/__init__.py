@@ -1,6 +1,6 @@
 
 import users, groups, deploy
-from Tartarus import db
+from Tartarus import db, auth
 from Tartarus.iface import SysDB as I
 
 def init(adapter):
@@ -18,10 +18,21 @@ def init(adapter):
             "Tartarus.SysDB.UserIDOffset", 65536)
     go = props.getPropertyAsIntWithDefault(
             "Tartarus.SysDB.GroupIDOffset", 65536)
-    adapter.add(users.UserManagerI(dbh, uo, go),
+
+    adm_groups = props.getProperty('Tartarus.SysDB.Auth.AdminGroups').split()
+    if len(adm_groups) > 0:
+        import authorize
+        auth.set_default(authorize.SimpleGroupAuthorizer(dbh, adm_groups))
+    else:
+        auth.set_default(lambda x_, y_: True)
+
+
+    loc = auth.AuthorizingLocator()
+    loc.add_object(users.UserManagerI(dbh, uo, go),
             com.stringToIdentity("SysDB-Manager/Users"))
-    adapter.add(groups.GroupManagerI(dbh, uo, go),
+    loc.add_object(groups.GroupManagerI(dbh, uo, go),
             com.stringToIdentity("SysDB-Manager/Groups"))
+    adapter.addServantLocator(loc, "SysDB-Manager")
 
     vname = props.getProperty('Tartarus.SysDB.SSLVerifier')
     if len(vname) > 0:

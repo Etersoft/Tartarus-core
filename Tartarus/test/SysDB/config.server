@@ -19,6 +19,7 @@ Tartarus.SysDB.db.database = ./test.db
 Tartarus.SysDB.db.trace = 255
 #Tartarus.SysDB.SSLVerifier = simple
 #Tartarus.SysDB.SSLVerifier.AllowGroups = group1:group2:nosuchgroup
+Tartarus.SysDB.Auth.AdminGroups = group1
 
 #
 # Warn about connection exceptions
