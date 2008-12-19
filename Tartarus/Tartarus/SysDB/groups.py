@@ -1,6 +1,6 @@
 
 import Tartarus, re
-from Tartarus import db, logging
+from Tartarus import db, logging, auth
 from Tartarus.iface import SysDB as I
 from Tartarus.iface import core as C
 
@@ -40,6 +40,7 @@ class GroupManagerI(I.GroupManager):
             raise I.UserNotFound("User not found",
                     "searching for user in database", uid)
 
+    @auth.mark('read')
     @db.wrap("retrieving group by id")
     def getById(self, con, gid, current):
         cur = self._dbh.execute(con,
@@ -51,6 +52,7 @@ class GroupManagerI(I.GroupManager):
                     "retrieving group by id" ,gid)
         return self._db2groups(res)[0]
 
+    @auth.mark('read')
     @db.wrap("retrieving group by name")
     def getByName(self, con, name, current):
         cur = self._dbh.execute(con,
@@ -62,6 +64,7 @@ class GroupManagerI(I.GroupManager):
                     "Could not get group information for  %s" % name, -1)
         return self._db2groups(res)[0]
 
+    @auth.mark('read')
     @db.wrap("retrieving groups for user id")
     def getGroupsForUserId(self, con, uid, current):
         cur = self._dbh.execute(con,
@@ -77,6 +80,7 @@ class GroupManagerI(I.GroupManager):
                     "retrieving groups for user id", uid)
         return [ x[0] + self._go for x in res ]
 
+    @auth.mark('read')
     @db.wrap("retrieving groups for user name")
     def getGroupsForUserName(self, con, name, current):
         cur = self._dbh.execute(con,
@@ -94,6 +98,7 @@ class GroupManagerI(I.GroupManager):
         return [ x[0] + self._go for x in res ]
 
 
+    @auth.mark('read')
     @db.wrap("retrieving multiple groups")
     def getGroups(self, con, groupids, current):
         ids = tuple((i - self._go for i in groupids))
@@ -111,6 +116,7 @@ class GroupManagerI(I.GroupManager):
                             "retrieving multiple groups", i)
         return res
 
+    @auth.mark('read')
     @db.wrap("retrieving users for group")
     def getUsers(self, con, gid, current):
         cur = self._dbh.execute(con,
@@ -123,6 +129,7 @@ class GroupManagerI(I.GroupManager):
             return []
         return [ x[0] + self._uo for x in res]
 
+    @auth.mark('read')
     @db.wrap("searching for groups")
     def search(self, con, factor, limit, current):
         phrase = (factor.replace('\\',  '\\\\')
@@ -135,6 +142,7 @@ class GroupManagerI(I.GroupManager):
         return self._db2groups(cur.fetchall())
 
 
+    @auth.mark('read')
     @db.wrap("counting groups")
     def count(self, con, current):
         cur = self._dbh.execute(con,
@@ -147,12 +155,14 @@ class GroupManagerI(I.GroupManager):
         return long(res[0][0])
 
 
+    @auth.mark('read')
     @db.wrap("retrieving groups")
     def get(self, con, limit, offset, current):
         cur = self._dbh.execute_limited(con, limit, offset,
                 "SELECT id, name, description FROM groups ")
         return self._db2groups(cur.fetchall())
 
+    @auth.mark('write')
     @db.wrap("setting users for group")
     def setUsers(self, con, gid, userids, current):
         self._dbh.execute(con,
@@ -161,6 +171,7 @@ class GroupManagerI(I.GroupManager):
                 gid - self._go)
         self._addUsers(con, gid, userids, current)
 
+    @auth.mark('write')
     @db.wrap("adding users to group")
     def addUsers(self, con, gid, userids, current):
         self._addUsers(con, gid, userids, current)
@@ -174,6 +185,7 @@ class GroupManagerI(I.GroupManager):
                 gen)
         con.commit()
 
+    @auth.mark('write')
     @db.wrap("deleting users")
     def delUsers(self, con, gid, userids, current):
         ids = tuple((i - self._uo for i in userids))
@@ -200,6 +212,7 @@ class GroupManagerI(I.GroupManager):
                         "Some users were not found", -1)
         con.commit()
 
+    @auth.mark('write')
     @db.wrap("modifying group")
     def modify(self, con, group, current):
         if not self._good_name.match(group.name):
@@ -214,6 +227,7 @@ class GroupManagerI(I.GroupManager):
                     "modifying group", group.gid)
         con.commit()
 
+    @auth.mark('write')
     @db.wrap("creating group")
     def create(self, con, newgroup, current):
         if not self._good_name.match(newgroup.name):
@@ -232,6 +246,7 @@ class GroupManagerI(I.GroupManager):
         con.commit()
         return res[0][0] + self._go
 
+    @auth.mark('write')
     @db.wrap("deleting group")
     def delete(self, con, gid, current):
         n = gid - self._go
@@ -253,6 +268,7 @@ class GroupManagerI(I.GroupManager):
                     "deleting group", gid)
         con.commit()
 
+    @auth.mark('write')
     @db.wrap("adding user to multiple groups")
     def addUserToGroups(self, con, uid, groups, current):
         self._user_exists(con, uid)
@@ -263,6 +279,7 @@ class GroupManagerI(I.GroupManager):
                 gen)
         con.commit()
 
+    @auth.mark('write')
     @db.wrap("removing user form multiple groups")
     def delUserFromGroups(self, con, uid, groups, current):
         ids = tuple((i - self._go for i in groups))
