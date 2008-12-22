@@ -1,5 +1,5 @@
 from Tartarus.system import Error
-import socket
+import socket, subprocess
 
 def getname():
     return socket.gethostname().split('.')[0]
@@ -31,8 +31,11 @@ def gethostname():
     return socket.gethostname()
 
 def sethostname(hostname):
-    raise Error('set hostname failed for "%s" (method not implemented yet)'
-            % hostname)
+    try:
+        subprocess.check_call(['hostname', hostname])
+    except subprocess.CalledProcessError, e:
+        raise Error('set hostname to "%s" failed: %s'
+                    % (hostname, e.message))
 
 
 def getsystemnets():
