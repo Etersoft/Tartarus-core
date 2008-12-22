@@ -1,6 +1,6 @@
 
 import server, zone, deploy
-from Tartarus import db
+from Tartarus import db, auth
 from Tartarus.iface import DNS as I
 
 def init(adapter):
@@ -25,7 +25,10 @@ def init(adapter):
     #minimal test whether configuration works
     dbh.get_connection()
 
-    adapter.add(server.ServerI(cfg_file_name, dbh, do_reload),
-            com.stringToIdentity("DNS/Server"))
-    adapter.addServantLocator(zone.Locator(dbh), "DNS-Zone")
+    loc = auth.SrvLocator()
+    loc.add_object(server.ServerI(cfg_file_name, dbh, do_reload),
+                   com.stringToIdentity("DNS/Server"))
+    adapter.addServantLocator(loc, "DNS")
+    adapter.addServantLocator(auth.DefaultSrvLocator(zone.ZoneI(dbh)),
+                              "DNS-Zone")
 
