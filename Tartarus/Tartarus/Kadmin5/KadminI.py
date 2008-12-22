@@ -50,19 +50,19 @@ class KadminI(I.Kadmin):
     def deletePrincipal(self, adm, name, current):
         adm.delete_princ(name)
 
-    @auth.mark('admin')
+    @auth.mark('read')
     @kdb.wrap
     def listPrincs(self, adm, expr, current):
         return adm.list(expr)
 
-    @auth.mark('admin')
+    @auth.mark('read')
     @kdb.wrap
     def listAllPrincs(self, adm, current):
         return adm.list()
 
     _disabling_attrs = kadmin5.attributes.DISALLOW_ALL_TIX
 
-    @auth.mark('admin')
+    @auth.mark('read')
     @kdb.wrap
     def isPrincEnabled(self, adm, name, current):
         attrs = adm.get_princ_attributes(name)
