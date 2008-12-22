@@ -1,6 +1,6 @@
 
 Version: 0.1.1
-Release: alt0.1
+Release: alt0.2
 
 %define tname Tartarus
 
@@ -343,6 +343,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.2
+- fixed a typo
+
 * Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.1
 - new version
   + basic authorization added
