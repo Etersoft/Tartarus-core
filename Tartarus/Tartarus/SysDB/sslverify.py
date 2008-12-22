@@ -25,7 +25,7 @@ class SimpleGroupVerifier(object):
         except Exception:
             return False
 
-def setup(com, verifier)
+def setup(com, verifier):
     v = SimpleGroupVerifier(verifier)
     IceSSL.setCertificateVerifier(com, v)
 
