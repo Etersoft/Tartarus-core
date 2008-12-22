@@ -1,6 +1,6 @@
 
 Version: 0.1.1
-Release: alt0.6
+Release: alt0.7
 
 %define tname Tartarus
 
@@ -344,6 +344,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.7
+- new snapshot: better diagnostics in few places
+
 * Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.6
 - relaxed dependency on dnsupdate
 
