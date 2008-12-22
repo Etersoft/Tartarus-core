@@ -1,6 +1,6 @@
 
-Version: 0.1.0
-Release: alt0.18
+Version: 0.1.1
+Release: alt0.1
 
 %define tname Tartarus
 
@@ -343,6 +343,10 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.1
+- new version
+  + basic authorization added
+
 * Fri Nov 28 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.0-alt0.18
 - fixed join with missed sethostname() implementation
 
