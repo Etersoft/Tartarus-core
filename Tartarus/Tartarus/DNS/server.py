@@ -1,7 +1,7 @@
 
 
 import Tartarus, os, IceSSL, socket
-from Tartarus import logging, db
+from Tartarus import logging, db, auth
 import Tartarus.iface.DNS as I
 import Tartarus.iface.core as ICore
 
@@ -34,6 +34,7 @@ class ServerI(I.Server):
         # enshure server is here and works with actual config file
         self._reload_config()
 
+    @auth.mark('admin')
     @db.wrap("retrieving all zones")
     def getZones(self, con, current):
         cur = self._dbh.execute(con, 'SELECT id FROM domains')
@@ -41,6 +42,7 @@ class ServerI(I.Server):
                    for x in cur.fetchall() ]
         return result
 
+    @auth.mark('admin')
     @db.wrap("retrieving zone by name")
     def getZone(self, con, name, current):
         cur = self._dbh.execute(con,
@@ -50,6 +52,7 @@ class ServerI(I.Server):
             raise ICore.NotFoundError("Could not locate zone in the database")
         return utils.proxy(I.ZonePrx, current, "DNS-Zone", str(result[0][0]))
 
+    @auth.mark('admin', 'write')
     @db.wrap("creating a zone")
     def createZone(self, con, name, soar, current):
         self._dbh.execute(con,
@@ -83,6 +86,7 @@ class ServerI(I.Server):
                 "DELETE FROM records WHERE domain_id=%s", key)
         con.commit()
 
+    @auth.mark('admin', 'write')
     @db.wrap("Deleting a zone")
     def deleteZone(self, con, name, current):
         cur = self._dbh.execute(con,
@@ -93,6 +97,7 @@ class ServerI(I.Server):
         key = res[0][0]
         self._dropZone(con, key)
 
+    @auth.mark('admin', 'write')
     @db.wrap("Deleting a zone")
     def deleteZoneByRef(self, con, proxy, current):
         key = utils.name(current, proxy.ice_getIdentity())
@@ -104,6 +109,7 @@ class ServerI(I.Server):
         "recursor"
         ))
 
+    @auth.mark('admin')
     def getOptions(self, current):
         try:
             return [ I.ServerOption(*pair)
@@ -131,6 +137,7 @@ class ServerI(I.Server):
         raise ICore.RuntimeError('Failed to reload configuration file. '
                       'All changes will be applied on next server restart.')
 
+    @auth.mark('admin', 'write')
     def setOptions(self, opts, current):
         try:
             new_opts = [ self._convert_option(opt) for opt in opts ]
@@ -146,6 +153,7 @@ class ServerI(I.Server):
         self._reload_config()
 
 
+    @auth.mark('admin', 'write')
     def changeOptions(self, opts, current):
         try:
             if len(opts) < 1:
@@ -207,6 +215,7 @@ class ServerI(I.Server):
             raise ICore.ValueError('Reverse zone update failure', addr)
         con.commit()
 
+    @auth.mark('host', 'admin')
     @db.wrap("updating host information")
     def updateHost(self, con, hostname, addr, current):
         props = current.adapter.getCommunicator().getProperties()
@@ -217,6 +226,7 @@ class ServerI(I.Server):
             rzone = self._rev_zone_name(con, addr)
         self._set_machine(con, hostname, addr, rzone)
 
+    @auth.mark('host', 'admin')
     @db.wrap("updating information for a host")
     def updateThisHost(self, con, current):
         princ, addr = _get_princ_and_addr(current)
