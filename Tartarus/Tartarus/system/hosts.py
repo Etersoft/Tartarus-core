@@ -18,7 +18,7 @@ def set_hosts(ip, hostnames, filename=_HOSTS_CONF):
                              r_delim='\s+', w_delim='\t')
 
 def set_localhosts(hostnames, filename=_HOSTS_CONF):
-    return set_hosts(_LOCAL_IP, hostnames)
+    return set_hosts(_LOCAL_IP, hostnames, filename)
 
 def _host_replace_filter(lines, hostname):
     expr = re.compile('^127\.0{1,3}\.0{1,3}\.0{,2}1*\s+(.*%s.*)'
