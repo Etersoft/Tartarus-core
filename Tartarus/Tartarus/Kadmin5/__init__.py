@@ -2,7 +2,7 @@
 import Tartarus
 import KadminI, kdb
 
-from Tartarus import logging
+from Tartarus import logging, auth
 
 #
 # Initialize the servants
@@ -18,6 +18,8 @@ def init(adapter):
 
     adapter.add(kdb.KadminService(kdb_common),
                 c.stringToIdentity("Service/Kerberos"))
-    adapter.add(KadminI.KadminI(kdb_common),
-                c.stringToIdentity("Kerberos/Kadmin"))
+    loc = auth.SrvLocator()
+    loc.add_object(KadminI.KadminI(kdb_common),
+                   c.stringToIdentity("Kerberos/Kadmin"))
+    adapter.addServantLocator(loc, "Kerberos")
 
