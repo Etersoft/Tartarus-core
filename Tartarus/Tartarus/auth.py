@@ -1,6 +1,7 @@
 
 import Ice
 import Tartarus
+from Tartarus import logging
 from Tartarus.iface import core as C
 
 # {{{ Default authorizer
@@ -63,9 +64,17 @@ class SrvLocator(Ice.ServantLocator):
             obj, marks = self._obj_map[current.id]
             if self._authorize(marks, current):
                 return obj
+        except Ice.ObjectNotExistException:
+            return None
         except C.PermissionError:
             raise
         except Exception, e:
+            c = current.adapter.getCommunicator()
+            logging.warning("Refusing permission because of exception. "
+                            "Object: %s. Operation: %s. Exception %s: %s."
+                            % (c.identityToString(current.id),
+                               current.operation,
+                               type(e).__name__, e))
             return None
         return None
 

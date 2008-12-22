@@ -185,7 +185,8 @@ class ServerI(I.Server):
                 z1,z2,z3)
         res = cur.fetchall()
         if len(res) != 1:
-            raise utils.NoSuchObject
+            raise ICore.ValueError("Could not find reverse zone "
+                                   "for supplied address", addr)
         return res[0][0]
 
 
@@ -232,7 +233,7 @@ class ServerI(I.Server):
         princ, addr = _get_princ_and_addr(current)
         if not princ.startswith('host/'):
             raise ICore.PermissionError("Permission denied",
-                    princ, 'updateHost')
+                    princ, 'updateThisHost')
         # krb5princ = 'host/f.q.d.n@REALM.NAME
         # we remove host/ part
         hostname = princ[5:]
