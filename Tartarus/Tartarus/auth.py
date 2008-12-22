@@ -24,7 +24,7 @@ def default_authorize(marks, current):
 
 # {{{ Authorizing locator
 
-class AuthorizingLocator(Ice.ServantLocator):
+class SrvLocator(Ice.ServantLocator):
     def __init__(self, authorize=default_authorize, trace=0):
         self._obj_map = {}
         self._trace = trace

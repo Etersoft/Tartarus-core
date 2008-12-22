@@ -26,8 +26,7 @@ def init(adapter):
     else:
         auth.set_default(lambda x_, y_: True)
 
-
-    loc = auth.AuthorizingLocator()
+    loc = auth.SrvLocator()
     loc.add_object(users.UserManagerI(dbh, uo, go),
             com.stringToIdentity("SysDB-Manager/Users"))
     loc.add_object(groups.GroupManagerI(dbh, uo, go),
