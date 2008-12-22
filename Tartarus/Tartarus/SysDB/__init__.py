@@ -34,7 +34,7 @@ def init(adapter):
     adapter.addServantLocator(loc, "SysDB-Manager")
 
     vname = props.getProperty('Tartarus.SysDB.SSLVerifier')
-    if len(vname) > 0:
+    if vname == simple and len(adm_groups) > 0:
         import sslverify
-        sslverify.setup(com, dbh, vname, props)
+        sslverify.setup(com, auth.get_default())
 
