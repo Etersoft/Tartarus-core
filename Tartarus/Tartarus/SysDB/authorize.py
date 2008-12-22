@@ -46,6 +46,9 @@ class SimpleGroupAuthorizer(object):
             # this is not SSL with Kerberos; so we don't care
             return True
 
+        if 'host' in m and info.krb5Princ.starswith('host/'):
+            return True
+
         return self.do_verify(current.operation, info)
 
 

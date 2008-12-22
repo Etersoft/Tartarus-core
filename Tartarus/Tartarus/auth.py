@@ -18,11 +18,36 @@ def get_default():
     return _DEFAULT_AUTHORIZER
 
 def default_authorize(marks, current):
-    return _DEFAULT_AUTHORIZER(marks, current)
+    if _DEFAULT_AUTHORIZER:
+        return _DEFAULT_AUTHORIZER(marks, current)
+    return True
 
 # }}}
 
-# {{{ Authorizing locator
+# {{{ Authorizing locators
+
+class DefaultSrvLocator(Ice.ServantLocator):
+    def __init__(self, obj, marks=('admin',),
+                 authorize=default_authorize):
+        self._obj = obj
+        self._marks = marks
+        self._authorize = authorize
+
+    def locate(self, current):
+        try:
+            if self._authorize(self._marks, current):
+                return self._obj
+        except C.PermissionError:
+            raise
+        except Exception, e:
+            return None
+        return None
+
+    def finished(self, current, obj, cookie):
+        pass
+    def deactivate(self, category):
+        pass
+
 
 class SrvLocator(Ice.ServantLocator):
     def __init__(self, authorize=default_authorize, trace=0):
@@ -43,7 +68,6 @@ class SrvLocator(Ice.ServantLocator):
         except Exception, e:
             return None
         return None
-
 
     def finished(self, current, obj, cookie):
         pass
