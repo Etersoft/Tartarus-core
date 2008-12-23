@@ -1,6 +1,6 @@
 
-Version: 0.1.0
-Release: alt0.18
+Version: 0.1.1
+Release: alt0.7
 
 %define tname Tartarus
 
@@ -74,7 +74,7 @@ Requires: %tname-SysDB-slice = %version-%release
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
-Requires: %tname-dnsupdate = %version
+Requires: %tname-dnsupdate >= 0.1.0
 Requires: libnss-tartarus, krb5-kinit, pam_krb5
 
 %description -n %tname-join
@@ -294,6 +294,7 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 %files -n python-module-%tname
 %dir %tpythondir
 %tpythondir/__init__*
+%tpythondir/auth*
 %tpythondir/iface*
 %tpythondir/logging*
 %tpythondir/modules*
@@ -343,6 +344,25 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.7
+- new snapshot: better diagnostics in few places
+
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.6
+- relaxed dependency on dnsupdate
+
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.5
+- new snapshot: bugfixes
+
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.3
+- added forgotten auth submodule
+
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.2
+- fixed a typo
+
+* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.1
+- new version
+  + basic authorization added
+
 * Fri Nov 28 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.0-alt0.18
 - fixed join with missed sethostname() implementation
 
