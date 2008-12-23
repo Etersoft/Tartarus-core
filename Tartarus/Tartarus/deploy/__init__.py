@@ -1,6 +1,7 @@
 
 
-__all__ = ['deploy_sysdb', 'deploy_kadmin', 'deploy_dns', 'save_keys']
+__all__ = ['deploy_sysdb', 'deploy_kadmin', 'deploy_dns',
+           'save_keys', 'client']
 
 def deploy_sysdb(comm, opts):
     import Tartarus
