@@ -16,6 +16,9 @@ def deploy_client_dnsupdate(opts_, auto_update = False):
     service.service_restart('tdnsupdate')
     if auto_update:
         service.service_on('tdnsupdate')
+    else
+        service.service_off('tdnsupdate')
+
 
 def deploy_client_finish(opts_):
     service.service_restart('tnscd')
