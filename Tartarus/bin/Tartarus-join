@@ -45,8 +45,14 @@ def deploy(opts):
         spr = kadmin.getPrincKeys(spn)
     save_keys(spr)
 
-    auto_dns_update = consdialog.yesno('Do you want to automatical start dns updater (need for dhcp from pool)?')
-    client.deploy_client_dnsupdate(opts, auto_dns_update)
+    if consdialog.yesno("Do you want to register this computer "
+                        "in Tartarus DNS now?"):
+        auto_dns_update = consdialog.yesno(
+                "Do you want to run DNS updater automatically "
+                "every time this system starts (helpfull when "
+                "address is obtained from DHCP pool)?")
+        client.deploy_client_dnsupdate(opts, auto_dns_update)
+
     client.deploy_client_finish(opts)
 
 

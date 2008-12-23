@@ -75,7 +75,11 @@ class _Helper(object):
         self.DBError = ICore.DBError
 
         self.trace = opts.get('trace', 0)
-
+        try:
+            self.trace = int(self.trace)
+        except ValueError, v:
+            raise self.ConfigError( "Invalid value for db.trace parametr "
+                                    "(must be integer)", self.trace)
         try:
             self.engine = opts['engine']
         except KeyError:
