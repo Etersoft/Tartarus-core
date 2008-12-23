@@ -85,9 +85,8 @@ def _do_test(comm, cond):
         i = comm.getProperties().getPropertyAsInt(cond)
         return i > 0
     else:
-        raise TypeError(
-                "Could not determine logging condition form object %s"
-                % obj)
+        raise TypeError("Could not determine logging condition form object %s"
+                        % cond)
 
 
 def test(cond, log_to):

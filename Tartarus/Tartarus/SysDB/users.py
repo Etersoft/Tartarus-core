@@ -1,8 +1,9 @@
 
 import Tartarus, re
-from Tartarus import db, logging
+from Tartarus import db, logging, auth
 from Tartarus.iface import SysDB as I
 from Tartarus.iface import core as C
+
 
 _user_query = ("SELECT users.id, groupid, name, fullname, shell "
                "FROM users , group_entries "
@@ -26,6 +27,7 @@ class UserManagerI(I.UserManager):
                 for uid, gid, name, fn, s in mas]
 
 
+    @auth.mark('read')
     @db.wrap("retrieving user by id")
     def getById(self, con, uid, current):
         cur = self._dbh.execute(con,
@@ -39,6 +41,7 @@ class UserManagerI(I.UserManager):
                 "retrieving user by id", uid)
 
 
+    @auth.mark('read')
     @db.wrap("retrieving user by name")
     def getByName(self, con, name, current):
         cur = self._dbh.execute(con,
@@ -51,7 +54,7 @@ class UserManagerI(I.UserManager):
         raise I.UserNotFound("User not found",
                 "retrieving data for user %s" % name, -1)
 
-
+    @auth.mark('read')
     @db.wrap("retrieving multiple users")
     def getUsers(self, con, userids, current):
         ids = tuple((i - self._uo for i in userids))
@@ -69,6 +72,7 @@ class UserManagerI(I.UserManager):
         return res
 
 
+    @auth.mark('read')
     @db.wrap("searching for users")
     def search(self, con, factor, limit, current):
         phrase = (factor.replace('\\',  '\\\\')
@@ -82,6 +86,7 @@ class UserManagerI(I.UserManager):
         return self._db2users(cur.fetchall())
 
 
+    @auth.mark('read')
     @db.wrap("counting users")
     def count(self, con, current):
         cur = self._dbh.execute(con,
@@ -94,12 +99,14 @@ class UserManagerI(I.UserManager):
         return long(res[0][0])
 
 
+    @auth.mark('read')
     @db.wrap("retrieving users")
     def get(self, con, limit, offset, current):
         cur = self._dbh.execute_limited(con, limit, offset, _user_query)
         return self._db2users(cur.fetchall())
 
 
+    @auth.mark('write')
     @db.wrap("changing user record")
     def modify(self, con, user, current):
         if not self._good_name.match(user.name):
@@ -125,6 +132,7 @@ class UserManagerI(I.UserManager):
         con.commit()
 
 
+    @auth.mark('write')
     @db.wrap("creating user")
     def create(self, con, newuser, current):
         if not self._good_name.match(newuser.name):
@@ -152,6 +160,7 @@ class UserManagerI(I.UserManager):
         con.commit()
         return uid + self._uo
 
+    @auth.mark('write')
     @db.wrap("deleting user")
     def delete(self, con, uid, current):
         cur = self._dbh.execute(con,

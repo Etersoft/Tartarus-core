@@ -7,17 +7,6 @@ import Tartarus.iface.core as ICore
 
 import utils
 
-class Locator(Ice.ServantLocator):
-    def __init__(self, dbh):
-        self.obj = ZoneI(dbh)
-    def locate(self, current):
-        return self.obj, None
-    def finished(self, current, obj, cookie):
-        pass
-    def deactivate(self, category):
-        pass
-
-
 class ZoneI(I.Zone):
     def __init__(self, dbh):
         # db.wrap expects database helper to be here:
