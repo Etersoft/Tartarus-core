@@ -1,6 +1,6 @@
 
 Version: 0.1.1
-Release: alt0.9
+Release: alt0.10
 
 %define tname Tartarus
 
@@ -344,6 +344,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Fri Dec 26 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt0.10
+- fixed syntax error
+
 * Tue Dec 23 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.9
 - new snapshot: join improvements
 
