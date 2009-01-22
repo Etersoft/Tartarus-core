@@ -1,6 +1,6 @@
 
 Version: 0.1.1
-Release: alt0.10
+Release: alt1
 
 %define tname Tartarus
 
@@ -344,6 +344,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Fri Jan 23 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt1
+- build for sisyphus
+
 * Fri Dec 26 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt0.10
 - fixed syntax error
 
