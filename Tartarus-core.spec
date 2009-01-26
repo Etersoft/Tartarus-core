@@ -1,6 +1,6 @@
 
 Version: 0.1.2
-Release: alt0.1
+Release: alt0.2
 
 %define tname Tartarus
 
@@ -344,6 +344,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.2
+- new snapshot: refuse to create system users
+
 * Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.1
 - new version: refactored SysDB database code
 
