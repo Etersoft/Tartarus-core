@@ -1,5 +1,5 @@
 
-import Tartarus, re
+import Tartarus, re, pwd
 from Tartarus import db, logging, auth
 from Tartarus.iface import SysDB as I
 from Tartarus.iface import core as C
@@ -126,6 +126,13 @@ class UserManagerI(I.UserManager):
     def create(self, con, newuser, current):
         if not self._good_name.match(newuser.name):
             raise C.ValueError("Invalid user name: %s" % newuser.name)
+        try:
+            pwd.getpwnam(newuser.name)
+        except KeyError:
+            pass
+        else:
+            raise C.ValueError("Current site policy does not allow to "
+                               "create users that already exist on server")
         if len(newuser.shell) == 0:
             newuser.shell = None
         self._dbh.execute(con,
