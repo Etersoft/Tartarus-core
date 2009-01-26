@@ -6,11 +6,11 @@ from Tartarus.iface import core as C
 
 
 _query = """
-SELECT count(group_entries.id)
+SELECT count(group_entries.gid)
 FROM group_entries, users
-WHERE users.id == group_entries.userid
+WHERE users.uid == group_entries.uid
 AND users.name == %s
-AND group_entries.groupid IN
+AND group_entries.gid IN
 """
 
 
@@ -72,7 +72,7 @@ class SimpleGroupAuthorizer(object):
     def make_groups(self, con, groups):
         ps = '(' + ', '.join( ('%s' for x in groups) ) + ')'
         cur = self._dbh.execute(con,
-                "SELECT id FROM groups WHERE name IN " + ps,
+                "SELECT gid FROM groups WHERE name IN " + ps,
                 *groups)
         return [x[0] for x in cur.fetchall()]
 
