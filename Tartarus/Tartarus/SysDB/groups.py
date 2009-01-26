@@ -1,5 +1,5 @@
 
-import Tartarus, re
+import Tartarus, re, grp
 from Tartarus import db, logging, auth
 from Tartarus.iface import SysDB as I
 from Tartarus.iface import core as C
@@ -210,6 +210,13 @@ class GroupManagerI(I.GroupManager):
     def create(self, con, newgroup, current):
         if not self._good_name.match(newgroup.name):
             raise C.ValueError("Invalid group name: %s" % newgroup.name)
+        try:
+            grp.getgrnam(newgroup.name)
+        except KeyError:
+            pass
+        else:
+            raise C.ValueError("Current site policy does not allow to "
+                               "create groups that already exist on server")
         self._dbh.execute(con,
                 "INSERT INTO groups (name, description) "
                 "VALUES (%s, %s)",
