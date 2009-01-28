@@ -1,5 +1,5 @@
 
-Version: 0.1.1
+Version: 0.1.2
 Release: alt1
 
 %define tname Tartarus
@@ -344,6 +344,15 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Wed Jan 28 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt1
+- build for sisyphus prebuild of alpha2
+
+* Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.2
+- new snapshot: refuse to create system users
+
+* Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.1
+- new version: refactored SysDB database code
+
 * Fri Jan 23 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt1
 - build for sisyphus
 

@@ -1,14 +1,11 @@
 
-import Tartarus, re
+import Tartarus, re, pwd
 from Tartarus import db, logging, auth
 from Tartarus.iface import SysDB as I
 from Tartarus.iface import core as C
 
 
-_user_query = ("SELECT users.id, groupid, name, fullname, shell "
-               "FROM users , group_entries "
-               "WHERE users.id == group_entries.userid "
-               "AND group_entries.is_primary ")
+_user_query = "SELECT uid, gid, name, fullname, shell FROM users "
 
 _GOOD_USER_NAME = "[A-Za-z].*"
 
@@ -32,7 +29,7 @@ class UserManagerI(I.UserManager):
     def getById(self, con, uid, current):
         cur = self._dbh.execute(con,
                 _user_query +
-                " AND users.id == %s", uid - self._uo)
+                " WHERE uid == %s", uid - self._uo)
         res = cur.fetchall()
         if len(res) == 1:
             return self._db2users(res)[0]
@@ -46,7 +43,7 @@ class UserManagerI(I.UserManager):
     def getByName(self, con, name, current):
         cur = self._dbh.execute(con,
                 _user_query +
-                " AND users.name == %s", name)
+                " WHERE users.name == %s", name)
         res = cur.fetchall()
         if len(res) == 1:
             return self._db2users(res)[0]
@@ -60,7 +57,7 @@ class UserManagerI(I.UserManager):
         ids = tuple((i - self._uo for i in userids))
         ps = '(' + ', '.join(('%s' for x in ids)) +')'
         cur = self._dbh.execute(con,
-                _user_query + " AND users.id IN " + ps, *ids)
+                _user_query + " WHERE uid IN " + ps, *ids)
         res = self._db2users(cur.fetchall())
         if (len(res) != len(userids)
                 and current.ctx.get("PartialStrategy") != "Partial"):
@@ -81,7 +78,7 @@ class UserManagerI(I.UserManager):
                         + '%')
         cur = self._dbh.execute_limited(con, limit, 0,
                 _user_query +
-                " AND (name LIKE %s or fullname LIKE %s)",
+                " WHERE (name LIKE %s or fullname LIKE %s)",
                 phrase, phrase)
         return self._db2users(cur.fetchall())
 
@@ -90,7 +87,7 @@ class UserManagerI(I.UserManager):
     @db.wrap("counting users")
     def count(self, con, current):
         cur = self._dbh.execute(con,
-                "SELECT count(name) FROM users")
+                "SELECT count(*) FROM users")
         res = cur.fetchall()
         if len(res) != 1:
             raise C.DBError(
@@ -115,20 +112,12 @@ class UserManagerI(I.UserManager):
         gid = user.gid - self._go
         cur = self._dbh.execute(con,
                 "UPDATE users SET "
-                "name=%s, fullname=%s, shell=%s "
-                "WHERE id == %s",
-                user.name, user.fullName, user.shell, uid)
+                "name=%s, gid=%s, fullname=%s, shell=%s "
+                "WHERE uid == %s",
+                user.name, gid, user.fullName, user.shell, uid)
         if cur.rowcount != 1:
             raise I.UserNotFound("User not found",
                     "changing user record", user.uid)
-        cur = self._dbh.execute(con,
-                "INSERT OR REPLACE "
-                "INTO group_entries (groupid, userid, is_primary) "
-                "SELECT groups.id, %s, %s FROM groups WHERE groups.id=%s",
-                uid, 1, gid)
-        if (cur.rowcount != 1):
-            raise I.GroupNotFound("Group not found",
-                    "Could not find new primary group", user.gid)
         con.commit()
 
 
@@ -137,39 +126,35 @@ class UserManagerI(I.UserManager):
     def create(self, con, newuser, current):
         if not self._good_name.match(newuser.name):
             raise C.ValueError("Invalid user name: %s" % newuser.name)
+        try:
+            pwd.getpwnam(newuser.name)
+        except KeyError:
+            pass
+        else:
+            raise C.ValueError("Current site policy does not allow to "
+                               "create users that already exist on server")
         if len(newuser.shell) == 0:
-            newuser.shell = "/bin/bash" # hardcoded default, yeah...
+            newuser.shell = None
         self._dbh.execute(con,
-                "INSERT INTO users (name, fullname, shell) "
-                "VALUES (%s, %s, %s)",
-                newuser.name, newuser.fullName, newuser.shell)
+                "INSERT INTO users (name, gid, fullname, shell) "
+                "VALUES (%s, %s, %s, %s)",
+                newuser.name, newuser.gid - self._go,
+                newuser.fullName, newuser.shell)
         cur = self._dbh.execute(con,
-                "SELECT id FROM users WHERE name = %s", newuser.name)
+                "SELECT uid FROM users WHERE name = %s", newuser.name)
         res = cur.fetchall()
         if len(res) != 1:
             raise C.DBError("Failed to add user",
-                    "User not found after insertion")
-        uid = res[0][0]
-        cur = self._dbh.execute(con,
-                "INSERT INTO group_entries (groupid, userid, is_primary) "
-                "SELECT groups.id, %s, %s FROM groups WHERE groups.id=%s",
-                uid, 1, newuser.gid - self._go)
-        if (cur.rowcount != 1):
-            raise I.GroupNotFound("Group not found",
-                    "Could not find primary group for new user", newuser.gid)
+                            "User not found after insertion")
         con.commit()
-        return uid + self._uo
+        return res[0][0] + self._uo
 
     @auth.mark('write')
     @db.wrap("deleting user")
     def delete(self, con, uid, current):
         cur = self._dbh.execute(con,
-                "DELETE FROM users WHERE id=%s", uid - self._uo)
+                "DELETE FROM users WHERE uid=%s", uid - self._uo)
         if cur.rowcount != 1:
             raise I.UserNotFound("User not found", "deleting user", uid)
-        self._dbh.execute(con,
-                "DELETE FROM group_entries WHERE userid=%s",
-                uid - self._uo)
         con.commit()
-
 
