@@ -27,7 +27,7 @@ def deploy_client_finish(opts_):
 
 def deploy_client_for_server(opts):
     deploy_client_start(opts)
-    for s in ['krb5kdc', 'powerdns', 'Tartarus']:
+    for s in ['krb5kdc', 'kadmin', 'powerdns', 'Tartarus']:
         service.service_on(s)
         service.service_restart(s)
     deploy_client_finish(opts)
