@@ -24,9 +24,9 @@ def deploy_sysdb(comm, opts):
     prx = comm.propertyToProxy('Tartarus.deployPrx.GroupManager')
     gm = SysDB.GroupManagerPrx.checkedCast(prx)
 
-    admins_gid = gm.create(SysDB.GroupRecord(-1, "admins",
-                                             "System administartors"))
-    users_gid = gm.create(SysDB.GroupRecord(-1, "users", "Users"))
+    admins_gid = gm.create(SysDB.GroupRecord(-1, "netadmins",
+                                             "Network administrators"))
+    users_gid = gm.create(SysDB.GroupRecord(-1, "netusers", "Network users"))
 
     uid = um.create(SysDB.UserRecord(-1, admins_gid, opts['name'],
                                      "System administrator"))

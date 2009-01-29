@@ -143,7 +143,7 @@ def deploy_options():
     fail_unless(opts['mask'], "Deployment canceled!")
     configure_recursor(opts)
     configure_resolv(opts)
-    opts['name'] = ask_user("User name for system administartor", "admin")
+    opts['name'] = ask_user("User name for system administrator", "sysadmin")
     opts['password'] = ask.password(
             "Please enter password for system administrator.")
     return opts
