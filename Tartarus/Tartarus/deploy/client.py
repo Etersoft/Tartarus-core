@@ -6,7 +6,8 @@ _all_template = '/usr/share/Tartarus/templates/all/all.config.template'
 
 
 def deploy_client_start(opts):
-    service.service_stop('tnscd')
+    for s in ['tnscd', 'nscd']:
+        service.service_stop(s)
     if not os.path.exists('/etc/Tartarus/clients'):
         os.makedirs('/etc/Tartarus/clients')
     config.gen_config_from_file('/etc/Tartarus/clients/all.config',
@@ -21,8 +22,9 @@ def deploy_client_dnsupdate(opts_, auto_update = False):
 
 
 def deploy_client_finish(opts_):
-    service.service_restart('tnscd')
-    service.service_on('tnscd')
+    for s in ['tnscd', 'nscd']:
+        service.service_restart(s)
+        service.service_on(s)
     pam.set_tartarus_auth()
 
 def deploy_client_for_server(opts):
@@ -33,6 +35,7 @@ def deploy_client_for_server(opts):
     deploy_client_finish(opts)
 
 def leave_client(opts_):
-    service.service_off('tnscd')
-    service.service_stop('tnscd')
+    for s in ['tnscd', 'nscd']:
+        service.service_off(s)
+        service.service_stop(s)
     pam.set_local_auth()
