@@ -1,6 +1,6 @@
 
 Version: 0.1.2
-Release: alt0.2
+Release: alt1.1
 
 %define tname Tartarus
 
@@ -75,7 +75,7 @@ Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
 Requires: %tname-dnsupdate >= 0.1.0
-Requires: libnss-tartarus, krb5-kinit, pam_krb5
+Requires: libnss-tartarus, krb5-kinit, pam_krb5, nscd
 
 %description -n %tname-join
 Tartarus client deployment.
@@ -344,6 +344,9 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Thu Jan 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt1.1
+- new snapshot: fixed admin and user names, added kadmin and nscd starting
+
 * Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.2
 - new snapshot: refuse to create system users
 
