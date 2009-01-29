@@ -1,6 +1,6 @@
 
 Version: 0.1.2
-Release: alt1
+Release: alt2
 
 %define tname Tartarus
 
@@ -75,7 +75,7 @@ Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
 Requires: %tname-dnsupdate >= 0.1.0
-Requires: libnss-tartarus, krb5-kinit, pam_krb5
+Requires: libnss-tartarus, krb5-kinit, pam_krb5, nscd
 
 %description -n %tname-join
 Tartarus client deployment.
@@ -344,17 +344,17 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Thu Jan 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt2
+- build for sisyphus prebuild of alpha2
++ fixed admin and user names, added kadmin and nscd starting
+
 * Wed Jan 28 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt1
 - build for sisyphus prebuild of alpha2
-
-* Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.2
-- new snapshot: refuse to create system users
-
-* Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.1
-- new version: refactored SysDB database code
++ refuse to create system users
++ refactored SysDB database code
 
 * Fri Jan 23 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt1
-- build for sisyphus
+- build for sisyphus alpha1
 
 * Fri Dec 26 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt0.10
 - fixed syntax error
