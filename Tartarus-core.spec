@@ -1,6 +1,6 @@
 
 Version: 0.1.2
-Release: alt2
+Release: alt3
 
 %define tname Tartarus
 
@@ -344,6 +344,11 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Fri Jan 30 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt3
+- build fixes for sisyphus prebuild of alpha2
++ add SRV records for kadmin service
++ change join default admin username
+
 * Thu Jan 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt2
 - build for sisyphus prebuild of alpha2
 + fixed admin and user names, added kadmin and nscd starting

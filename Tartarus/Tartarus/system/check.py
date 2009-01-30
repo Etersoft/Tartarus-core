@@ -19,3 +19,9 @@ def check_krb5_lookup(domain = None):
     except NXDOMAIN:
         raise Error('kdc for REALM "%s" not found' % realm)
 
+    try:
+        kdc_query = '_kpasswd._udp.' + realm + '.'
+        iter(query(kdc_query,'SRV')).next()
+    except NXDOMAIN:
+        raise Error('kpasswd for REALM "%s" not found' % realm)
+
