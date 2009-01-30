@@ -1,6 +1,6 @@
 
 Version: 0.1.2
-Release: alt1.1
+Release: alt1.2
 
 %define tname Tartarus
 
@@ -344,6 +344,11 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Fri Jan 30 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt1.2
+- new snapshot:
+  + add SRV records for kadmin service
+  + change join default admin username
+
 * Thu Jan 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt1.1
 - new snapshot: fixed admin and user names, added kadmin and nscd starting
 
