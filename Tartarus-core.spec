@@ -1,6 +1,6 @@
 
-Version: 0.1.2
-Release: alt3
+Version: 0.8.1
+Release: alt1
 
 %define tname Tartarus
 
@@ -45,6 +45,7 @@ Requires: python-module-%tname-daemon = %version-%release
 %package -n %tname-deploy-srv
 Summary: %tname server deployment utility
 Group: System/Configuration/Other
+Requires: %tname-leave = %version-%release
 Requires: %tname-common = %version-%release
 Requires: %tname = %version-%release
 Requires: %tname-DNS = %version-%release
@@ -67,7 +68,7 @@ inital configuration for Tartarus server.
 %package -n %tname-join
 Summary: Tartarus client deployment
 Group: System/Configuration/Other
-Provides: %tname = %version-%release
+Requires: %tname-leave = %version-%release
 Requires: %tname-common = %version-%release
 Requires: %tname-Kerberos-slice = %version-%release
 Requires: %tname-SysDB-slice = %version-%release
@@ -79,6 +80,17 @@ Requires: libnss-tartarus, krb5-kinit, pam_krb5, nscd
 
 %description -n %tname-join
 Tartarus client deployment.
+
+%package -n %tname-leave
+Summary: Tartarus client leave
+Group: System/Configuration/Other
+Requires: %tname-common = %version-%release
+Requires: python-module-%tname = %version-%release
+Requires: python-module-%tname-deploy = %version-%release
+Requires: python-module-%tname-system = %version-%release
+
+%description -n %tname-leave
+Tartarus client leave.
 
 
 # {{{1 Internal modules
@@ -261,6 +273,14 @@ cp -pR pam/* %buildroot%_sysconfdir/pam.d
 mkdir -p %buildroot%_localstatedir/%tname/SysDB
 
 
+# {{{1 triggers
+
+%preun -n %tname-leave
+if [ "$1" = "0" ]; then
+    Tartarus-leave -f
+fi
+
+
 # {{{1 files
 
 %files -n %tname-common
@@ -289,6 +309,8 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 
 %files -n %tname-join
 %_sbindir/*join*
+
+%files -n %tname-leave
 %_sbindir/*leave*
 
 %files -n python-module-%tname
@@ -344,6 +366,11 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 # {{{1 changelog
 
 %changelog
+* Fri Feb 06 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt1
+- build alpha2 for sisyphus
++ add leave running to Tartarus-leave preun script
++ add force option to Tartarus-leave for uninstall scripts
+
 * Fri Jan 30 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt3
 - build fixes for sisyphus prebuild of alpha2
 + add SRV records for kadmin service
