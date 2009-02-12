@@ -1,0 +1,20 @@
+srcdir='.'
+blddir='build'
+APPNAME='Tartarus'
+
+def set_options(opts):
+    opts.tool_options('gnu_dirs')
+    opts.tool_options('g++')
+
+def configure(cfg):
+    cfg.check_tool('g++')
+    cfg.check_tool('icetool', '.')
+    cfg.check_tool('gnu_dirs')
+
+def build(bld):
+    b = bld.new_task_gen(features='cshlib cxx')
+    b.source = 'DHCP.ice'
+    b.includes = '.'
+    b.target = 'Tartarus-slice-DHCP'
+    b.vnum='0.8.1'
+

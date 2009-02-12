@@ -1,0 +1,362 @@
+#!/usr/bin/python
+
+import sys
+import os
+import re
+from optparse import OptionParser
+from functools import wraps
+
+import Ice
+
+import Tartarus
+if 'TARTARUS_SLICES_PATH' in os.environ:
+    Tartarus.slices.path=[os.environ['TARTARUS_SLICES_PATH']]
+
+from Tartarus.iface import DHCP
+
+comm = Ice.initialize()
+
+class CommandLineError(Exception):
+    def __init__(self, msg):
+        super(CommandLineError, self).__init__(msg)
+
+class CommandError(Exception):
+    def __init__(self, msg, error_code=1):
+        super(CommandError, self).__init__(msg)
+        self.error_code = error_code
+
+class Command(object):
+    def run(self, argv):
+        if len(argv) == 1 and argv[0] == 'help':
+            self.help()
+            return 0
+        try:
+            return self.do_cmd(argv)
+        except CommandLineError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            self.help()
+            return 1
+        except CommandError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            return e.error_code
+    @classmethod
+    def help(cls):
+        name = cls.__name__.lower()
+        print 'Usage: %s %s\n' % (sys.argv[0], name)
+        print cls.__doc__
+        print
+
+def cmd(method):
+    @wraps(method)
+    def wrapper(self, argv):
+        if len(argv) == 1 and argv[0] == 'help':
+            self.cmd_help()
+            return 0
+        try:
+            return method(self, argv)
+        except CommandLineError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            self.cmd_help()
+            return 1
+        except CommandError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            return e.error_code
+    wrapper.is_command = True
+    return wrapper
+
+class SuperCommand(Command):
+    def __init__(self):
+        self.__commands = {}
+        for i in dir(self):
+            attr = getattr(self, i)
+            if hasattr(attr, 'is_command') and attr.is_command is True:
+                self.__commands[attr.__name__] = attr
+    def do_cmd(self, argv):
+        if len(argv) < 1:
+            raise CommandLineError('you should specify subcommand')
+        self.__subcmd = argv[0]
+        try:
+            callable = getattr(self, self.__subcmd)
+            if not callable.is_command:
+                raise CommandLineError('command %s not found' % self.__subcmd)
+        except:
+            raise CommandLineError('command %s not found' % self.__subcmd)
+        return callable(argv[1:])
+    def cmd_help(self):
+        if hasattr(self, 'help_' + self.__subcmd):
+            getattr(self, 'help_' + self.__subcmd)()
+        else:
+            name = type(self).__name__.lower()
+            print 'Usage: %s %s %s' % (sys.argv[0], name, self.__subcmd)
+            print '\n%s\n' % getattr(self, self.__subcmd).__doc__
+    def help(self):
+        name = type(self).__name__.lower()
+        print 'Usage: %s %s <subcommand> <args>\n' % (sys.argv[0], name)
+        print 'Valid subcommands are:'
+        for cmd, doc in ((name, attr.__doc__) for name, attr in self.__commands.iteritems()):
+            print '  \033[92m%s\033[0m - %s' % (cmd, doc)
+        print '\nTry run %s %s <subcommand> help for more information\n' % (sys.argv[0], name)
+
+class Start(Command):
+    'start dhcpd daemon'
+    def do_cmd(self, argv):
+        prx = daemonPrx()
+        prx.start()
+        return 0
+
+class Stop(Command):
+    'stop dhcpd daemon'
+    def do_cmd(self, argv):
+        prx = daemonPrx()
+        prx.stop()
+        return 0
+
+class Restart(Command):
+    'stop and start dhcpd daemon'
+    def do_cmd(self, argv):
+        prx = daemonPrx()
+        prx.stop()
+        prx.start()
+        return 0
+
+class Status(Command):
+    'show status of dhcpd daemon'
+    def do_cmd(self, argv):
+        prx = daemonPrx()
+        if prx.running():
+            print 'DHCP daemon is running'
+        else:
+            print 'DHCP daemon is not running'
+
+class Reset(Command):
+    'reset last changes in configuration'
+    def do_cmd(self, argv):
+        prx = serverPrx()
+        prx.reset()
+
+class Commit(Command):
+    'commit last changes'
+    def do_cmd(self, argv):
+        prx = serverPrx()
+        prx.commit()
+
+class Param(SuperCommand):
+    'show, set or unset global parameters'
+    @cmd
+    def show(self, argv):
+        'show parameters'
+        if len(argv) != 1: raise CommandLineError('wrong parameters')
+        scope = argv[0]
+        if scope == 'global':
+            srv = serverPrx()
+            for i in srv.params().iteritems():
+                print '%s: %s' % i
+            return 0
+        if re.match('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2}', scope):
+            srv = serverPrx()
+            s = srv.findSubnet(scope)
+            if s is None: raise CommandError('subnet %s is not found' % scope)
+            for i in s.params().iteritems():
+                print '%s: %s' % i
+            return 0
+        srv = serverPrx()
+        h = srv.hostsByNames([scope])[0]
+        if h is None: raise CommandError('host %s is not found' % scope)
+        for i in h.params().iteritems():
+            print '%s: %s' % i
+        return 0
+    def help_show(self):
+        print 'Usage: %s param show <scope>' % sys.argv[0]
+        print '\nShow parameters for scope'
+        print '<scope> can be "global", subnet in form <ip-addr>/<mask> or host name\n'
+    @cmd
+    def set(self, argv):
+        'set parameter'
+        if len(argv) != 3: raise CommandLineError('wrong parameters')
+        scope, key, value = argv
+        if scope == 'global':
+            srv = serverPrx()
+            srv.setParam(key, value)
+            return 0
+        if re.match('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2}', scope):
+            srv = serverPrx()
+            s = srv.findSubnet(scope)
+            if s is None: raise CommandError('subnet %s is not found' % scope)
+            s.setParam(key, value)
+            return 0
+        srv = serverPrx()
+        h = srv.hostsByNames([scope])[0]
+        if h is None: raise CommandError('host %s is not found' % scope)
+        h.setParam(key, value)
+        return 0
+    def help_set(self):
+        print 'Usage: %s param set <scope> <param> <value>' % sys.argv[0]
+        print '\nSet <param> to <value> for scope <scope>'
+        print '<scope> can be "global", subnet in form <ip-addr>/<mask> or host name\n'
+    @cmd
+    def unset(self, argv):
+        'unset parameters'
+        if len(argv) != 2: raise CommandLineError('wrong parameters')
+        scope, key = argv
+        if scope == 'global':
+            srv = serverPrx()
+            srv.unsetParam(key)
+            return 0
+        if re.match('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2}', scope):
+            srv = serverPrx()
+            s = srv.findSubnet(scope)
+            if s is None: raise CommandError('subnet %s is not found' % scope)
+            s.unsetParam(key)
+            return 0
+        srv.serverPrx()
+        h = srv.hostsByNames([scope])[0]
+        if h is None: raise CommandError('host %s is not found' % scope)
+        h.unsetParam(key)
+        return 0
+
+class Subnet(SuperCommand):
+    'list, create or delete subnets'
+    @cmd
+    def add(self, argv):
+        'add subnet'
+        if len(argv) != 1:
+            raise CommandLineError('wrong number of arguments')
+        prx = serverPrx()
+        prx.addSubnet(argv[0])
+    def help_add(self):
+        print 'Usage: %s subnet add <decl>' % sys.argv[0]
+        print '\nAdd subnet. <decl> should be in CIDR form: <ip-addr>/<mask>\n'
+    @cmd
+    def list(self, argv):
+        'list all available subnets'
+        prx = serverPrx()
+        for s in prx.subnets():
+            print '%s:' % s.decl()
+            r = s.range(DHCP.RangeType.STATIC)
+            if r.hasValue:
+                print '   STATIC: %s-%s' % (r.start, r.end)
+            else:
+                print '   STATIC: none'
+            r = s.range(DHCP.RangeType.TRUST)
+            if r.hasValue:
+                print '   TRUST: %s-%s' % (r.start, r.end)
+            else:
+                print '   TRUST: none'
+            r = s.range(DHCP.RangeType.UNTRUST)
+            if r.hasValue:
+                print '   UNTRUST: %s-%s' % (r.start, r.end)
+            else:
+                print '   UNTRUST: none'
+    @cmd
+    def delete(self, argv):
+        'delete subnet'
+        if len(argv) != 1:
+            raise CommandLineError('wrong number of arguments')
+        srv = serverPrx()
+        s = srv.findSubnet(argv[0])
+        if s is None: raise CommandError('subnet %s is not found' % argv[0])
+        srv.delSubnet(s)
+    def help_delete(self):
+        print 'Usage: %s subnet delete <decl>' % sys.argv[0]
+        print '\nDelete subnet. <decl> should be in CIDR form: <ip-addr>/<mask>\n'
+
+class Range(Command):
+    'modify subnets ip ranges'
+    def do_cmd(self, argv):
+        if len(argv) != 2 and len(argv) != 4:
+            raise CommandLineError('wrong number of arguments')
+        RT = DHCP.RangeType
+        type = {
+                'static': RT.STATIC,
+                'trust': RT.TRUST,
+                'untrust': RT.UNTRUST
+                }.get(argv[1], None)
+        if type is None: raise CommandLineError('you should specify range type')
+        srv = serverPrx()
+        sbn = srv.findSubnet(argv[0])
+        if sbn is None: raise CommandError('subnet %s not found' % argv[0])
+        if len(argv) == 2:
+            sbn.setRange(type, DHCP.IpRange('', '', False))
+        else:
+            start, end = argv[2:]
+            sbn.setRange(type, DHCP.IpRange(start, end, True))
+    def help(self):
+        print 'Usage: %s range <subnet> static|trust|untrust [<start> <end>]\n' % sys.argv[0]
+        print 'Set ip range for subnet or unset if <start> and <end> is not set\n'
+
+class Host(SuperCommand):
+    'add, or delete hosts'
+    def __init__(self):
+        super(Host, self).__init__()
+    @cmd
+    def add(self, argv):
+        'add host as trust'
+        if len(argv) not in (2, 3): raise CommandLineError('wrong number of arguments')
+        name = argv[0]
+        if len(argv) == 2:
+            id = DHCP.HostId(DHCP.HostIdType.IDENTITY, argv[1])
+        else:
+            id = DHCP.HostId(DHCP.HostIdType.HARDWARE, '%s %s' % argv[1:])
+        srv = serverPrx()
+        srv.addHost(name, id)
+    def help_add(self):
+        print 'Usage: %s host add <name> <identity>|ethernet <mac>|token-ring <hw>\n' % sys.argv[0]
+        print 'Add host with name as trust host for this server\n'
+    @cmd
+    def delete(self, argv):
+        'delete host'
+        if len(argv) != 1: raise CommandLineError('you should specify host name')
+        srv = serverPrx()
+        h = srv.hostsByNames(argv[0])[0]
+        if h is None: raise CommandError('host %s not found' % argv[0])
+        srv.delHosts([h])
+    @cmd
+    def list(self, argv):
+        'list all known hosts'
+        srv = serverPrx()
+        for h in srv.hosts():
+            print h.name()
+
+class Main:
+    def __init__(self):
+        self.__exec_name = sys.argv[0]
+        self.__cmds = {}
+        for cmd, cls in ((cmd.lower(), cls) for cmd, cls in globals().iteritems() if
+                isinstance(cls, type)
+                and issubclass(cls, Command)
+                and cls not in (Command, SuperCommand)
+                ):
+            self.__cmds[cmd] = cls
+    def usage(self):
+        print 'Usage: %s <command> <args>\n' % sys.argv[0]
+        self.helpCmds()
+    def helpCmds(self):
+        print 'Valid commands are:'
+        for cmd, doc in ((key, cmd.__doc__) for key, cmd in self.__cmds.iteritems()):
+            print '  \033[92m%s\033[0m - %s' % (cmd, doc)
+        print '\nTry run %s <command> help for more information\n' % sys.argv[0]
+    def __call__(self):
+        if len(sys.argv) < 2:
+            self.usage()
+            return 1
+        cmd = sys.argv[1]
+        cmd = self.__cmds.get(cmd, None)
+        if cmd is None:
+            print 'Error: %s - unknown command' % sys.argv[1]
+            self.helpCmds()
+            return 1
+        argv = sys.argv[2:]
+        cmd().run(argv)
+        comm.destroy()
+        return 0
+
+def daemonPrx():
+    prx = comm.propertyToProxy('Tartarus.DHCP.DaemonPrx')
+    return DHCP.DaemonPrx.checkedCast(prx)
+
+def serverPrx():
+    prx = comm.propertyToProxy('Tartarus.DHCP.ServerPrx')
+    return DHCP.ServerPrx.checkedCast(prx)
+
+sys.exit(Main()())
+
