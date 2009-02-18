@@ -14,8 +14,7 @@ Packager: Ivan A. Melnikov <iv@altlinux.org>
 
 BuildRequires(pre): rpm-build-licenses, rpm-build-python
 
-# Automatically added by buildreq on Fri Mar 21 2008
-BuildRequires: python-devel
+BuildRequires: python-devel gcc-c++ ice-devel-utils libice-devel
 
 %description
 Core components for %tname.
@@ -44,6 +43,7 @@ Requires: python-module-%tname-daemon = %version-%release
 %package -n %tname-deploy-srv
 Summary: %tname server deployment utility
 Group: System/Configuration/Other
+Requires: %tname-leave = %version-%release
 Requires: %tname-common = %version-%release
 Requires: %tname = %version-%release
 Requires: %tname-DNS = %version-%release
@@ -66,7 +66,7 @@ inital configuration for Tartarus server.
 %package -n %tname-join
 Summary: Tartarus client deployment
 Group: System/Configuration/Other
-Provides: %tname = %version-%release
+Requires: %tname-leave = %version-%release
 Requires: %tname-common = %version-%release
 Requires: %tname-Kerberos-slice = %version-%release
 Requires: %tname-SysDB-slice = %version-%release
@@ -74,10 +74,21 @@ Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
 Requires: %tname-dnsupdate >= 0.1.0
-Requires: libnss-tartarus, krb5-kinit, pam_krb5
+Requires: libnss-tartarus, krb5-kinit, pam_krb5, nscd
 
 %description -n %tname-join
 Tartarus client deployment.
+
+%package -n %tname-leave
+Summary: Tartarus client leave
+Group: System/Configuration/Other
+Requires: %tname-common = %version-%release
+Requires: python-module-%tname = %version-%release
+Requires: python-module-%tname-deploy = %version-%release
+Requires: python-module-%tname-system = %version-%release
+
+%description -n %tname-leave
+Tartarus client leave.
 
 
 # {{{1 Internal modules
@@ -244,6 +255,14 @@ fi
 %install
 ./waf install --destdir=%buildroot
 
+# {{{1 triggers
+
+%preun -n %tname-leave
+if [ "$1" = "0" ]; then
+    Tartarus-leave -f
+fi
+
+
 # {{{1 files
 
 %files -n %tname-common
@@ -272,6 +291,8 @@ fi
 
 %files -n %tname-join
 %_sbindir/*join*
+
+%files -n %tname-leave
 %_sbindir/*leave*
 
 %files -n python-module-%tname
@@ -325,107 +346,35 @@ fi
 # {{{1 changelog
 
 %changelog
-* Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.2
-- new snapshot: refuse to create system users
+* Wed Feb 18 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt1
+- add waf build system
 
-* Mon Jan 26 2009 Ivan A. Melnikov <iv@altlinux.org> 0.1.2-alt0.1
-- new version: refactored SysDB database code
+* Wed Feb 18 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt2
+- build fixes for sisyphus prebuild of alpha3
++ Now proper services should start and stop in proper moments (#114)
++ core: minor pylint-driven code cleanup
++ SysDB: fixed broken test database dump
++ SysDB: improved diagnostics on user and group creation
 
-* Fri Dec 26 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt0.10
-- fixed syntax error
+* Fri Feb 06 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt1
+- build alpha2 for sisyphus
++ add leave running to Tartarus-leave preun script
++ add force option to Tartarus-leave for uninstall scripts
 
-* Tue Dec 23 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.9
-- new snapshot: join improvements
+* Fri Jan 30 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt3
+- build fixes for sisyphus prebuild of alpha2
++ add SRV records for kadmin service
++ change join default admin username
 
-* Tue Dec 23 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.8
-- new snapshot: bugfixes
+* Thu Jan 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt2
+- build for sisyphus prebuild of alpha2
++ fixed admin and user names, added kadmin and nscd starting
 
-* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.7
-- new snapshot: better diagnostics in few places
+* Wed Jan 28 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.2-alt1
+- build for sisyphus prebuild of alpha2
++ refuse to create system users
++ refactored SysDB database code
 
-* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.6
-- relaxed dependency on dnsupdate
-
-* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.5
-- new snapshot: bugfixes
-
-* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.3
-- added forgotten auth submodule
-
-* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.2
-- fixed a typo
-
-* Mon Dec 22 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.1-alt0.1
-- new version
-  + basic authorization added
-
-* Fri Nov 28 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.0-alt0.18
-- fixed join with missed sethostname() implementation
-
-* Fri Nov 28 2008 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.0-alt0.17
-- fixed join with missed system.hosts
-- fixed first deployment server prompt
-
-* Fri Nov 28 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.16
-- new snapshot: join improvements
-- dependency cleanup
-
-* Thu Nov 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.15
-- added missed requirements to Tartarus-deploy-srv
-
-* Thu Nov 27 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.14
-- new snapshot: bugfixes
-
-* Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.13
-- new snapshot:
-  - many improvements in server deployment
-  - added Tartarus-leave: utility to remove clients from domain
-
-* Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.12
-- new snapshot: minor fixes in deployment
-
-* Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.11
-- fixed a typo in specfile
-
-* Wed Nov 26 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.10
-- added Tartarus-join subpackage to deploy clients
-
-* Tue Nov 25 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.9
-- new snapshot:
-  - several bug fixes
-  - many deployment improvements; in partucular:
-    - server is it's own client now (closes #25)
-    - necessary services are restarted after deployment is finished
-
-* Tue Nov 18 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.8
-- new snapshot: improved error diagnostics and handling
-
-* Tue Nov 18 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.7
-- new snapshot: Kadmin5: fixed default path to templates
-
-* Tue Nov 18 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.6
-- fixed configuration files installation
-- added dependency on python-module-dnet
-
-* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.5
-- new snapshot:
-    deploy-srv: better system network address detection
-    DNS: sqlite3 as default database engine
-- now modules require services they configure
-
-* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.4
-- added missed %% in dependencies
-- fixed requirements for deploy-srv
-
-* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.3
-- fixed creating directory for SysDB database
-
-* Mon Nov 17 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.2
-- added packages related to server deployment:
-  - python-module-Tartarus-deploy
-  - Tartarus-deploy-srv
-- fixed some errors in dependencies
-
-* Mon Nov 10 2008 Ivan A. Melnikov <iv@altlinux.org> 0.1.0-alt0.1
-- inital build from one common files
+* Fri Jan 23 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.1.1-alt1
+- build for sisyphus alpha1
 
