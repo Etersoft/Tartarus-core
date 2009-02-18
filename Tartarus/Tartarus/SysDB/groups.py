@@ -216,7 +216,8 @@ class GroupManagerI(I.GroupManager):
             pass
         else:
             raise C.ValueError("Current site policy does not allow to "
-                               "create groups that already exist on server")
+                               "create groups that already exist on server",
+                               newgroup.name)
         self._dbh.execute(con,
                 "INSERT INTO groups (name, description) "
                 "VALUES (%s, %s)",

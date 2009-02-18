@@ -53,7 +53,8 @@ def password(prompt, prompt1="Password: ",
     while True:
         ans1 = getpass.getpass(prompt1)
         if len(ans1) < min_len:
-            print 'Password too short! Please type at least %s symbols.' % min_len
+            print ('Password too short! Please type at least %s symbols.'
+                   % min_len)
             continue
         ans2 = getpass.getpass(prompt2)
         if ans1 == ans2:
