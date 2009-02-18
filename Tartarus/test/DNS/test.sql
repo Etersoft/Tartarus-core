@@ -45,12 +45,15 @@ INSERT INTO records VALUES(17,6,'saratov.etersoft.ru','NS','ns.saratov.etersoft.
 INSERT INTO records VALUES(18,6,'saratov.etersoft.ru','A','192.168.33.15',NULL,NULL,NULL);
 INSERT INTO records VALUES(19,6,'kerberos.saratov.etersoft.ru','CNAME','tartarus.saratov.etersoft.ru',NULL,NULL,NULL);
 INSERT INTO records VALUES(20,6,'_kerberos._udp.saratov.etersoft.ru','SRV','0 88 kerberos.saratov.etersoft.ru',NULL,NULL,NULL);
-INSERT INTO records VALUES(21,6,'_kerberos.saratov.etersoft.ru','TXT','SARATOV.ETERSOFT.RU',NULL,NULL,NULL);
-INSERT INTO records VALUES(22,6,'tartarus.saratov.etersoft.ru','A','192.168.33.15',NULL,0,NULL);
-INSERT INTO records VALUES(23,6,'ns.saratov.etersoft.ru','CNAME','tartarus.saratov.etersoft.ru',NULL,0,NULL);
-INSERT INTO records VALUES(24,7,'33.168.192.in-addr.arpa','SOA','ns.saratov.etersoft.ru admin.saratov.etersoft.ru 0 43200 3600 604800 3600',NULL,NULL,NULL);
-INSERT INTO records VALUES(25,7,'33.168.192.in-addr.arpa','NS','ns.saratov.etersoft.ru',NULL,NULL,NULL);
-INSERT INTO records VALUES(26,7,'15.33.168.192.in-addr.arpa','PTR','tartarus.saratov.etersoft.ru',NULL,NULL,NULL);
+INSERT INTO records VALUES(21,6,'_kerberos._tcp.saratov.etersoft.ru','SRV','0 88 kerberos.saratov.etersoft.ru',NULL,NULL,NULL);
+INSERT INTO records VALUES(22,6,'_kpasswd._udp.saratov.etersoft.ru','SRV','0 464 kerberos.saratov.etersoft.ru',NULL,NULL,NULL);
+INSERT INTO records VALUES(23,6,'_kerberos-adm._tcp.saratov.etersoft.ru','SRV','0 749 kerberos.saratov.etersoft.ru',NULL,NULL,NULL);
+INSERT INTO records VALUES(24,6,'_kerberos.saratov.etersoft.ru','TXT','SARATOV.ETERSOFT.RU',NULL,NULL,NULL);
+INSERT INTO records VALUES(25,6,'tartarus.saratov.etersoft.ru','A','192.168.33.15',NULL,0,NULL);
+INSERT INTO records VALUES(26,6,'ns.saratov.etersoft.ru','CNAME','tartarus.saratov.etersoft.ru',NULL,0,NULL);
+INSERT INTO records VALUES(27,7,'33.168.192.in-addr.arpa','SOA','ns.saratov.etersoft.ru admin.saratov.etersoft.ru 0 43200 3600 604800 3600',NULL,NULL,NULL);
+INSERT INTO records VALUES(28,7,'33.168.192.in-addr.arpa','NS','ns.saratov.etersoft.ru',NULL,NULL,NULL);
+INSERT INTO records VALUES(29,7,'15.33.168.192.in-addr.arpa','PTR','tartarus.saratov.etersoft.ru',NULL,NULL,NULL);
 INSERT INTO records VALUES(30,6,'tclient.saratov.etersoft.ru','A','192.168.33.238',NULL,NULL,NULL);
 INSERT INTO records VALUES(31,7,'238.33.168.192.in-addr.arpa','PTR','tclient.saratov.etersoft.ru',NULL,NULL,NULL);
 CREATE TABLE supermasters (

@@ -32,7 +32,7 @@ def deploy(opts):
 
     hosts.replace_localhost(opts['fqdn'])
     krb5user.kinitPasswordPromptPosix(
-            consdialog.ask('user[admin]: ', 'admin'))
+            consdialog.ask('user[admin]: ', 'sysadmin'))
 
     client.deploy_client_start(opts)
 

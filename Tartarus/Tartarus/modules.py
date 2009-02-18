@@ -46,7 +46,7 @@ def load_config(props, cfg_path):
             continue
         try:
             props.load(f)
-        except:
+        except Exception:
             logging.error("Failed to load configuration file: %s" % f)
 
 

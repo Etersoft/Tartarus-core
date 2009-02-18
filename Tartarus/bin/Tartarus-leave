@@ -1,18 +1,56 @@
 #!/usr/bin/python
 
-import Tartarus.system
+import sys, Ice, Tartarus.system
 from Tartarus.system import consdialog, Error
 from Tartarus.deploy import client
+from optparse import OptionParser
 
 def leave(opts):
     client.leave_client(opts)
 
 
-def main():
+def _main():
     domain = Tartarus.system.hostname.getdomain()
 
-    if (consdialog.yesno('Do you realy want to leave from Tartarus Domain: %s?' % domain)):
+    parser = OptionParser()
+    parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
+                      help="force leave from Tartarus domain")
+
+    (options, args) = parser.parse_args()
+
+    if (options.force or consdialog.yesno('Do you realy want to leave from Tartarus Domain: %s?' % domain)):
         leave({ 'domain' : domain})
+
+def _format_exception():
+    et, ev, _  = sys.exc_info()
+
+    if et is Ice.InitializationException:
+        code = -1
+        msg = "Failed to initialize runtime: %s" % ev.reason
+    elif et is OSError:
+        print et.message()
+        code =  ev.errno
+        msg = "OS Error: %s" % ev.strerror
+    else:
+        code =  -1
+        msg = str().join(traceback. format_exception(et, ev, None))
+
+    if not msg.endswith('\n'):
+        msg += '\n'
+
+    return (code, msg)
+
+def main():
+    try:
+        _main()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        msg = "\n\nJoin canceled!\n"
+        code = -1
+    except Exception:
+        code, msg = _format_exception()
+    sys.stderr.write(msg)
+    sys.exit(code)
 
 if __name__ == '__main__':
     main()

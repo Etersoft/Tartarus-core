@@ -77,7 +77,7 @@ class _Helper(object):
         self.trace = opts.get('trace', 0)
         try:
             self.trace = int(self.trace)
-        except ValueError, v:
+        except ValueError:
             raise self.ConfigError( "Invalid value for db.trace parametr "
                                     "(must be integer)", self.trace)
         try:

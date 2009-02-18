@@ -4,8 +4,8 @@ CREATE TABLE groups (
     name VARCHAR UNIQUE NOT NULL,
     description VARCHAR DEFAULT "" NOT NULL ON CONFLICT REPLACE
 );
-INSERT INTO "groups" VALUES(1,'admins','System administartors');
-INSERT INTO "groups" VALUES(2,'users','Users');
+INSERT INTO "groups" VALUES(1,'netadmins','Network administrators');
+INSERT INTO "groups" VALUES(2,'netusers','Network users');
 DELETE FROM sqlite_sequence;
 INSERT INTO "sqlite_sequence" VALUES('groups',2);
 INSERT INTO "sqlite_sequence" VALUES('users',1);
@@ -17,7 +17,7 @@ CREATE TABLE users (
     shell VARCHAR DEFAULT "/bin/bash"
         NOT NULL ON CONFLICT REPLACE
 );
-INSERT INTO "users" VALUES(1,1,'admin','System administrator','/bin/bash');
+INSERT INTO "users" VALUES(1,1,'sysadmin','System administrator','/bin/bash');
 CREATE TABLE real_group_entries (
     uid INTEGER NOT NULL,
     gid INTEGER NOT NULL,
