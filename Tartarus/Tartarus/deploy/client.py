@@ -27,8 +27,13 @@ def deploy_client_finish(opts_):
         service.service_on(s)
     pam.set_tartarus_auth()
 
-def deploy_client_for_server(opts):
+def deploy_server_pre():
+    service.tartarus_start_deploy()
+
+def deploy_server_start(opts):
     deploy_client_start(opts)
+
+def deploy_server_stop(opts):
     for s in ['krb5kdc', 'kadmin', 'powerdns', 'Tartarus']:
         service.service_on(s)
         service.service_restart(s)
