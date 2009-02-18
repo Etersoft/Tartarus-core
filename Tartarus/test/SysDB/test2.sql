@@ -17,7 +17,7 @@ CREATE TABLE users (
     shell VARCHAR DEFAULT "/bin/bash"
         NOT NULL ON CONFLICT REPLACE
 );
-INSERT INTO "netusers" VALUES(1,1,'sysadmin','System administrator','/bin/bash');
+INSERT INTO "users" VALUES(1,1,'sysadmin','System administrator','/bin/bash');
 CREATE TABLE real_group_entries (
     uid INTEGER NOT NULL,
     gid INTEGER NOT NULL,
