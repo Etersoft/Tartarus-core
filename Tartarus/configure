@@ -1,7 +1,4 @@
 #!/bin/bash
 
-export PREFIX=/usr
-export SYSCONFDIR=/etc
-
-waf configure "$@"
+waf configure --prefix=/usr --sysconfdir=/etc "$@"
 

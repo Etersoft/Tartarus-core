@@ -1,3 +1,6 @@
+import sys
+import Options
+
 srcdir = '.'
 blddir = '.waf-build'
 APPNAME = 'Tartarus-core'
@@ -7,6 +10,16 @@ def set_options(opt):
     opt.tool_options('gnu_dirs')
     opt.tool_options('python')
     opt.tool_options('cxx')
+    opt.add_option(
+            '--package-version',
+            action='store_true',
+            help='Show version of package and exit',
+            dest='show_version')
+
+def init():
+    if Options.options.show_version:
+        print VERSION
+        sys.exit(0)
 
 def configure(cfg):
     cfg.check_tool('gnu_dirs')
