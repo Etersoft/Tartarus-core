@@ -1,4 +1,4 @@
 #!/bin/bash
 
-waf configure --prefix=/usr --sysconfdir=/etc "$@"
+./waf configure --prefix=/usr --sysconfdir=/etc "$@"
 
