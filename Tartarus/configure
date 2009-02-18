@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export PREFIX=/usr
+export SYSCONFDIR=/etc
+
+waf configure "$@"
+

@@ -1,0 +1,148 @@
+def configure(cfg):
+    cfg.env['SLICE2CPP_PROG'] = cfg.find_program('slice2cpp')
+
+def build(bld):
+    bld.install_files('${DATADIR}/Tartarus/slice', bld.glob('*/*.ice'), relative_trick=True)
+    bld.auto_add_subdirs()
+
+# support for process slice files
+
+from TaskGen import feature, extension, after, before, taskgen
+import Task
+import Utils
+
+slice2cpp_str = '${SLICE2CPP_PROG} ${SRC} --output-dir ${TGT[0].dir(env)} ${_SLICEINCLUDES}'
+Task.simple_task_type('slice2cpp', slice2cpp_str, before='cxx', vars=['SLICE2CPP_PROG'])
+
+@feature('slice2cpp')
+def ice_init(self):
+    Utils.def_attrs(self,
+            slice_includes='',
+            headers_path=None)
+
+def install_headers(install_path=None):
+    install_path = install_path or '${INCLUDEDIR}/${PACKAGE}'
+    def do_install(task):
+        bld = task.generator.bld
+        files = [o.relpath_gen(bld.srcnode) for o in task.outputs if o.suffix() in ('.h', '.hpp')]
+        bld.install_files(install_path, files, task.env)
+    return do_install
+
+@before('apply_link')
+@feature('slice2cpp')
+@after('apply_core', 'ice_init', 'apply_slice_includes')
+def create_slice2cpp_task(self):
+    if self.env['SLICE2CPP_PROG']:
+        for s in self.slices:
+            t = self.create_task('slice2cpp')
+            t.inputs = [s]
+            cppnode = s.change_ext('.cpp')
+            t.outputs = [s.change_ext('.h'), cppnode]
+            t.install = install_headers(self.headers_path)
+            t = self.create_task('cxx')
+            t.inputs = [cppnode]
+            t.outputs = [cppnode.change_ext('.o')]
+            self.compiled_tasks.append(t)
+
+@feature('slice2cpp')
+def apply_slice_includes(self):
+    incnodes = []
+    for path in self.to_list(self.slice_includes):
+        node = None
+        if path[0] == '#':
+            node = self.bld.srcnode
+            if len(path) > 1:
+                node = node.find_dir(path[1:])
+        else:
+            node = self.path.find_dir(path)
+        if node:
+            incnodes.append(node)
+    for i in incnodes:
+        self.env.append_value('_SLICEINCLUDES', '-I%s' % i.bldpath(self.env))
+        self.env.append_value('_SLICEINCLUDES', '-I%s' % i.srcpath(self.env))
+
+@extension('.ice')
+def add_slice(self, node):
+    self.slices = self.to_list(getattr(self, 'slices', [])) + [node]
+
+# support for generate pc files (pkgconfig)
+
+def generate_pcfile(tsk):
+    lines = []
+    a = lines.append
+
+    version = getattr(tsk, 'version', None) or tsk.env.get_flat('VERSION')
+    if not version:
+        return 1
+    a('version='+version)
+    if hasattr(tsk, 'defines'):
+        for i in tsk.defines.iteritems():
+            a('%s=%s' % i)
+    a('')
+
+    if not hasattr(tsk, 'name'):
+        return 1
+    a('Name: %s' % getattr(tsk, 'name'))
+
+    description = getattr(tsk, 'description', None)
+    if description: a('Description: %s' % description)
+
+    a('Version: ${version}')
+
+    url = getattr(tsk, 'url', None)
+    if url: a('Url: %s' % url)
+
+    requires = getattr(tsk, 'requires', None)
+    if requires: a('Requires: %s' % ','.join(requires))
+
+    conflicts = getattr(tsk, 'conflicts', None)
+    if conflicts: a('Conflicts: %s' % ','.join(conflicts))
+
+    libs = getattr(tsk, 'libs', None)
+    if libs: a('Libs: %s' % ' '.join(Utils.to_list(libs)))
+
+    libs_private = getattr(tsk, 'libs_private', None)
+    if libs_private: a('Libs.private: %s' % ' '.join(Utils.to_list(libs_private)))
+
+    cflags = getattr(tsk, 'cflags', None)
+    if cflags: a('Cflags: %s' % ' '.join(Utils.to_list(cflags)))
+
+    a('')
+    open(tsk.outputs[0].abspath(tsk.env), 'w+').write('\n'.join(lines))
+
+cls = Task.task_type_from_func('pcgen', func=generate_pcfile)
+cls.install_path = '${LIBDIR}/pkgconfig'
+
+_pcgen_attrs = '''
+        defines
+        name
+        description
+        version
+        url
+        requires
+        conflicts
+        libs
+        libs_private
+        cflags'''.split()
+
+@feature('pcgen')
+def init_pcgen(self):
+    Utils.def_attrs(self,
+            pc_filename='${PACKAGE}.pc',
+            pc_install_path=None)
+
+@feature('pcgen')
+@after('init_pcgen')
+def apply_pcgen(self):
+    t = self.create_task('pcgen')
+    for a in _pcgen_attrs:
+        val = getattr(self, 'pc_'+a, None)
+        if val: setattr(t, a, val)
+    t.defines = getattr(t, 'defines', {})
+    for i in self.to_list(getattr(self, 'pc_env_defines', '')):
+        t.defines[i] = self.env.get_flat(i.upper())
+    outfilename = Utils.subst_vars(self.pc_filename, self.env)
+    t.outputs = [self.path.find_or_declare(outfilename)]
+    if self.pc_install_path:
+        t.install_path = self.pc_install_path
+

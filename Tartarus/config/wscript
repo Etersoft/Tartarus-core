@@ -1,0 +1,4 @@
+def build(bld):
+    confs = bld.glob('*.conf') + bld.glob('*/*.conf')
+    bld.install_files('${SYSCONFDIR}/Tartarus', confs, relative_trick=True)
+

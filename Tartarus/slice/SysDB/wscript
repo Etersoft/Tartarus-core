@@ -1,0 +1,16 @@
+def build(bld):
+    bld.new_task_gen(
+            features='slice2cpp cxx cstaticlib pcgen',
+            source=bld.glob('*.ice'),
+            target='tartarus-slice-SysDB',
+            slice_includes='..',
+            headers_path='${INCLUDEDIR}/Tartarus/SysDB',
+            includes='. ..',
+            pc_filename = 'tartarus-slice-sysdb.pc',
+            pc_env_defines = 'includedir',
+            pc_name = 'tartarus-slice-sysdb',
+            pc_description = 'Tartarus library for using SysDB service',
+            pc_requires = ['tartarus-slice-core = ${version}'],
+            pc_libs = '-ltartarus-slice-sysdb',
+            pc_cflags='-I${includedir}/Tartarus')
+

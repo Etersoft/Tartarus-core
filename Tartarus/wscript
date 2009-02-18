@@ -1,0 +1,33 @@
+srcdir = '.'
+blddir = '.waf-build'
+APPNAME = 'Tartarus-core'
+VERSION = '0.8.2'
+
+def set_options(opt):
+    opt.tool_options('gnu_dirs')
+    opt.tool_options('python')
+    opt.tool_options('cxx')
+
+def configure(cfg):
+    cfg.check_tool('gnu_dirs')
+    cfg.check_tool('python')
+    cfg.check_tool('g++')
+    cfg.check_python_version((2,5))
+    cfg.sub_config('slice')
+    cfg.env['VERSION'] = VERSION
+
+def build(bld):
+    bld.auto_add_subdirs()
+
+def bld_ext(method):
+    import Build
+    name = method.__name__
+    setattr(Build.BuildContext, name, method)
+
+@bld_ext
+def auto_add_subdirs(self):
+    from os import path
+    from Logs import info
+    subdirs = [path.dirname(i) for i in self.glob('*/wscript')]
+    self.add_subdirs(subdirs)
+
