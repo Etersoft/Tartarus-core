@@ -1,6 +1,6 @@
 
-Version: 0.1.2
-Release: alt0.2
+Version: 0.8.2
+Release: alt1
 
 %define tname Tartarus
 
@@ -40,7 +40,6 @@ Requires: python-module-%tname-daemon = %version-%release
 
 %description -n %tname-srv1
 %tname python service loader
-
 
 %package -n %tname-deploy-srv
 Summary: %tname server deployment utility
@@ -230,36 +229,20 @@ Interface defenision files for %tname core objects.
 
 %setup  -q -n %tname-%version
 
+%build
+# check version
+if [ "%version" != "`./waf --package-version`" ]; then
+    echo RPM and package versions are not equal
+    exit 1
+fi
+
+./configure
+./waf
 
 # {{{1 install
 
 %install
-mkdir -p %buildroot%tmoduledir
-cp -pR %tname/[A-Z]* %buildroot%tmoduledir
-
-mkdir -p %buildroot%tpythondir
-cp -pR %tname/[a-z_]* %buildroot%tpythondir
-
-mkdir -p %buildroot%_sbindir
-cp -pR bin/* %buildroot%_sbindir
-
-mkdir -p %buildroot%tconfdir
-cp -pR config/* %buildroot%tconfdir
-
-mkdir -p %buildroot%ttemplatedir
-cp -pR templates/* %buildroot%ttemplatedir
-
-mkdir -p %buildroot%_initdir
-cp -pR init/* %buildroot%_initdir
-
-mkdir -p %buildroot%tslicedir
-cp -pR slice/* %buildroot%tslicedir
-
-mkdir -p %buildroot%_sysconfdir/pam.d
-cp -pR pam/* %buildroot%_sysconfdir/pam.d
-
-mkdir -p %buildroot%_localstatedir/%tname/SysDB
-
+./waf install --destdir=%buildroot
 
 # {{{1 files
 
@@ -324,8 +307,6 @@ mkdir -p %buildroot%_localstatedir/%tname/SysDB
 %files -n %tname-SysDB
 %tconfdir/*/SysDB*
 %tmoduledir/SysDB
-%_localstatedir/%tname/SysDB
-
 
 %files -n %tname-core-slice
 %dir %tslicedir
