@@ -133,6 +133,9 @@ def deploy_dns(comm, opts):
         R(domain,                     T.A,     ip,             -1, -1),
         R(krb,                        T.CNAME, fqdn,           -1, -1),
         R('_kerberos._udp.' + domain, T.SRV,   '0 88 ' + krb,  0,  -1),
+        R('_kerberos._tcp.' + domain, T.SRV,   '0 88 ' + krb,  0,  -1),
+        R('_kpasswd._udp.' + domain,  T.SRV,   '0 464 ' + krb,  0,  -1),
+        R('_kerberos-adm._tcp.' + domain, T.SRV, '0 749 ' + krb,  0,  -1),
         R('_kerberos.' + domain,      T.TXT,   domain.upper(), -1, -1),
         ]
     if fqdn != domain:

@@ -8,7 +8,6 @@ import os, sys, socket, traceback, re
 from Tartarus import system
 import Tartarus.system.resolv as resolv
 import Tartarus.system.consdialog as ask
-from Tartarus.system import service
 import Tartarus.deploy.client
 
 class Failure(RuntimeError):
@@ -143,7 +142,7 @@ def deploy_options():
     fail_unless(opts['mask'], "Deployment canceled!")
     configure_recursor(opts)
     configure_resolv(opts)
-    opts['name'] = ask_user("User name for system administartor", "admin")
+    opts['name'] = ask_user("User name for system administrator", "sysadmin")
     opts['password'] = ask.password(
             "Please enter password for system administrator.")
     return opts
@@ -165,7 +164,8 @@ def init():
     return Ice.initialize(d)
 
 def _main():
-    service.tartarus_start_deploy()
+    c = Tartarus.deploy.client
+    c.deploy_server_pre()
     comm = init()
     services = [
             ('DNS',      'dns_force',   Tartarus.deploy.deploy_sysdb),
@@ -174,6 +174,7 @@ def _main():
     for svc, _, _ in services:
         check_availability(comm, svc)
     opts = deploy_options()
+    c.deploy_server_start(opts)
     for svc, force, _ in services:
         check_deployment(comm, svc, force, opts)
     for svc, _, proc in services:
@@ -187,7 +188,7 @@ def _main():
     if len(nameservers):
         resolv.set_nameservers(nameservers)
     comm.destroy()
-    Tartarus.deploy.client.deploy_client_for_server(opts)
+    c.deploy_server_stop(opts)
 
 
 def _format_exception():

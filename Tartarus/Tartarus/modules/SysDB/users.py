@@ -132,7 +132,8 @@ class UserManagerI(I.UserManager):
             pass
         else:
             raise C.ValueError("Current site policy does not allow to "
-                               "create users that already exist on server")
+                               "create users that already exist on server",
+                               newuser.name)
         if len(newuser.shell) == 0:
             newuser.shell = None
         self._dbh.execute(con,
