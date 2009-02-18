@@ -1,6 +1,6 @@
 
 Version: 0.8.1
-Release: alt1
+Release: alt2
 
 %define tname Tartarus
 
@@ -366,6 +366,13 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Feb 18 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt2
+- build fixes for sisyphus prebuild of alpha3
++ Now proper services should start and stop in proper moments (#114)
++ core: minor pylint-driven code cleanup
++ SysDB: fixed broken test database dump
++ SysDB: improved diagnostics on user and group creation
+
 * Fri Feb 06 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt1
 - build alpha2 for sisyphus
 + add leave running to Tartarus-leave preun script
