@@ -3,5 +3,5 @@ def build(bld):
     bld.new_task_gen(
             features='py',
             source=bld.glob('*.py'),
-            install_path='${PYTHONDIR}/Tartarus/server/DHCP')
+            install_path='${PYTHONDIR}/Tartarus/system')
 

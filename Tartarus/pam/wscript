@@ -1,0 +1,3 @@
+def build(bld):
+    bld.install_files('${SYSCONFDIR}/pam.d', '*')
+
