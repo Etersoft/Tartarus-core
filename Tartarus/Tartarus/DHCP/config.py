@@ -1,7 +1,4 @@
 import os
-from options import opts
-import storage
-from server import Server
 
 class Config:
     "High-level interface for config files manipulations"
@@ -27,4 +24,8 @@ class Config:
     def genDHCPCfg(self):
         self.__server.genConfig(open(self.__dhcp_cfg_fname_new, 'w+'))
         os.rename(self.__dhcp_cfg_fname_new, self.__dhcp_cfg_fname)
+
+from options import opts
+import storage
+from server import Server
 

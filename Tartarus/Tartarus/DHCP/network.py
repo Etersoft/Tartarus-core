@@ -1,59 +1,10 @@
 import os
-from subprocess import Popen, PIPE
 import Ice
-import signal
 from Tartarus.iface import DHCP
 from server import Server, Identity
 from options import opts
 from config import Config
-
-class Daemon:
-    RUN, STOP = range(2)
-    __instance = None
-    @staticmethod
-    def get():
-        if Daemon.__instance is None:
-            Daemon.__instance = Daemon()
-        return Daemon.__instance
-    def __init__(self):
-        self.__program = 'dhcpd'
-        self.__pid = None
-        self.__args = [
-                'dhcpd',
-                '-f',
-                '-q',
-                '-cf', opts().dhcp_cfg_fname
-                ]
-    def start(self):
-        if self.status() == self.RUN:
-            return
-        self.test_cfg()
-        self.__pid = os.spawnvp(os.P_NOWAIT, self.__program, self.__args)
-    def stop(self):
-        if self.status() == self.STOP:
-            return
-        os.kill(self.__pid, signal.SIGTERM)
-        self.__waitpid()
-    def status(self):
-        if self.__pid is None:
-            return self.STOP
-        statfile = '/proc/%d/stat' % self.__pid
-        if os.path.exists(statfile):
-            statcontent = open(statfile).read()
-            stat = statcontent.split()
-            if stat[1] == '(dhcpd)' and stat[2] != 'Z':
-                return self.RUN
-            if stat[1] == '(dhcpd)' and stat[2] == 'Z':
-                self.__waitpid()
-        return self.STOP
-    def test_cfg(self):
-        sp = Popen(['dhcpd', '-t', '-cf', opts().dhcp_cfg_fname], stderr=PIPE)
-        _, errors = sp.communicate()
-        if sp.returncode != 0:
-            raise RuntimeError(errors)
-    def __waitpid(self):
-        os.waitpid(self.__pid, 0)
-        self.__pid = None
+from runner import Runner, Status
 
 class HostI(DHCP.Host):
     def __init__(self, name):
@@ -187,16 +138,18 @@ class ServerI(DHCP.Server):
 
 class DaemonI(DHCP.Daemon):
     def __init__(self):
-        self.__daemon = Daemon.get()
+        self.__runner = Runner.get()
         self.__server = Server.get()
+        if self.__server.startOnLoad():
+            self.__runner.start()
     def start(self, current):
-        self.__daemon.start()
+        self.__runner.start()
         self.__server.startOnLoad(True)
     def stop(self, current):
-        self.__daemon.stop()
+        self.__runner.stop()
         self.__server.startOnLoad(False)
     def running(self, current):
-        return self.__daemon.status() == Daemon.RUN
+        return self.__runner.status() == Status.RUN
 
 class SubnetLocator(Ice.ServantLocator):
     def locate(self, current):
@@ -214,4 +167,14 @@ class HostLocator(Ice.ServantLocator):
         pass
     def deactivate(self, category):
         pass
+
+def init(adapter):
+    com = adapter.getCommunicator()
+    adapter.addServantLocator(SubnetLocator(), "DHCP-Subnets")
+    adapter.addServantLocator(HostLocator(), "DHCP-Hosts")
+
+    ident = com.stringToIdentity('DHCP/Server')
+    adapter.add(ServerI(), ident)
+    ident = com.stringToIdentity('DHCP/Daemon')
+    adapter.add(DaemonI(), ident)
 

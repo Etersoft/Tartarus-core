@@ -1,21 +1,10 @@
-from network import ServerI, DaemonI, SubnetLocator, HostLocator, Daemon
-from server import Server
-import options
-
 def init(adapter):
-    com = adapter.getCommunicator()
-    props = com.getProperties()
+    props = adapter.getCommunicator().getProperties()
     options.init(props)
+    Config.get().load()
+    network.init(adapter)
 
-    server = Server.get()
-    if server.startOnLoad():
-        Daemon.get().start()
-
-    ident = com.stringToIdentity('DHCP/Server')
-    adapter.add(ServerI(), ident)
-    ident = com.stringToIdentity('DHCP/Daemon')
-    adapter.add(DaemonI(), ident)
-
-    adapter.addServantLocator(SubnetLocator(), "DHCP-Subnets")
-    adapter.addServantLocator(HostLocator(), "DHCP-Hosts")
+import options
+from config import Config
+import network
 
