@@ -1,2 +1,5 @@
+
 Tartarus.module.DHCP = DHCP
+Tartarus.DHCP.ConfigFile = ./dhcp/cgf
+Tartarus.DHCP.DHCPConfigFile = ./dhcp/dhcpd.conf
 
