@@ -2,7 +2,7 @@ import re
 
 class _none:
     def __init__(self, key): pass
-    def __call__(value): pass
+    def __call__(self, value): pass
 
 def _regexp(key, expr):
     rexp = re.compile(expr)
@@ -22,7 +22,7 @@ class _ip:
     __rexp = re.compile('^\d{1,3}$')
     def __init__(self, key):
         self.__key = key
-    def __call__(value):
+    def __call__(self, value):
         parts = value.split('.')
         if len(parts) != 4:
             raise DHCPDValueError(self.__key, value)
@@ -71,8 +71,12 @@ class _int:
 class _Registrator:
     def __init__(self, map):
         self.__map = map
-    def __call__(self, key, validator, *args):
-        self.__map[key] = validator(key, *args)
+    def __call__(self, dhcpd_optname, validator, *args):
+        if dhcpd_optname.startswith('option '):
+            key = dhcpd_optname[7:]
+        else:
+            key = dhcpd_optname
+        self.__map[key] = (dhcpd_optname, validator(key, *args))
 
 class Params:
     __opts_map = {}
@@ -122,8 +126,9 @@ class Params:
     def set(self, key, value):
         if key not in self.__opts_map:
             raise DHCPDKeyError(key)
-        # chack value is valid
-        self.__opts_map[key](value)
+        # check value is valid
+        _, validator = self.__opts_map[key]
+        validator(value)
         self.__map[key] = value
     def unset(self, key):
         if key in self.__map:
@@ -132,5 +137,17 @@ class Params:
         return self.__map
     def iter(self):
         for key, value in self.__map.iteritems():
-            yield (key, value)
+            dhcpd_optname, _ = self.__opts_map[key]
+            yield dhcpd_optname, value
+
+class DHCPDValueError(RuntimeError):
+    def __init__(self, key, value):
+        RuntimeError.__init__(self, 'Wrong value "%s" for %s option' % (key, value))
+        self.key = key
+        self.value = value
+
+class DHCPDKeyError(RuntimeError):
+    def __init__(self, key):
+        RuntimeError.__init__(self, 'Unknown option %s' % key)
+        self.key = key
 

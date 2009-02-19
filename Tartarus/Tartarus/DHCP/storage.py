@@ -63,7 +63,7 @@ def _get_range(node):
         yield int(r.get('type')), r.get('start'), r.get('end')
 
 def _add_params(params, node):
-    for key, value in params.iter():
+    for key, value in params.map().iteritems():
         n = etree.SubElement(node, 'param')
         etree.SubElement(n, 'key').text = key
         etree.SubElement(n, 'value').text = value
