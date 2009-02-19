@@ -1,0 +1,8 @@
+
+Tartarus.module.DNS = DNS
+Tartarus.DNS.ConfigFile = /etc/powerdns/pdns.conf
+Tartarus.DNS.db.engine = sqlite
+Tartarus.DNS.db.database = /var/lib/powerdns/sqlite.db
+Tartarus.DNS.trace = 255
+Tartarus.DNS.db.trace = 255
+

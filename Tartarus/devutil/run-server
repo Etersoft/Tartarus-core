@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#make config
+
+CFG=./config
+cat $CFG/common > $CFG/.server
+for c in "$@"; do cat $CFG/$c >> $CFG/.server; done
+
+#run server
+
+sudo env PYTHONPATH=./../ ../bin/Tartarus-srv1 -v --stderr run --config $CFG/.server
+
