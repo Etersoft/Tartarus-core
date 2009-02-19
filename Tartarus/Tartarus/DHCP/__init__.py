@@ -1,5 +1,5 @@
 from network import ServerI, DaemonI, Saver, SubnetLocator, HostLocator, Daemon
-from internal import Server
+from server import Server
 
 def init(adapter):
     com = adapter.getCommunicator()

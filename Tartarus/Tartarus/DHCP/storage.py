@@ -1,5 +1,5 @@
 from lxml import etree
-from internal import Identity, STATIC, TRUST, UNTRUST
+from server import Identity, STATIC, TRUST, UNTRUST
 
 def save(server, file):
     tree = etree.ElementTree(etree.Element('dhcp'))

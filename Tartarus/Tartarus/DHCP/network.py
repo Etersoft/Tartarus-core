@@ -3,7 +3,7 @@ from subprocess import Popen, PIPE
 import Ice
 import signal
 from Tartarus.iface import DHCP
-from internal import Server, Identity
+from server import Server, Identity
 import storage
 
 class Saver:
