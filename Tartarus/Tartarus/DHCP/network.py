@@ -4,34 +4,8 @@ import Ice
 import signal
 from Tartarus.iface import DHCP
 from server import Server, Identity
-import storage
-
-class Saver:
-    __instance = None
-    @staticmethod
-    def get():
-        if Saver.__instance is None:
-            raise RuntimeError('Saver instance is not initialized')
-        return Saver.__instance
-    def __init__(self, cfg_fname, dhcp_cfg_fname):
-        Saver.__instance = self
-        self.__server = Server.get()
-        self.__cfg_fname = cfg_fname
-        self.__cfg_fname_new = cfg_fname + '.new'
-        self.__dhcp_cfg_fname = dhcp_cfg_fname
-        self.__dhcp_cfg_fname_new = dhcp_cfg_fname + '.new'
-    def save(self):
-        storage.save(self.__server, open(self.__cfg_fname_new, 'w+'))
-        os.rename(self.__cfg_fname_new, self.__cfg_fname)
-    def load(self):
-        self.__server.reset()
-        if os.path.exists(self.__cfg_fname):
-            storage.load(self.__server, open(self.__cfg_fname))
-    def cfgPath(self):
-        return self.__dhcp_cfg_fname
-    def genConfig(self):
-        self.__server.genConfig(open(self.__dhcp_cfg_fname_new, 'w+'))
-        os.rename(self.__dhcp_cfg_fname_new, self.__dhcp_cfg_fname)
+from options import opts
+from config import Config
 
 class Daemon:
     RUN, STOP = range(2)
@@ -48,7 +22,7 @@ class Daemon:
                 'dhcpd',
                 '-f',
                 '-q',
-                '-cf', Saver.get().cfgPath()
+                '-cf', opts().dhcp_cfg_fname
                 ]
     def start(self):
         if self.status() == self.RUN:
@@ -73,7 +47,7 @@ class Daemon:
                 self.__waitpid()
         return self.STOP
     def test_cfg(self):
-        sp = Popen(['dhcpd', '-t', '-cf', Saver.get().cfgPath()], stderr=PIPE)
+        sp = Popen(['dhcpd', '-t', '-cf', opts().dhcp_cfg_fname], stderr=PIPE)
         _, errors = sp.communicate()
         if sp.returncode != 0:
             raise RuntimeError(errors)
@@ -192,10 +166,10 @@ class ServerI(DHCP.Server):
         self.__server.params().unset(key, value)
     def commit(self, current):
         '''void commit()'''
-        Saver.get().save()
-        Saver.get().genConfig()
+        Config.get().save()
+        Config.get().genDHCPCfg()
     def reset(self, current):
-        Saver.get().load()
+        Config.get().load()
     @staticmethod
     def __mkHostPrx(host, adapter):
         if host is None: return None
