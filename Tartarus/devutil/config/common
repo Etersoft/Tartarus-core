@@ -1,0 +1,11 @@
+TartarusAdapter.Endpoints=ssl -p 12345
+
+Ice.Plugin.IceSSL=IceSSL:createIceSSL
+IceSSL.Ciphers=KRB5
+IceSSL.ServiceName=host
+
+Tartarus.import.Trace = 8
+Tartarus.modules.Trace = 8
+
+Tartarus.addSlicePath.Test = ../slice
+

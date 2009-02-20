@@ -69,6 +69,15 @@ _translator_map = {
         }
 
 
+def _enshure_dir(path):
+    if not path:
+        return
+    import os
+    p, f = os.path.split(path)
+    if f.endswith('.db'):
+        os.makedirs(p, mode=700)
+
+
 class _Helper(object):
     def __init__(self, opts):
         self.ConfigError = ICore.ConfigError
@@ -88,6 +97,13 @@ class _Helper(object):
         try:
             self.modname = _engine2module(self.engine)
             __import__(self.modname)
+            if 'sqlite' in self.modname:
+                dbpath = opts.get('database')
+                try:
+                    _enshure_dir(dbpath)
+                except OSError:
+                    raise self.ConfigError('Bad database name', dbpath)
+
             self.module = sys.modules[self.modname]
             self.trans = _translator_map[self.module.paramstyle]()
         except (KeyError, ImportError):
@@ -100,6 +116,8 @@ class _Helper(object):
         for k in ['dsn', 'user', 'password', 'port', 'host', 'database']:
             if k in opts:
                 self.options[k] = opts[k]
+
+
 
     def get_connection(self):
         return self.module.connect(**self.options)

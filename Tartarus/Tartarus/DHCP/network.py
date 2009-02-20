@@ -1,85 +1,11 @@
 import os
-from subprocess import Popen, PIPE
 import Ice
-import signal
 from Tartarus.iface import DHCP
-from internal import Server, Identity
-import storage
-
-class Saver:
-    __instance = None
-    @staticmethod
-    def get():
-        if Saver.__instance is None:
-            raise RuntimeError('Saver instance is not initialized')
-        return Saver.__instance
-    def __init__(self, cfg_fname, dhcp_cfg_fname):
-        Saver.__instance = self
-        self.__server = Server.get()
-        self.__cfg_fname = cfg_fname
-        self.__cfg_fname_new = cfg_fname + '.new'
-        self.__dhcp_cfg_fname = dhcp_cfg_fname
-        self.__dhcp_cfg_fname_new = dhcp_cfg_fname + '.new'
-    def save(self):
-        storage.save(self.__server, open(self.__cfg_fname_new, 'w+'))
-        os.rename(self.__cfg_fname_new, self.__cfg_fname)
-    def load(self):
-        self.__server.reset()
-        if os.path.exists(self.__cfg_fname):
-            storage.load(self.__server, open(self.__cfg_fname))
-    def cfgPath(self):
-        return self.__dhcp_cfg_fname
-    def genConfig(self):
-        self.__server.genConfig(open(self.__dhcp_cfg_fname_new, 'w+'))
-        os.rename(self.__dhcp_cfg_fname_new, self.__dhcp_cfg_fname)
-
-class Daemon:
-    RUN, STOP = range(2)
-    __instance = None
-    @staticmethod
-    def get():
-        if Daemon.__instance is None:
-            Daemon.__instance = Daemon()
-        return Daemon.__instance
-    def __init__(self):
-        self.__program = 'dhcpd'
-        self.__pid = None
-        self.__args = [
-                'dhcpd',
-                '-f',
-                '-q',
-                '-cf', Saver.get().cfgPath()
-                ]
-    def start(self):
-        if self.status() == self.RUN:
-            return
-        self.test_cfg()
-        self.__pid = os.spawnvp(os.P_NOWAIT, self.__program, self.__args)
-    def stop(self):
-        if self.status() == self.STOP:
-            return
-        os.kill(self.__pid, signal.SIGTERM)
-        self.__waitpid()
-    def status(self):
-        if self.__pid is None:
-            return self.STOP
-        statfile = '/proc/%d/stat' % self.__pid
-        if os.path.exists(statfile):
-            statcontent = open(statfile).read()
-            stat = statcontent.split()
-            if stat[1] == '(dhcpd)' and stat[2] != 'Z':
-                return self.RUN
-            if stat[1] == '(dhcpd)' and stat[2] == 'Z':
-                self.__waitpid()
-        return self.STOP
-    def test_cfg(self):
-        sp = Popen(['dhcpd', '-t', '-cf', Saver.get().cfgPath()], stderr=PIPE)
-        _, errors = sp.communicate()
-        if sp.returncode != 0:
-            raise RuntimeError(errors)
-    def __waitpid(self):
-        os.waitpid(self.__pid, 0)
-        self.__pid = None
+from server import Server, Identity
+from options import opts
+from config import Config
+from runner import Runner, Status
+from Tartarus import auth
 
 class HostI(DHCP.Host):
     def __init__(self, name):
@@ -99,9 +25,11 @@ class HostI(DHCP.Host):
     def params(self, current):
         '''StrStrMap params()'''
         return self.__host().params().map()
+    @auth.mark('admin')
     def setParam(self, key, value, current):
         '''void setParam(string key, string value)'''
         self.__host().params().set(key, value)
+    @auth.mark('admin')
     def unsetParam(self, key, current):
         '''void unsetParam(string key)'''
         self.__host().params().unset(key)
@@ -125,6 +53,7 @@ class SubnetI(DHCP.Subnet):
         if r is ():
             return DHCP.IpRange('', '', False)
         return DHCP.IpRange(r[0], r[1], True)
+    @auth.mark('admin')
     def setRange(self, type, range, current):
         if range.hasValue:
             self.__subnet().range(type.value, (range.start, range.end))
@@ -133,9 +62,11 @@ class SubnetI(DHCP.Subnet):
     def params(self, current):
         '''StrStrMap params()'''
         return self.__subnet().params().map()
+    @auth.mark('admin')
     def setParam(self, key, value, current):
         '''void setParam(string key, string value)'''
         return self.__subnet().params().set(key, value)
+    @auth.mark('admin')
     def unsetParam(self, key, current):
         '''void unsetParam(string key)'''
         return self.__subnet().params().unset(value)
@@ -143,10 +74,6 @@ class SubnetI(DHCP.Subnet):
 class ServerI(DHCP.Server):
     def __init__(self):
         self.__server = Server.get()
-    def apply(self):
-        pass
-    def reset(self):
-        pass
     def subnets(self, current):
         '''SubnetSeq subnets()'''
         return [self.__mkSubnetPrx(s, current.adapter) for s in self.__server.subnets().itervalues()]
@@ -154,10 +81,12 @@ class ServerI(DHCP.Server):
         for s in self.__server.subnets().itervalues():
             if s.decl() == decl:
                 return self.__mkSubnetPrx(s, current.adapter)
+    @auth.mark('admin')
     def addSubnet(self, decl, current):
         '''Subnet* addSubnet(addr, mask)'''
         s = self.__server.addSubnet(decl)
         return self.__mkSubnetPrx(s, current.adapter)
+    @auth.mark('admin')
     def delSubnet(self, s, current):
         '''void delSubnet(Subnet* s)'''
         id = s.ice_getIdentity()
@@ -170,6 +99,7 @@ class ServerI(DHCP.Server):
         mkprx = lambda h: self.__mkHostPrx(h, current.adapter)
         host = lambda name: self.__server.hosts().get(name, None)
         return [mkprx(host(name)) for name in names]
+    @auth.mark('admin')
     def addHost(self, name, id, current):
         '''Host* addHost(string name, HostId id)'''
         if id.type == DHCP.HostIdType.IDENTITY:
@@ -178,24 +108,29 @@ class ServerI(DHCP.Server):
             hid = Identity(hardware=id.value)
         h = self.__server.addHost(name, hid)
         return self.__mkHostPrx(h, current.adapter)
+    @auth.mark('admin')
     def delHosts(self, hosts):
         '''void delHosts(HostSeq hosts)'''
         pass
     def params(self, current):
         '''StrStrMap params()'''
         return self.__server.params().map()
+    @auth.mark('admin')
     def setParam(self, key, value, current):
         '''void setParam(string key, string value)'''
         self.__server.params().set(key, value)
+    @auth.mark('admin')
     def unsetParam(self, key, current):
         '''void unsetParam(string key)'''
         self.__server.params().unset(key, value)
+    @auth.mark('admin')
     def commit(self, current):
         '''void commit()'''
-        Saver.get().save()
-        Saver.get().genConfig()
+        Config.get().save()
+        Config.get().genDHCPCfg()
+    @auth.mark('admin')
     def reset(self, current):
-        Saver.get().load()
+        Config.get().load()
     @staticmethod
     def __mkHostPrx(host, adapter):
         if host is None: return None
@@ -213,16 +148,20 @@ class ServerI(DHCP.Server):
 
 class DaemonI(DHCP.Daemon):
     def __init__(self):
-        self.__daemon = Daemon.get()
+        self.__runner = Runner.get()
         self.__server = Server.get()
+        if self.__server.startOnLoad():
+            self.__runner.start()
+    @auth.mark('admin')
     def start(self, current):
-        self.__daemon.start()
+        self.__runner.start()
         self.__server.startOnLoad(True)
+    @auth.mark('admin')
     def stop(self, current):
-        self.__daemon.stop()
+        self.__runner.stop()
         self.__server.startOnLoad(False)
     def running(self, current):
-        return self.__daemon.status() == Daemon.RUN
+        return self.__runner.status() == Status.RUN
 
 class SubnetLocator(Ice.ServantLocator):
     def locate(self, current):
@@ -240,4 +179,17 @@ class HostLocator(Ice.ServantLocator):
         pass
     def deactivate(self, category):
         pass
+
+def init(adapter):
+    com = adapter.getCommunicator()
+    dec = auth.DecoratingLocator
+    adapter.addServantLocator(dec(SubnetLocator()), "DHCP-Subnets")
+    adapter.addServantLocator(dec(HostLocator()), "DHCP-Hosts")
+
+    loc = auth.SrvLocator()
+    ident = com.stringToIdentity('DHCP/Server')
+    loc.add_object(ServerI(), ident)
+    ident = com.stringToIdentity('DHCP/Daemon')
+    loc.add_object(DaemonI(), ident)
+    adapter.addServantLocator(loc, "DHCP")
 

@@ -4,4 +4,5 @@ def build(bld):
             features='py',
             source=bld.glob('*.py'),
             install_path='${LIBDIR}/Tartarus/modules/DHCP')
+    bld.install_files('${LIBDIR}/Tartarus/modules/DHCP', 'dhcpd_conf.tmpl')
 
