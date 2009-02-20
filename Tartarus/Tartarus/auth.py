@@ -84,6 +84,35 @@ class SrvLocator(Ice.ServantLocator):
     def deactivate(self, category):
         pass
 
+class DecoratingLocator(Ice.ServantLocator):
+    def __init__(self, locator, authorize=default_authorize, trace=0):
+        self._trace = trace
+        self._authorize = authorize
+        self.__locator = locator
+
+    def locate(self, current):
+        try:
+            obj = self.__locator.locate(current)
+            marks = getattr(obj, 'marks', None) or auth_marks(obj)
+            if self._authorize(marks, current):
+                return obj
+        except Ice.ObjectNotExistException:
+            return None
+        except C.PermissionError:
+            raise
+        except Exception, e:
+            c = current.adapter.getCommunicator()
+            logging.warning("Refusing permission because of exception. "
+                            "Object: %s. Operation: %s. Exception %s: %s."
+                            % (c.identityToString(current.id),
+                               current.operation,
+                               type(e).__name__, e))
+            return None
+        return None
+
+    def __getattr__(self, *args):
+        return getattr(self.__locator, *args)
+
 # }}}
 
 # {{{ Marks for methods
