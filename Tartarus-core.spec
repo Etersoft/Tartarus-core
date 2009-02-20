@@ -193,7 +193,44 @@ Requires: %tname = %version-%release
 This module is built for python %__python_version
 
 
+%package -n %tname-DHCP
+Summary: %tname DHCP service.
+Group: System/Servers
+Requires: dhcp-server
+Requires: python-module-%tname = %version-%release
+Requires: python-module-%tname-db = %version-%release
+Requires: %tname = %version-%release
+
+%description -n %tname-DHCP
+%tname DHCP service.
+
+This module is built for python %__python_version
+
+
+%package -n %tname-DHCP-client
+Summary: %tname DHCP adminitrative utility.
+Group: System/Configuration/Other
+Requires: %tname-DHCP-slice = %version-%release
+
+%description -n %tname-DHCP-client
+%tname DHCP adminitrative utility.
+
+This module is built for python %__python_version
+
+
 # {{{1 Slices
+
+%package -n %tname-slice
+Summary: Interface defenision files for %tname objects.
+Group: Development/Other
+Provides: %tname-SysDB-slice = %version-%release
+Provides: %tname-Kerberos-slice = %version-%release
+Provides: %tname-DNS-slice = %version-%release
+Provides: %tname-DHCP-slice = %version-%release
+
+%description -n %tname-slice
+Interface defenision files for %tname core objects.
+
 
 %package -n %tname-core-slice
 Summary: Interface defenision files for %tname core objects.
@@ -209,24 +246,45 @@ Group: Development/Other
 Requires: %tname-core-slice = %version-%release
 
 %description -n %tname-Kerberos-slice
-Interface defenision files for %tname core objects.
+Interface defenision files for %tname Kerberos objects.
 
 
 %package -n %tname-DNS-slice
-Summary: Interface defenision files for %tname core objects.
+Summary: Interface defenision files for %tname DNS objects.
 Group: Development/Other
 Requires: %tname-core-slice = %version-%release
 
 %description -n %tname-DNS-slice
-Interface defenision files for %tname core objects.
+Interface defenision files for %tname DNS objects.
+
 
 %package -n %tname-SysDB-slice
-Summary: Interface defenision files for %tname core objects.
+Summary: Interface defenision files for %tname SysDB objects.
 Group: Development/Other
 Requires: %tname-core-slice = %version-%release
 
 %description -n %tname-SysDB-slice
-Interface defenision files for %tname core objects.
+Interface defenision files for %tname SysDB objects.
+
+
+%package -n %tname-DHCP-slice
+Summary: Interface defenision files for %tname DHCP objects.
+Group: Development/Other
+Requires: %tname-core-slice = %version-%release
+
+%description -n %tname-DHCP-slice
+Interface defenision files for %tname DHCP objects.
+
+
+# {{{1 Libraries
+
+%package -n %tname-devel
+Summary: Development files for build C++ %tname projects.
+Group: Development/C++
+Requires: libice-devel
+
+%description -n %tname-devel
+Development files for build C++ %tname projects.
 
 
 # {{{1 prep
@@ -237,6 +295,7 @@ Interface defenision files for %tname core objects.
 %define tslicedir %_datadir/%tname/slice
 %define ttemplatedir %_datadir/%tname/templates
 %define tpythondir %python_sitelibdir/%tname
+%define tincludedir %_includedir/%tname
 
 %setup  -q -n %tname-%version
 
@@ -320,7 +379,6 @@ fi
 %tconfdir/*/DNS*
 %tmoduledir/DNS
 
-
 %files -n %tname-Kadmin5
 %tconfdir/*/Kadmin5*
 %tmoduledir/Kadmin5
@@ -328,6 +386,15 @@ fi
 %files -n %tname-SysDB
 %tconfdir/*/SysDB*
 %tmoduledir/SysDB
+
+%files -n %tname-DHCP
+%tconfdir/*/DHCP*
+%tmoduledir/DHCP
+
+%files -n %tname-DHCP-client
+%_bindir/t-dhcp
+
+%files -n %tname-slice
 
 %files -n %tname-core-slice
 %dir %tslicedir
@@ -342,11 +409,22 @@ fi
 %files -n %tname-SysDB-slice
 %tslicedir/SysDB
 
+%files -n %tname-DHCP-slice
+%tslicedir/DHCP
+
+
+%files -n %tname-devel
+%tincludedir
+%_libdir/*.a
+%_pkgconfigdir/*.pc
+
 
 # {{{1 changelog
 
 %changelog
-* Wed Feb 18 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt1
+* Fri Feb 20 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt1
+- added DHCP service with simple authentification
+- directory creation code added to constructor of database helper (#117)
 - add waf build system
 
 * Wed Feb 18 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt2
