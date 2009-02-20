@@ -74,8 +74,12 @@ def _enshure_dir(path):
         return
     import os
     p, f = os.path.split(path)
+    if os.path.isdir(p):
+        return
+    if os.path.exists(p):
+        raise RuntimeError
     if f.endswith('.db'):
-        os.makedirs(p, mode=700)
+        os.makedirs(p, mode=0700)
 
 
 class _Helper(object):
@@ -101,7 +105,7 @@ class _Helper(object):
                 dbpath = opts.get('database')
                 try:
                     _enshure_dir(dbpath)
-                except OSError:
+                except (OSError, RuntimeError):
                     raise self.ConfigError('Bad database name', dbpath)
 
             self.module = sys.modules[self.modname]
