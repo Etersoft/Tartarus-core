@@ -14,7 +14,13 @@ if 'TARTARUS_SLICES_PATH' in os.environ:
 
 from Tartarus.iface import DHCP
 
-comm = Ice.initialize()
+if 'ICE_CONFIG' in os.environ:
+    comm = Ice.initialize()
+else:
+    idata = Ice.InitializationData()
+    idata.properties = Ice.createProperties()
+    idata.properties.load('/etc/Tartarus/clients/common.config')
+    comm = Ice.initialize(None, idata)
 
 class CommandLineError(Exception):
     def __init__(self, msg):
