@@ -200,6 +200,7 @@ Requires: dhcp-server
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-db = %version-%release
 Requires: %tname = %version-%release
+Requires: %tname-DHCP-client = %version-%release
 
 %description -n %tname-DHCP
 %tname DHCP service.
@@ -357,14 +358,15 @@ fi
 %files -n python-module-%tname
 %dir %tpythondir
 %tpythondir/__init__*
-%tpythondir/auth*
 %tpythondir/iface*
 %tpythondir/logging*
 %tpythondir/modules*
 %tpythondir/slices*
 
 %files -n python-module-%tname-daemon
+%tpythondir/auth*
 %tpythondir/daemon*
+%tpythondir/locator*
 
 %files -n python-module-%tname-system
 %tpythondir/system*
@@ -423,9 +425,10 @@ fi
 
 %changelog
 * Fri Feb 20 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt1
-- added DHCP service with simple authentification
+- add DHCP service with simple authentification
 - directory creation code added to constructor of database helper (#117)
 - add waf build system
+- add simple service locator
 
 * Wed Feb 18 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt2
 - build fixes for sisyphus prebuild of alpha3
