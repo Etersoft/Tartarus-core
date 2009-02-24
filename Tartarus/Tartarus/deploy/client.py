@@ -2,7 +2,7 @@
 import os
 from Tartarus.system import config, service, pam
 
-_all_template = '/usr/share/Tartarus/templates/all/all.config.template'
+_all_template = '/usr/share/Tartarus/templates/all/common.config.template'
 
 
 def deploy_client_start(opts):
@@ -10,8 +10,9 @@ def deploy_client_start(opts):
         service.service_stop(s)
     if not os.path.exists('/etc/Tartarus/clients'):
         os.makedirs('/etc/Tartarus/clients')
-    config.gen_config_from_file('/etc/Tartarus/clients/all.config',
+    config.gen_config_from_file('/etc/Tartarus/clients/common.config',
                                 _all_template, opts, True)
+    os.symlink('common.config', '/etc/Tartarus/clients/all.config')
 
 def deploy_client_dnsupdate(opts_, auto_update = False):
     service.service_restart('tdnsupdate')

@@ -351,11 +351,11 @@ class Main:
         return 0
 
 def daemonPrx():
-    prx = comm.propertyToProxy('Tartarus.DHCP.DaemonPrx')
+    prx = comm.stringToProxy('DHCP/Daemon')
     return DHCP.DaemonPrx.checkedCast(prx)
 
 def serverPrx():
-    prx = comm.propertyToProxy('Tartarus.DHCP.ServerPrx')
+    prx = comm.stringToProxy('DHCP/Server')
     return DHCP.ServerPrx.checkedCast(prx)
 
 sys.exit(Main()())
