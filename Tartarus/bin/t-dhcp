@@ -6,21 +6,10 @@ import re
 from optparse import OptionParser
 from functools import wraps
 
-import Ice
-
-import Tartarus
-if 'TARTARUS_SLICES_PATH' in os.environ:
-    Tartarus.slices.path=[os.environ['TARTARUS_SLICES_PATH']]
+from Tartarus.client import initialize
+comm, argv = initialize()
 
 from Tartarus.iface import DHCP
-
-if 'ICE_CONFIG' in os.environ:
-    comm = Ice.initialize()
-else:
-    idata = Ice.InitializationData()
-    idata.properties = Ice.createProperties()
-    idata.properties.load('/etc/Tartarus/clients/common.config')
-    comm = Ice.initialize(None, idata)
 
 class CommandLineError(Exception):
     def __init__(self, msg):
@@ -324,8 +313,9 @@ class Host(SuperCommand):
             print h.name()
 
 class Main:
-    def __init__(self):
+    def __init__(self, argv):
         self.__exec_name = sys.argv[0]
+        self.__argv = argv
         self.__cmds = {}
         for cmd, cls in ((cmd.lower(), cls) for cmd, cls in globals().iteritems() if
                 isinstance(cls, type)
@@ -342,16 +332,16 @@ class Main:
             print '  \033[92m%s\033[0m - %s' % (cmd, doc)
         print '\nTry run %s <command> help for more information\n' % sys.argv[0]
     def __call__(self):
-        if len(sys.argv) < 2:
+        if len(self.__argv) < 2:
             self.usage()
             return 1
-        cmd = sys.argv[1]
+        cmd = self.__argv[1]
         cmd = self.__cmds.get(cmd, None)
         if cmd is None:
-            print 'Error: %s - unknown command' % sys.argv[1]
+            print 'Error: %s - unknown command' % self.__argv[1]
             self.helpCmds()
             return 1
-        argv = sys.argv[2:]
+        argv = self.__argv[2:]
         cmd().run(argv)
         comm.destroy()
         return 0
@@ -364,5 +354,5 @@ def serverPrx():
     prx = comm.stringToProxy('DHCP/Server')
     return DHCP.ServerPrx.checkedCast(prx)
 
-sys.exit(Main()())
+sys.exit(Main(argv)())
 
