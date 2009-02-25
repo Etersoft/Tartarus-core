@@ -62,6 +62,8 @@ interface Server {
     void setParam(string key, string value);
     void unsetParam(string key);
     void commit();
+    void rollback();
+    bool isConfigured();
     void reset();
 };
 

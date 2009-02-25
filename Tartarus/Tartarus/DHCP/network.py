@@ -129,8 +129,13 @@ class ServerI(DHCP.Server):
         Config.get().save()
         Config.get().genDHCPCfg()
     @auth.mark('admin')
-    def reset(self, current):
+    def rollback(self, current):
         Config.get().load()
+    def isConfigured(self, common):
+        return Config.get().isConfigured()
+    @auth.mark('admin')
+    def reset(self, common):
+        Config.get().reset()
     @staticmethod
     def __mkHostPrx(host, adapter):
         if host is None: return None
