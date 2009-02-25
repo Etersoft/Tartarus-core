@@ -20,7 +20,7 @@ class _Options:
 # define options
 o = _Options._defOpt
 o('cfg_fname', 'Tartarus.DHCP.ConfigFile', '/usr/share/Tartarus/dhcp/dhcpd.conf')
-o('dhcp_cfg_fname', 'Tartarus.DHCP.DHCPConfigFile', '/etc/dhcp/dhcpd.conf')
+o('dhcp_cfg_fname', 'Tartarus.DHCP.DHCPConfigFile', '/etc/dhcp/tartarus.dhcpd.conf')
 del o
 
 init = _Options.init
