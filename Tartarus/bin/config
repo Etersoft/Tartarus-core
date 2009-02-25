@@ -1,0 +1,7 @@
+Ice.Default.Locator = Locator:ssl -p 12345 -h localhost
+Tartarus.addSlicePath.Debug = ../slice
+
+Ice.Plugin.IceSSL=IceSSL:createIceSSL
+IceSSL.Ciphers=KRB5
+IceSSL.ServiceName=host
+

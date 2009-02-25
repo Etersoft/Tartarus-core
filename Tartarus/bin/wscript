@@ -1,0 +1,4 @@
+def build(bld):
+    bld.install_files('${BINDIR}', 't-*', chmod=0755)
+    bld.install_files('${SBINDIR}', 'Tartarus-*', chmod=0755)
+

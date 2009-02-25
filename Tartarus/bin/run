@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export PYTHONPATH=..
+export TARTARUS_CONFIG=./config
+
+PROG=$1
+shift
+
+./$PROG "$@"
+
