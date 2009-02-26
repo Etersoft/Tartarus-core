@@ -16,7 +16,10 @@ def initialize(cfgs='common', prefixes=[]):
         props.load(os.environ['TARTARUS_CONFIG'])
         return _init(props), argv
     for cfg in cfgs:
-        props.load(cfg)
+        if os.path.isabs(cfg):
+            props.load(cfg)
+        else:
+            props.load('/etc/Tartarus/clients/%s.config' % cfg)
     return _init(props), argv
 
 def _parse_cmd_line(props, prefixes, argv):
