@@ -19,7 +19,7 @@ def initialize(cfgs='common', prefixes=[]):
         if os.path.isabs(cfg):
             props.load(cfg)
         else:
-            props.load('/etc/Tartarus/clients/%s.config' % cfg)
+            props.load('/etc/Tartarus/clients/%s.conf' % cfg)
     return _init(props), argv
 
 def _parse_cmd_line(props, prefixes, argv):
