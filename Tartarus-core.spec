@@ -425,7 +425,7 @@ fi
 
 %changelog
 * Fri Feb 20 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt1
-- add DHCP service with simple authentification
+- add DHCP service with simple authentification and console client
 - directory creation code added to constructor of database helper (#117)
 - add waf build system
 - add simple service locator
