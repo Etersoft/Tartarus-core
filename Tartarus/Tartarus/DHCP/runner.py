@@ -1,6 +1,7 @@
 import time
 import os
 import signal
+import resource
 from subprocess import Popen, PIPE
 from enum import Enum
 
@@ -27,7 +28,7 @@ class Runner:
         if not result:
             msg = 'Can\'t start dhcpd: config file checking failed\n\n' + msg
             raise StartError(msg)
-        self.__pid = os.spawnvp(os.P_NOWAIT, self.__program, self.__args)
+        self.__pid = _spawn(self.__program, self.__args)
         time.sleep(1)
         if self.status() != Status.RUN:
             msg = 'dhcpd was started, but it status is not RUN'
@@ -61,6 +62,28 @@ class Runner:
 class StartError(RuntimeError):
     def __init__(self, msg):
         RuntimeError.__init__(self, msg)
+
+def _spawn(program, args):
+    pid = os.fork()
+    if pid: return pid
+    _exec(program, args)
+
+def _exec(program, args):
+    if os.path.exists('/proc/self/fd'):
+        for i in os.listdir('/proc/self/fd'):
+            if int(i) not in (0, 1, 2):
+                try: os.close(int(i))
+                except: pass
+    else:
+        try:
+            maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[0]
+        except:
+            maxfd = 255
+        for i in xrange(maxfd):
+            if i not in (0, 1, 2):
+                try: os.close(int(i))
+                except: pass
+    os.execvp(program, args)
 
 from options import opts
 
