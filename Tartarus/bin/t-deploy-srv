@@ -1,0 +1,70 @@
+#!/usr/bin/python
+
+import sys
+import traceback
+
+import Ice
+
+import Tartarus
+from Tartarus.client import initialize
+from Tartarus.deploy.common import Failure, Wizard
+import Tartarus.deploy.server
+import Tartarus.deploy.service
+import Tartarus.deploy.SysDB
+import Tartarus.deploy.DNS
+import Tartarus.deploy.DHCP
+import Tartarus.deploy.Kadmin5
+
+def init():
+    if len(sys.argv) > 2:
+        fail("Too many arguments.\nUsage: %s [config]" % sys.argv[0])
+    if len(sys.argv) == 2:
+        cfgfile = sys.argv[1]
+    else:
+        cfgfile = 'deploy'
+    comm, _ = initialize([cfgfile])
+    return comm
+
+def _main():
+    q = Wizard()
+    q.comm = init()
+    q.opts = {}
+    q.run('server', 'service', 'sysdb', 'kerberos', 'dns', 'dhcp')
+
+def _format_exception():
+    et, ev, _  = sys.exc_info()
+
+    if et is Failure:
+        msg = ev.message
+        code = -1
+    elif et is Ice.InitializationException:
+        code = -1
+        msg = "Failed to initialize runtime: %s" % ev.reason
+    elif et is OSError:
+        code =  ev.errno
+        msg = "OS Error: %s" % ev.strerror
+    else:
+        code =  -1
+        msg = str().join(traceback. format_exception(et, ev, None))
+
+    if not msg.endswith('\n'):
+        msg += '\n'
+
+    return (code, msg)
+
+def main():
+    try:
+        _main()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        msg = "\n\nDeployment canceled!\n"
+        code = -1
+    except Exception:
+        traceback.print_exc()
+        code, msg = _format_exception()
+    sys.stderr.write(msg)
+    sys.exit(code)
+
+if __name__ == '__main__':
+    main()
+
