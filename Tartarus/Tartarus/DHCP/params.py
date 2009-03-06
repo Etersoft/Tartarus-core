@@ -1,4 +1,109 @@
 import re
+from enum import Enum
+
+Context = Enum('GLOBAL', 'SUBNET', 'RANGE', 'HOSTS', 'HOST')
+Context.ALL = (
+        Context.GLOBAL,
+        Context.SUBNET,
+        Context.RANGE,
+        Context.HOSTS,
+        Context.HOST)
+
+class Option:
+    def __init__(self, key, contexts=Context.ALL):
+        self.__key = key
+        self.__contexts = frozenset(contexts)
+    def key(self):
+        return self.__key
+    def check(self, value):
+        pass
+    def repr(self, value):
+        return value
+    def contexts(self):
+        return self.__contexts
+
+class IpOption(Option):
+    __errmsg = 'Wrong value for %s option. It must be ip-address'
+    __re = re.compile('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
+    def __init__(self, key, contexts=Context.ALL):
+        Option.__init__(self, key, contexts)
+    def check(self, value):
+        if not self.__re.match(value): self.__fail()
+        for p in (int(p) for p in value.split('.')):
+            if p > 255: self.__fail()
+    def __fail(self):
+        raise ValueError(self.__errmsg % self.key())
+
+class IntOption(Option):
+    __errmsg = 'Value of %s option must be %d bits integer'
+    __re = re.compile('^-?\d+$')
+    def __init__(self, key, contexts=Context.ALL, bits=32):
+        Option.__init__(self, key, contexts)
+        self.__bits = bits
+        self.__min = -2**(bits-1)
+        self.__max = 2**(bits-1)-1
+    def check(self, value):
+        if not self.__re.match(value): self.__fail()
+        intv = int(value)
+        if intv > self.__max or intv < self.__min:
+            self.__fail()
+    def __fail(self):
+        raise ValueError(self.__errmsg % (self.key(), self.__bits))
+
+class UIntOption(Option):
+    __errmsg = 'Value of %s option must be %d bits unsigned integer'
+    __re = re.compile('^\d+$')
+    def __init__(self, key, contexts=Context.ALL, bits=32):
+        Option.__init__(self, key, contexts)
+        self.__bits = bits
+        self.__max = 2**bits-1
+    def check(self, value):
+        if not self.__re.match(value): self.__fail()
+        intv = int(value)
+        if intv > self.__max: self.__fail()
+    def __fail(self):
+        raise ValueError(self.__errmsg % (self.key(), self.__bits))
+
+class TextOption(Option):
+    __errmsg = 'Wrong cahacter in value of %s options'
+    def __init__(self, key, context=Context.ALL, regexp=None):
+        Option.__init__(self, key, contexts)
+        self.__regexp = None
+        if regexp:
+            self.__regexp = re.compile(regexp)
+    def check(self, value):
+        for i in (ord(c) for c in value):
+            if i < 32 or i > 126: self.__fail()
+        if self.__regexp and not self.__regexp.match(value):
+            self.__fail()
+    def repr(self, value):
+        return '"%s"' % value
+    def __fail(self):
+        raise ValueError(self.__errmsg % self.key())
+
+class FlagOption(Option):
+    __errmsg = 'Wrong value for %s option; valid are "on" and "off"'
+    def __init__(self, key, context=Context.ALL):
+        Option.__init__(self, key, contexts)
+    def check(self, value):
+        if value not in ('on', 'off'):
+            raise ValueError(self.__errmsg % self.key())
+
+StringOption = TextOption
+
+class IpListOption:
+    __errmsg = 'Wrong walue for %s option; valid value is list of ip-address separated by comma'
+    def __init__(self, key, context):
+        Option.__init__(self, key, contexts=Context.ALL)
+        self.__ipopt = IpOption(key)
+    def check(self, value):
+        for addr in (i.strip() for i in value.split(',')):
+            try:
+                self.__ipopt.check(addr)
+            except:
+                self.__fail()
+    def __fail(self):
+        raise ValueError(self.__errmsg % self.key())
 
 class _none:
     def __init__(self, key): pass
@@ -90,8 +195,6 @@ class Params:
     r('default-lease-time', _regexp, '^\d+$')
     r('filename', _regexp, '^"\w+"$')
     r('fixed-address', _ip)
-#    r('hardware', _regexp, 
-#            '^(?:ethernet|token-ring) (?:[\da-fA-F]){1,2}(?::(?:[\da-fA-F]){1,2})*$')
     r('max-lease-time', _regexp, '^\d+$')
     r('min-lease-time', _regexp, '^\d+$')
     r('min-secs', _regexp, '^\d+$')
