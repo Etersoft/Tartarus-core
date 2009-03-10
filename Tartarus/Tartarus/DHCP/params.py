@@ -1,7 +1,13 @@
 import re
 from enum import Enum
 
-Context = Enum('GLOBAL', 'SUBNET', 'RANGE', 'HOSTS', 'HOST')
+class MutableEnum(Enum):
+    def __init__(self, *args, **kwargs):
+        Enum.__init__(self, *args, **kwargs)
+    def __setattr__(self, attr, value):
+        object.__setattr__(self, attr, value)
+
+Context = MutableEnum('GLOBAL', 'SUBNET', 'RANGE', 'HOSTS', 'HOST')
 Context.ALL = (
         Context.GLOBAL,
         Context.SUBNET,
@@ -9,24 +15,34 @@ Context.ALL = (
         Context.HOSTS,
         Context.HOST)
 
-class Option:
-    def __init__(self, key, contexts=Context.ALL):
+class Option(object):
+    __all = {}
+    def __init__(self, key, dhcp_key=None, contexts=Context.ALL):
         self.__key = key
+        self.__dhcp_key = dhcp_key or key
         self.__contexts = frozenset(contexts)
+        self.__all[key] = self
     def key(self):
         return self.__key
+    def dhcpKey(self):
+        return self.__dhcp_key
     def check(self, value):
         pass
     def repr(self, value):
         return value
     def contexts(self):
         return self.__contexts
+    @staticmethod
+    def opt(key):
+        return Option.__all.get(key, None)
+
+opt = Option.opt
 
 class IpOption(Option):
     __errmsg = 'Wrong value for %s option. It must be ip-address'
     __re = re.compile('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
-    def __init__(self, key, contexts=Context.ALL):
-        Option.__init__(self, key, contexts)
+    def __init__(self, key, dhcp_key=None, contexts=Context.ALL):
+        Option.__init__(self, key, dhcp_key, contexts)
     def check(self, value):
         if not self.__re.match(value): self.__fail()
         for p in (int(p) for p in value.split('.')):
@@ -37,8 +53,8 @@ class IpOption(Option):
 class IntOption(Option):
     __errmsg = 'Value of %s option must be %d bits integer'
     __re = re.compile('^-?\d+$')
-    def __init__(self, key, contexts=Context.ALL, bits=32):
-        Option.__init__(self, key, contexts)
+    def __init__(self, key, dhcp_key=None, contexts=Context.ALL, bits=32):
+        Option.__init__(self, key, dhcp_key, contexts)
         self.__bits = bits
         self.__min = -2**(bits-1)
         self.__max = 2**(bits-1)-1
@@ -53,8 +69,8 @@ class IntOption(Option):
 class UIntOption(Option):
     __errmsg = 'Value of %s option must be %d bits unsigned integer'
     __re = re.compile('^\d+$')
-    def __init__(self, key, contexts=Context.ALL, bits=32):
-        Option.__init__(self, key, contexts)
+    def __init__(self, key, dhcp_key=None, contexts=Context.ALL, bits=32):
+        Option.__init__(self, key, dhcp_key, contexts)
         self.__bits = bits
         self.__max = 2**bits-1
     def check(self, value):
@@ -66,14 +82,14 @@ class UIntOption(Option):
 
 class TextOption(Option):
     __errmsg = 'Wrong cahacter in value of %s options'
-    def __init__(self, key, context=Context.ALL, regexp=None):
-        Option.__init__(self, key, contexts)
+    def __init__(self, key, dhcp_key=None, contexts=Context.ALL, regexp=None):
+        Option.__init__(self, key, dhcp_key, contexts)
         self.__regexp = None
         if regexp:
             self.__regexp = re.compile(regexp)
     def check(self, value):
         for i in (ord(c) for c in value):
-            if i < 32 or i > 126: self.__fail()
+            if i < 32 or i > 126 or i in (34,): self.__fail()
         if self.__regexp and not self.__regexp.match(value):
             self.__fail()
     def repr(self, value):
@@ -83,18 +99,18 @@ class TextOption(Option):
 
 class FlagOption(Option):
     __errmsg = 'Wrong value for %s option; valid are "on" and "off"'
-    def __init__(self, key, context=Context.ALL):
-        Option.__init__(self, key, contexts)
+    def __init__(self, key, dhcp_key=None, contexts=Context.ALL):
+        Option.__init__(self, key, dhcp_key, contexts)
     def check(self, value):
         if value not in ('on', 'off'):
             raise ValueError(self.__errmsg % self.key())
 
 StringOption = TextOption
 
-class IpListOption:
+class IpListOption(Option):
     __errmsg = 'Wrong walue for %s option; valid value is list of ip-address separated by comma'
-    def __init__(self, key, context):
-        Option.__init__(self, key, contexts=Context.ALL)
+    def __init__(self, key, dhcp_key=None, contexts=Context.ALL):
+        Option.__init__(self, key, dhcp_key, contexts)
         self.__ipopt = IpOption(key)
     def check(self, value):
         for addr in (i.strip() for i in value.split(',')):
@@ -104,6 +120,61 @@ class IpListOption:
                 self.__fail()
     def __fail(self):
         raise ValueError(self.__errmsg % self.key())
+
+FlagOption('always-broadcast')
+FlagOption('always-reply-rfc1048')
+#r('authoritative', _one_of, '')
+#r('not authoritative', _one_of, '')
+FlagOption('boot-unknown-clients')
+UIntOption('default-lease-time')
+StringOption('filename')
+IpListOption('fixed-address')
+UIntOption('max-lease-time')
+UIntOption('min-lease-time')
+UIntOption('min-secs')
+Option('next-server')
+FlagOption('one-lease-per-client')
+FlagOption('ping-check')
+UIntOption('ping-timeout')
+
+FlagOption('all-subnets-local', 'option all-subnets-local')
+UIntOption('arp-cache-timeout', 'option arp-cache-timeout')
+TextOption('bootfile-name', 'option bootfile-name')
+UIntOption('boot-size', 'option boot-size', bits=16)
+IpOption('broadcast-address', 'option broadcast-address')
+UIntOption('default-ip-ttl', 'option default-ip-ttl', bits=8)
+UIntOption('default-tcp-ttl', 'option default-tcp-ttl', bits=8)
+UIntOption('dhcp-lease-time', 'option dhcp-lease-time')
+UIntOption('dhcp-max-message-size', 'option dhcp-max-message-size', bits=16)
+TextOption('dhcp-message', 'option dhcp-message')
+IpListOption('domain-name-servers', 'option domain-name-servers')
+StringOption('host-name', 'option host-name')
+UIntOption('interface-mtu', 'option interface-mtu', bits=16)
+FlagOption('ip-forwarding', 'option ip-forwarding')
+FlagOption('mask-supplier', 'option mask-supplier')
+TextOption('root-path', 'option root-path')
+IpListOption('routers', 'option routers')
+TextOption('tftp-server-name', 'option tftp-server-name')
+IntOption('time-offset', 'option time-offset')
+IpListOption('time-servers', 'option time-servers')
+
+class ParamsNew:
+    def __init__(self):
+        self.__map = {}
+    def set(self, key, value):
+        o = opt(key)
+        if not o: raise DHCPDKeyError(key)
+        o.check(value)
+        self.__map[key] = value
+    def unset(self, key):
+        if key in self.__map:
+            del self.__map[key]
+    def map(self):
+        return self.__map
+    def iter(self):
+        for key, value in self.__map.iteritems():
+            o = opt(key)
+            yield o.dhcpKey(), o.repr(value)
 
 class _none:
     def __init__(self, key): pass
@@ -183,7 +254,7 @@ class _Registrator:
             key = dhcpd_optname
         self.__map[key] = (dhcpd_optname, validator(key, *args))
 
-class Params:
+class ParamsOld:
     __opts_map = {}
     # register options
     r = _Registrator(__opts_map)
@@ -242,6 +313,8 @@ class Params:
         for key, value in self.__map.iteritems():
             dhcpd_optname, _ = self.__opts_map[key]
             yield dhcpd_optname, value
+
+Params = ParamsNew
 
 class DHCPDValueError(RuntimeError):
     def __init__(self, key, value):
