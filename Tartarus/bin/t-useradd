@@ -18,9 +18,11 @@ def main():
     u.name = name
     u.fullName = opts.fullname
     u.shell = opts.shell
+    if opts.groups:
+        gids = [gm.getByName(g).gid for g in opts.groups.split(',')]
     uid = uM().create(u)
-    gids = [gm.getByName(g).gid for g in opts.groups.split(',')]
-    gm.addUserToGroups(uid, gids)
+    if opts.groups:
+        gm.addUserToGroups(uid, gids)
 
 def parse_cmdline():
     optp = OptionParser()
