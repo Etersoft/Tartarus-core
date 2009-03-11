@@ -1,5 +1,5 @@
 def build(bld):
-    bins = ('t-dhcp', 't-dns', 't-useradd')
+    bins = ('t-dhcp', 't-dns', 't-useradd', 't-userdel')
     sbins = (
             'Tartarus-srv1',
             'Tartarus-join',

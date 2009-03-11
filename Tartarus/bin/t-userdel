@@ -1,0 +1,35 @@
+#!/usr/bin/python
+
+import sys
+
+import Tartarus
+from Tartarus.iface import SysDB, core
+
+from Tartarus.client import initialize
+comm, argv = initialize()
+
+def main():
+    name = parse_cmdline()
+    uid = uM().getByName(name).uid
+    uM().delete(uid)
+
+def parse_cmdline():
+    if len(sys.argv) != 2:
+        raise RuntimeError('Wrong arguments.\n'
+                'Usage %s <username>' % sys.argv[0])
+    return argv[1]
+
+def uM():
+    prx = comm.propertyToProxy('Tartarus.SysDB.UserManagerPrx')
+    return SysDB.UserManagerPrx.checkedCast(prx)
+
+try:
+    main()
+#except core.DBError, e:
+#    print '%s: %s' % (e.reason, e.response)
+except core.Error, e:
+    print e.reason
+except:
+    _, e, _ = sys.exc_info()
+    print e
+
