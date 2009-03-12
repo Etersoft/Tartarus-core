@@ -34,6 +34,7 @@ def parse_cmdline():
     opt('-s', '--shell', help='A name of user\'s login shell')
     optp.set_defaults(group='netusers', shell='/bin/bash')
     opts, argv = optp.parse_args(sys.argv)
+    if len(argv) != 2: raise RuntimeError('You should specify user name.')
     return argv[1], opts
 
 def uM():
