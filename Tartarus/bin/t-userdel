@@ -33,13 +33,13 @@ def kAdm():
 
 try:
     main()
-#except core.DBError, e:
-#    print '%s: %s' % (e.reason, e.response)
 except core.Error, e:
     print e.reason
+    sys.exit(1)
 except SystemExit:
-    pass
+    raise
 except:
     _, e, _ = sys.exc_info()
     print e
+    sys.exit(1)
 
