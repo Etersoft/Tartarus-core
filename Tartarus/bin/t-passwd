@@ -1,0 +1,54 @@
+#!/usr/bin/python
+
+import sys
+from optparse import OptionParser
+
+import Tartarus
+from Tartarus.iface import SysDB, Kerberos, core
+from Tartarus.system import consdialog
+
+from Tartarus.client import initialize
+comm, argv = initialize()
+
+def main():
+    name, opts = parse_cmdline()
+    u = uM().getByName(name)
+    if opts.enable is not None:
+        kAdm().setPrincEnabled(u.name, opts.enable)
+    else:
+        pwd = consdialog.password('New user password', min_len=4)
+        ka = kAdm()
+        try:
+            ka.createPrincipal(u.name, pwd)
+        except core.AlreadyExistsError:
+            ka.changePrincPassword(u.name, pwd)
+
+def parse_cmdline():
+    optp = OptionParser()
+    opt = optp.add_option
+    opt('-e', '--enable', action='store_true', help='Enable user.')
+    opt('-d', '--disable', dest='enable', action='store_false', help='Disable user.')
+    opts, argv = optp.parse_args(sys.argv)
+    if len(argv) != 2: raise RuntimeError('You should specify user name.')
+    return argv[1], opts
+
+def uM():
+    prx = comm.propertyToProxy('Tartarus.SysDB.UserManagerPrx')
+    return SysDB.UserManagerPrx.checkedCast(prx)
+
+def kAdm():
+    prx = comm.propertyToProxy('Tartarus.Kerberos.KadminPrx')
+    return Kerberos.KadminPrx.checkedCast(prx)
+
+try:
+    main()
+#except core.DBError, e:
+#    print '%s: %s' % (e.reason, e.response)
+except core.Error, e:
+    print e.reason
+except SystemExit:
+    pass
+except:
+    _, e, _ = sys.exc_info()
+    print e
+

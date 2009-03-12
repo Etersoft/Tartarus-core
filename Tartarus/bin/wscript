@@ -1,10 +1,11 @@
 def build(bld):
-    bins = ('t-dhcp', 't-dns', 't-useradd', 't-userdel')
     sbins = (
             'Tartarus-srv1',
             'Tartarus-join',
             'Tartarus-leave',
             't-deploy-srv')
+    bins = set(bld.glob('t-*'))
+    bins -= frozenset(sbins)
     bld.install_files('${BINDIR}', bins, chmod=0755)
     bld.install_files('${SBINDIR}', sbins, chmod=0755)
 
