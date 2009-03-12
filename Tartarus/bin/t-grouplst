@@ -1,0 +1,64 @@
+#!/usr/bin/python
+
+import sys
+from optparse import OptionParser
+
+import Tartarus
+from Tartarus.iface import SysDB, core
+
+from Tartarus.client import initialize
+comm, argv = initialize()
+
+def main():
+    pattern, opts = parse_cmdline()
+    gm = gM()
+    if pattern:
+        groups = gm.search(pattern, opts.limit+1)
+        over = len(users) > opts.limit
+    else:
+        groups = gm.get(opts.limit, 0)
+        over =  gm.count() > opts.limit
+    if over:
+        print >> sys.stderr, 'WARNING: There are more then %d groups.' % opts.limit
+    if opts.users:
+        for g in groups:
+            uids = gm.getUsers(g.gid)
+            users = uM().getUsers(uids)
+            users = ','.join(('%d(%s)' % (u.gid, u.name) for u in users))
+            print '%d(%s): %s' % (g.gid, g.name, users)
+    else:
+        for g in groups:
+            s = '%s(%d)' % (g.name, g.gid)
+            if g.description: s += ': ' + g.description
+            print s
+
+def parse_cmdline():
+    optp = OptionParser()
+    opt = optp.add_option
+    opt('-l', '--limit', type='int', help='Maximum records count.')
+    opt('-u', '--users', action='store_true', help='Show group\'s users instead of group info.')
+    optp.set_defaults(limit=100)
+    opts, argv = optp.parse_args(sys.argv)
+    pattern = argv[1] if len(argv) == 2 else None
+    return pattern, opts
+
+def uM():
+    prx = comm.propertyToProxy('Tartarus.SysDB.UserManagerPrx')
+    return SysDB.UserManagerPrx.checkedCast(prx)
+
+def gM():
+    prx = comm.propertyToProxy('Tartarus.SysDB.GroupManagerPrx')
+    return SysDB.GroupManagerPrx.checkedCast(prx)
+
+try:
+    main()
+except core.Error, e:
+    print e.reason
+    sys.exit(1)
+except SystemExit:
+    raise
+except:
+    _, e, _ = sys.exc_info()
+    print e
+    sys.exit(1)
+
