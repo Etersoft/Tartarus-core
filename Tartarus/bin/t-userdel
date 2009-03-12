@@ -3,7 +3,7 @@
 import sys
 
 import Tartarus
-from Tartarus.iface import SysDB, core
+from Tartarus.iface import SysDB, Kerberos, core
 
 from Tartarus.client import initialize
 comm, argv = initialize()
@@ -11,6 +11,10 @@ comm, argv = initialize()
 def main():
     name = parse_cmdline()
     uid = uM().getByName(name).uid
+    try:
+        kAdm().deletePrincipal(name)
+    except core.NotFoundError:
+        pass
     uM().delete(uid)
 
 def parse_cmdline():
@@ -23,12 +27,18 @@ def uM():
     prx = comm.propertyToProxy('Tartarus.SysDB.UserManagerPrx')
     return SysDB.UserManagerPrx.checkedCast(prx)
 
+def kAdm():
+    prx = comm.propertyToProxy('Tartarus.Kerberos.KadminPrx')
+    return Kerberos.KadminPrx.checkedCast(prx)
+
 try:
     main()
 #except core.DBError, e:
 #    print '%s: %s' % (e.reason, e.response)
 except core.Error, e:
     print e.reason
+except SystemExit:
+    pass
 except:
     _, e, _ = sys.exc_info()
     print e

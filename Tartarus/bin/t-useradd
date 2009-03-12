@@ -16,7 +16,7 @@ def main():
     group = gm.getByName(opts.group)
     u.gid = group.gid
     u.name = name
-    u.fullName = opts.fullname
+    u.fullName = opts.fullname or name
     u.shell = opts.shell
     if opts.groups:
         gids = [gm.getByName(g).gid for g in opts.groups.split(',')]
@@ -32,7 +32,7 @@ def parse_cmdline():
     opt('-g', '--group', help='Initial group name')
     opt('-G', '--groups', help='A list of supplementary group')
     opt('-s', '--shell', help='A name of user\'s login shell')
-    optp.set_defaults(group='netusers', shell='/bin/bash', fullname='')
+    optp.set_defaults(group='netusers', shell='/bin/bash')
     opts, argv = optp.parse_args(sys.argv)
     return argv[1], opts
 
@@ -46,10 +46,12 @@ def gM():
 
 try:
     main()
-except core.DBError, e:
-    print '%s: %s' % (e.reason, e.response)
+#except core.DBError, e:
+#    print '%s: %s' % (e.reason, e.response)
 except core.Error, e:
     print e.reason
+except SystemExit:
+    pass
 except:
     _, e, _ = sys.exc_info()
     print e
