@@ -51,6 +51,7 @@ class _App(daemon.Daemon):
         logging.trace("Tartarus", "Successfully started Tartarus daemon")
         self.adapter.activate()
         self.adapter.waitForDeactivate()
+        modules.shutdown_modules()
         return 0
 
 

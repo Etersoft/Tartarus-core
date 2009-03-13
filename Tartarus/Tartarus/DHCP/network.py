@@ -6,6 +6,7 @@ from options import opts
 from config import Config
 from runner import Runner, Status
 from Tartarus import auth
+from Tartarus import logging
 
 class HostI(DHCP.Host):
     def __init__(self, name):
@@ -48,7 +49,6 @@ class SubnetI(DHCP.Subnet):
         sbn = self.__subnet()
         return sbn.decl()
     def range(self, type, current):
-        print type, type.value
         r = self.__subnet().range(type.value)
         if r is ():
             return DHCP.IpRange('', '', False)
@@ -129,8 +129,13 @@ class ServerI(DHCP.Server):
         Config.get().save()
         Config.get().genDHCPCfg()
     @auth.mark('admin')
-    def reset(self, current):
+    def rollback(self, current):
         Config.get().load()
+    def isConfigured(self, common):
+        return Config.get().isConfigured()
+    @auth.mark('admin')
+    def reset(self, common):
+        Config.get().reset()
     @staticmethod
     def __mkHostPrx(host, adapter):
         if host is None: return None
@@ -151,7 +156,10 @@ class DaemonI(DHCP.Daemon):
         self.__runner = Runner.get()
         self.__server = Server.get()
         if self.__server.startOnLoad():
-            self.__runner.start()
+            try:
+                self.__runner.start()
+            except RuntimeError, e:
+                logging.warning(str(e))
     @auth.mark('admin')
     def start(self, current):
         self.__runner.start()
