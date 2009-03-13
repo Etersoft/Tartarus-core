@@ -28,10 +28,10 @@ def default_authorize(marks, current):
 # {{{ Authorizing locators
 
 class DefaultSrvLocator(Ice.ServantLocator):
-    def __init__(self, obj, marks=('admin',),
+    def __init__(self, obj, marks=None,
                  authorize=default_authorize):
         self._obj = obj
-        self._marks = marks
+        self._marks = marks or {}
         self._authorize = authorize
 
     def locate(self, current):
@@ -41,6 +41,12 @@ class DefaultSrvLocator(Ice.ServantLocator):
         except C.PermissionError:
             raise
         except Exception, e:
+            c = current.adapter.getCommunicator()
+            logging.warning("Refusing permission because of exception. "
+                            "Object: %s. Operation: %s. Exception %s: %s."
+                            % (c.identityToString(current.id),
+                               current.operation,
+                               type(e).__name__, e))
             return None
         return None
 
