@@ -78,7 +78,8 @@ class UserManagerI(I.UserManager):
                         + '%')
         cur = self._dbh.execute_limited(con, limit, 0,
                 _user_query +
-                " WHERE (name LIKE %s or fullname LIKE %s)",
+                " WHERE (name LIKE %s ESCAPE '\\'"
+                " OR fullname LIKE %s ESCAPE '\\')",
                 phrase, phrase)
         return self._db2users(cur.fetchall())
 
