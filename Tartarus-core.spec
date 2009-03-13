@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt1
+Release: alt2
 
 %define tname Tartarus
 
@@ -165,6 +165,18 @@ Requires: pdns-backend-sqlite3
 This module is built for python %__python_version
 
 
+%package -n %tname-DNS-client
+Summary: %tname DNS adminitrative utility.
+Group: System/Configuration/Other
+Requires: %tname-DNS-slice = %version-%release
+Requires: python-module-%tname = %version-%release
+
+%description -n %tname-DNS-client
+%tname DNS adminitrative utility.
+
+This module is built for python %__python_version
+
+
 %package -n %tname-Kadmin5
 Summary: %tname Kadmin5 Configurator.
 Group: System/Configuration/Other
@@ -193,6 +205,19 @@ Requires: %tname = %version-%release
 This module is built for python %__python_version
 
 
+%package -n %tname-SysDB-client
+Summary: %tname SysDB adminitrative utility.
+Group: System/Configuration/Other
+Requires: %tname-SysDB-slice = %version-%release
+Requires: %tname-Kerberos-slice = %version-%release
+Requires: python-module-%tname = %version-%release
+
+%description -n %tname-SysDB-client
+%tname SysDB adminitrative utility.
+
+This module is built for python %__python_version
+
+
 %package -n %tname-DHCP
 Summary: %tname DHCP service.
 Group: System/Servers
@@ -212,6 +237,7 @@ This module is built for python %__python_version
 Summary: %tname DHCP adminitrative utility.
 Group: System/Configuration/Other
 Requires: %tname-DHCP-slice = %version-%release
+Requires: python-module-%tname = %version-%release
 
 %description -n %tname-DHCP-client
 %tname DHCP adminitrative utility.
@@ -362,6 +388,7 @@ fi
 %tpythondir/logging*
 %tpythondir/modules*
 %tpythondir/slices*
+%tpythondir/client*
 
 %files -n python-module-%tname-daemon
 %tpythondir/auth*
@@ -392,6 +419,14 @@ fi
 %files -n %tname-DHCP
 %tconfdir/*/DHCP*
 %tmoduledir/DHCP
+
+%files -n %tname-SysDB-client
+%_bindir/t-passwd
+%_bindir/t-user*
+%_bindir/t-group*
+
+%files -n %tname-DNS-client
+%_bindir/t-dns
 
 %files -n %tname-DHCP-client
 %_bindir/t-dhcp
@@ -424,11 +459,17 @@ fi
 # {{{1 changelog
 
 %changelog
+* Fri Mar 13 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt2
+- add simple service locator (#119)
+- add DNS console utility (#125)
+- add SysDB (users and groups) console utility (#129)
+- add locator for service lookup (#119)
+- fix '_' in user names (#131)
+
 * Fri Feb 20 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt1
 - add DHCP service with simple authentification and console client
 - directory creation code added to constructor of database helper (#117)
-- add waf build system
-- add simple service locator
+- add waf build system (#113)
 
 * Wed Feb 18 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.1-alt2
 - build fixes for sisyphus prebuild of alpha3
