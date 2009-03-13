@@ -13,7 +13,7 @@ class Communicator:
         if cls.__communicator is None:
             idata = Ice.InitializationData()
             idata.properties = Ice.createProperties()
-            idata.properties.load('/etc/Tartarus/clients/all.config')
+            idata.properties.load('/etc/Tartarus/clients/common.conf')
             cls.__communicator = Ice.initialize(None, idata)
         return cls.__communicator
     @classmethod
@@ -23,7 +23,6 @@ class Communicator:
 
 _template_dir = '/usr/share/Tartarus/templates/'
 _krb5_conf_template = _template_dir + "clients/krb5.conf.template"
-_ice_config_template = _template_dir + "all/all.config.template"
 
 def deploy(opts):
     Tartarus.system.check.check_krb5_lookup(opts['domain'])

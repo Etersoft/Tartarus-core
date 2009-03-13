@@ -3,7 +3,7 @@ from uuid import uuid4 as uuid
 import re
 import os
 from socket import inet_ntoa, inet_aton
-from struct import pack
+from struct import pack, unpack
 #from dhcpd_conf import dhcpd_conf
 from Cheetah.Template import Template
 
@@ -17,8 +17,16 @@ class IpMask:
     @staticmethod
     def s2i(mask):
         mask = inet_aton(mask)
-        i = unpack('I', mask)[0]
+        i = unpack('>I', mask)[0]
         return int(math.log(i+1,2)+0.1)
+
+class IpAddr:
+    @staticmethod
+    def i2s(addr):
+        return inet_ntoa(pack('>I', addr))
+    @staticmethod
+    def s2i(addr):
+        return unpack('>I', inet_aton(addr))[0]
 
 class Server:
     __instance = None
@@ -70,13 +78,12 @@ class Server:
 class _Subnet:
     re = re.compile('^\d{1,3}$')
     def __init__(self, id, decl):
-        addr, mask = decl.split('/')
-        mask = IpMask.i2s(int(mask))
-        self.__testAddr(addr)
+        addr, imask, smask = self.__test(decl)
         self.__id = id
         self.__decl = decl
         self.__addr = addr
-        self.__mask = mask
+        self.__mask = smask
+        self.__imask = imask
         self.__params = Params()
         self.__ranges = [()]*3
     def id(self):
@@ -94,13 +101,17 @@ class _Subnet:
             return self.__ranges[rtype]
         self.__ranges[rtype] = value
     @staticmethod
-    def __testAddr(addr):
-        parts = addr.split('.')
-        if len(parts) != 4:
-            raise RuntimeError('Wrong subnet address: %s' % addr)
-        for part in parts:
-            if not _Subnet.re.match(part) or int(part) > 255:
-                raise RuntimeError('Wrong subnet address: %s' % addr)
+    def __test(decl):
+        if '/' not in decl:
+            raise RuntimeError('Wrong subnet declaration: %s' % decl)
+        addr, imask = decl.split('/')
+        imask = int(imask)
+        smask = IpMask.i2s(imask)
+        addr = IpAddr.s2i(addr)
+        zero_bits = 32 - imask
+        addr = (addr >> zero_bits) << zero_bits
+        addr = IpAddr.i2s(addr)
+        return addr, imask, smask
 
 class Identity:
     IDENTITY, HARDWARE = range(2)

@@ -14,6 +14,14 @@ class Config:
         self.__cfg_fname_new = self.__cfg_fname + '.new'
         self.__dhcp_cfg_fname = opts().dhcp_cfg_fname
         self.__dhcp_cfg_fname_new = self.__dhcp_cfg_fname + '.new'
+    def reset(self):
+        self.__server.reset()
+        exists = os.path.exists
+        if exists(self.__cfg_fname): os.unlink(self.__cfg_fname)
+        if exists(self.__dhcp_cfg_fname): os.unlink(self.__dhcp_cfg_fname)
+    def isConfigured(self):
+        exists = os.path.exists
+        return exists(self.__cfg_fname) and exists(self.__dhcp_cfg_fname)
     def save(self):
         storage.save(self.__server, open(self.__cfg_fname_new, 'w+'))
         os.rename(self.__cfg_fname_new, self.__cfg_fname)

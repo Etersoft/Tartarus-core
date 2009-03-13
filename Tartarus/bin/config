@@ -1,5 +1,10 @@
-Tartarus.DHCP.ServerPrx=DHCP/Server:ssl -p 12345 -h localhost
-Tartarus.DHCP.DaemonPrx=DHCP/Daemon:ssl -p 12345 -h localhost
+Ice.Default.Locator = Locator:ssl -p 12345 -h @HOSTNAME@
+Tartarus.SysDB.UserManagerPrx = SysDB-Manager/Users: ssl -h @HOSTNAME@ -p 12345
+Tartarus.SysDB.GroupManagerPrx = SysDB-Manager/Groups: ssl -h @HOSTNAME@ -p 12345
+Tartarus.Kerberos.KadminPrx = Kerberos/Kadmin: ssl -h @HOSTNAME@ -p 12345
+Tartarus.DNS.ServerPrx = DNS/Server: ssl -h @HOSTNAME@ -p 12345
+
+Tartarus.addSlicePath.Debug = ../slice
 
 Ice.Plugin.IceSSL=IceSSL:createIceSSL
 IceSSL.Ciphers=KRB5

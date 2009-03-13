@@ -1,0 +1,37 @@
+#!/usr/bin/python
+
+import sys
+
+import Tartarus
+from Tartarus.iface import SysDB, core
+
+from Tartarus.client import initialize
+comm, argv = initialize()
+
+def main():
+    name = parse_cmdline()
+    gid = gM().getByName(name).gid
+    gM().delete(gid)
+
+def parse_cmdline():
+    if len(sys.argv) != 2:
+        raise RuntimeError('Wrong arguments.\n'
+                'Usage %s <groupname>' % sys.argv[0])
+    return argv[1]
+
+def gM():
+    prx = comm.propertyToProxy('Tartarus.SysDB.GroupManagerPrx')
+    return SysDB.GroupManagerPrx.checkedCast(prx)
+
+try:
+    main()
+except core.Error, e:
+    print e.reason
+    sys.exit(1)
+except SystemExit:
+    raise
+except:
+    _, e, _ = sys.exc_info()
+    print e
+    sys.exit(1)
+

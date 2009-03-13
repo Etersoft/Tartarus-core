@@ -130,7 +130,7 @@ class GroupManagerI(I.GroupManager):
                         + '%')
         cur = self._dbh.execute_limited(con, limit, 0,
                 "SELECT gid, name, description FROM groups "
-                "WHERE name LIKE %s", phrase)
+                "WHERE name LIKE %s ESCAPE '\\'", phrase)
         return self._db2groups(cur.fetchall())
 
 

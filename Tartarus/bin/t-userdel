@@ -1,0 +1,45 @@
+#!/usr/bin/python
+
+import sys
+
+import Tartarus
+from Tartarus.iface import SysDB, Kerberos, core
+
+from Tartarus.client import initialize
+comm, argv = initialize()
+
+def main():
+    name = parse_cmdline()
+    uid = uM().getByName(name).uid
+    try:
+        kAdm().deletePrincipal(name)
+    except core.NotFoundError:
+        pass
+    uM().delete(uid)
+
+def parse_cmdline():
+    if len(sys.argv) != 2:
+        raise RuntimeError('Wrong arguments.\n'
+                'Usage %s <username>' % sys.argv[0])
+    return argv[1]
+
+def uM():
+    prx = comm.propertyToProxy('Tartarus.SysDB.UserManagerPrx')
+    return SysDB.UserManagerPrx.checkedCast(prx)
+
+def kAdm():
+    prx = comm.propertyToProxy('Tartarus.Kerberos.KadminPrx')
+    return Kerberos.KadminPrx.checkedCast(prx)
+
+try:
+    main()
+except core.Error, e:
+    print e.reason
+    sys.exit(1)
+except SystemExit:
+    raise
+except:
+    _, e, _ = sys.exc_info()
+    print e
+    sys.exit(1)
+

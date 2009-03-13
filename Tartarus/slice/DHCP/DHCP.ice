@@ -79,6 +79,8 @@ interface Server {
     void setParam(string key, string value) throws core::Error;
     void unsetParam(string key) throws core::Error;
     void commit() throws core::Error;
+    void rollback() throws core::Error;
+    bool isConfigured() throws core:;Error;
     void reset() throws core::Error;
 };
 

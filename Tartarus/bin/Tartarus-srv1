@@ -3,6 +3,7 @@
 import Tartarus
 
 from Tartarus import daemon, modules, logging
+from Tartarus.locator import Locator
 
 class _App(daemon.Daemon):
 
@@ -40,6 +41,7 @@ class _App(daemon.Daemon):
         self.adapter = comm.createObjectAdapter("TartarusAdapter")
         self.props = comm.getProperties()
         self.apply_properties()
+        Locator(self.adapter)
         self.load_modules()
         if self.props.getPropertyAsIntWithDefault('Ice.InitPlugins', 1) == 0:
             import IceSSL
@@ -49,6 +51,7 @@ class _App(daemon.Daemon):
         logging.trace("Tartarus", "Successfully started Tartarus daemon")
         self.adapter.activate()
         self.adapter.waitForDeactivate()
+        modules.shutdown_modules()
         return 0
 
 

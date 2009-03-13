@@ -28,6 +28,7 @@ def configure(cfg):
     cfg.check_python_version((2,5))
     cfg.sub_config('slice')
     cfg.env['VERSION'] = VERSION
+    cfg.env.append_value('CPPFLAGS', '-O2')
 
 def build(bld):
     bld.auto_add_subdirs()
