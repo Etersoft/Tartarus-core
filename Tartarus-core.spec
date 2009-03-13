@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt3
+Release: alt4
 
 %define tname Tartarus
 
@@ -337,7 +337,7 @@ if [ "%version" != "`./waf --package-version`" ]; then
     exit 1
 fi
 
-./configure
+./configure --libdir=%_libdir
 ./waf
 
 # {{{1 install
@@ -463,6 +463,9 @@ fi
 # {{{1 changelog
 
 %changelog
+* Fri Mar 13 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt4
+- fix building on x86_64 with new build system
+
 * Fri Mar 13 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt3
 - fix DNS bug (#134)
 - add more diagnostics to Tartarus.auth.DefaultSrvLocator
