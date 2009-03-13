@@ -5,6 +5,7 @@ from Tartarus import logging
 path = []
 
 trace = 0
+modules = []
 
 def load_module(modname, adapter):
 
@@ -15,6 +16,7 @@ def load_module(modname, adapter):
         __import__(modname)
         module = sys.modules[modname]
         module.init(adapter)
+        modules.append(module)
         return True
     except Exception:
         et, ev, tb = sys.exc_info()
@@ -28,6 +30,10 @@ def load_module(modname, adapter):
                 (modname, msg.strip()))
         return False
 
+def shutdown_modules():
+    for m in modules:
+        sd = getattr(m, 'shutdown', None)
+        if sd: sd()
 
 def load_config(props, cfg_path):
     if len(cfg_path) == 0:

@@ -127,7 +127,7 @@ class Reset(Command):
     'reset last changes in configuration'
     def do_cmd(self, argv):
         prx = serverPrx()
-        prx.reset()
+        prx.rollback()
 
 class Commit(Command):
     'commit last changes'

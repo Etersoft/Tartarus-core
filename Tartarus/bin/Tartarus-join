@@ -13,7 +13,7 @@ class Communicator:
         if cls.__communicator is None:
             idata = Ice.InitializationData()
             idata.properties = Ice.createProperties()
-            idata.properties.load('/etc/Tartarus/clients/all.config')
+            idata.properties.load('/etc/Tartarus/clients/common.conf')
             cls.__communicator = Ice.initialize(None, idata)
         return cls.__communicator
     @classmethod

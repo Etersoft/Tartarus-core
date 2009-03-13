@@ -1,0 +1,300 @@
+#!/usr/bin/python
+
+import sys
+import os
+import re
+from optparse import OptionParser
+from functools import wraps
+
+from Tartarus.system import hostname
+from Tartarus.client import initialize
+comm, argv = initialize()
+
+from Tartarus.iface import DNS
+
+class CommandLineError(Exception):
+    def __init__(self, msg):
+        super(CommandLineError, self).__init__(msg)
+
+class CommandError(Exception):
+    def __init__(self, msg, error_code=1):
+        super(CommandError, self).__init__(msg)
+        self.error_code = error_code
+
+class Command(object):
+    def run(self, argv):
+        if len(argv) == 1 and argv[0] == 'help':
+            self.help()
+            return 0
+        try:
+            return self.do_cmd(argv)
+        except CommandLineError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            self.help()
+            return 1
+        except CommandError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            return e.error_code
+    @classmethod
+    def help(cls):
+        name = cls.__name__.lower()
+        name = getattr(cls, 'command_name', name)
+        print 'Usage: %s %s\n' % (sys.argv[0], name)
+        print cls.__doc__
+        print
+
+def cmd(method):
+    @wraps(method)
+    def wrapper(self, argv):
+        if len(argv) == 1 and argv[0] == 'help':
+            self.cmd_help()
+            return 0
+        try:
+            return method(self, argv)
+        except CommandLineError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            self.cmd_help()
+            return 1
+        except CommandError, e:
+            print '\033[91mError:\033[0m %s\n' % e
+            return e.error_code
+    wrapper.is_command = True
+    return wrapper
+
+class SuperCommand(Command):
+    def __init__(self):
+        self.__commands = {}
+        for i in dir(self):
+            attr = getattr(self, i)
+            if hasattr(attr, 'is_command') and attr.is_command is True:
+                self.__commands[attr.__name__] = attr
+    def do_cmd(self, argv):
+        if len(argv) < 1:
+            raise CommandLineError('you should specify subcommand')
+        self.__subcmd = argv[0]
+        try:
+            callable = getattr(self, self.__subcmd)
+            if not callable.is_command:
+                raise CommandLineError('command %s not found' % self.__subcmd)
+        except:
+            raise CommandLineError('command %s not found' % self.__subcmd)
+        return callable(argv[1:])
+    def cmd_help(self):
+        if hasattr(self, 'help_' + self.__subcmd):
+            getattr(self, 'help_' + self.__subcmd)()
+        else:
+            name = type(self).__name__.lower()
+            print 'Usage: %s %s %s' % (sys.argv[0], name, self.__subcmd)
+            print '\n%s\n' % getattr(self, self.__subcmd).__doc__
+    def help(self):
+        name = type(self).__name__.lower()
+        print 'Usage: %s %s <subcommand> <args>\n' % (sys.argv[0], name)
+        print 'Valid subcommands are:'
+        for cmd, doc in ((name, attr.__doc__) for name, attr in self.__commands.iteritems()):
+            print '  \033[92m%s\033[0m - %s' % (cmd, doc)
+        print '\nTry run %s %s <subcommand> help for more information\n' % (sys.argv[0], name)
+
+class Zone(SuperCommand):
+    __soa_fields = 'nameserver hostmaster serial refresh retry expire ttl'.split()
+    "Manipulate with DNS zones"
+    @cmd
+    def list(self, argv):
+        "Show all zones"
+        srv = serverPrx()
+        for zone in srv.getZones():
+            name = zone.getName()
+            print name
+            if '-v' in argv:
+                soa = zone.getSOA()
+                self.__printSOA(soa)
+    @cmd
+    def show(self, argv):
+        "Show zone soa record"
+        if len(argv) != 1:
+            self.cmd_help()
+            return
+        name = argv[0]
+        srv = serverPrx()
+        zone = srv.getZone(name)
+        print name
+        self.__printSOA(zone.getSOA())
+    @cmd
+    def create(self, argv):
+        'Add DNS zone to server'
+        if len(argv) < 1:
+            self.cmd_help()
+            return
+        name = argv[0]
+        opts, _ = self.__soaOptP().parse_args(argv)
+        soa = DNS.SOARecord()
+        for a in self.__soa_fields:
+            v = getattr(opts, a)
+            setattr(soa, a, v)
+        srv = serverPrx()
+        srv.createZone(name, soa)
+    def help_create(self):
+        usage = 'Usage: %s zone create <name> ...' % sys.argv[0]
+        op = self.__soaOptP(usage)
+        op.print_help()
+    @cmd
+    def delete(self, argv):
+        'Delete zone by name'
+        if len(argv) != 1:
+            self.cmd_help()
+            return
+        name = argv[0]
+        srv = serverPrx()
+        srv.deleteZone(name)
+    @cmd
+    def soa(self, argv):
+        'Modify SOA record'
+        if len(argv) < 1:
+            self.cmd_help()
+            return
+        name = argv[0]
+        srv = serverPrx()
+        zone = srv.getZone(name)
+        soa = zone.getSOA()
+        defaults = {}
+        for f in self.__soa_fields:
+            defaults[f] = getattr(soa, f)
+        opts, _ = self.__soaOptP(defaults=defaults).parse_args(argv)
+        for f in self.__soa_fields:
+            setattr(soa, f, getattr(opts, f))
+        zone.setSOA(soa)
+        print name
+        self.__printSOA(soa)
+    def help_soa(self):
+        usage = 'Usage: %s zone soa <name> <options>...' % sys.argv[0]
+        self.__soaOptP(usage).print_help()
+    @staticmethod
+    def __soaOptP(usage=None, defaults=None):
+        optp = OptionParser(usage=usage)
+        optp.remove_option('-h')
+        opt = optp.add_option
+        opt('-n', '--nameserver',
+                help='nameserver field for SOA record')
+        opt('-h', '--hostmaster',
+                help='hostmaster field for SOA record')
+        opt('-s', '--serial', type='int',
+                help='serial field for SOA record')
+        opt('--refresh', type='int',
+                help='refresh field for SOA record')
+        opt('--retry', type='int',
+                help='retry field for SOA record')
+        opt('-e', '--expire', type='int',
+                help='expire field for SOA record')
+        opt('-t', '--ttl', type='int',
+                help='ttl field for SOA record')
+        domain = hostname.getdomain()
+        defaults = defaults or {
+                'nameserver': 'ns.' + domain,
+                'hostmaster': 'hostmaster.' + domain,
+                'serial': 0,
+                'refresh': 43200,
+                'retry': 3600,
+                'expire': 604800,
+                'ttl': 3600 }
+        optp.set_defaults(**defaults)
+        return optp
+    @staticmethod
+    def __printSOA(soa):
+        print '  SOA: nameserver: %s' % soa.nameserver
+        print '       hostmaster: %s' % soa.hostmaster
+        print '       serial:     %s' % soa.serial
+        print '       refresh:    %s' % soa.refresh
+        print '       retry:      %s' % soa.retry
+        print '       expire:     %s' % soa.expire
+        print '       ttl:        %s' % soa.ttl
+
+class Record(SuperCommand):
+    @cmd
+    def find(self, argv):
+        'Find record in zone'
+        zone = self.__getZone(argv[0])
+        if len(argv) == 3:
+            limit = int(argv[2])
+        else:
+            limit = 100
+        for r in zone.findRecords(argv[1], limit):
+            repr = '%s %s %s' % (r.name, r.type, r.data)
+            if r.ttl > -1: repr += ' %s' % r.ttl
+            if r.prio > -1: repr += ' %s' % r.prio
+            print repr
+    @cmd
+    def add(self, argv):
+        opts, argv = self.__add_optp().parse_args(argv)
+        zone = self.__getZone(argv[0])
+        type = getattr(DNS.RecordType, argv[2])
+        r = DNS.Record(argv[1], type, argv[3], opts.ttl, opts.prio)
+        zone.addRecord(r)
+    @cmd
+    def drop(self, argv):
+        type = getattr(DNS.RecordType, argv[2])
+        r = DNS.Record(argv[1], type, argv[3])
+        zone = self.__getZone(argv[0])
+        zone.dropRecord(r)
+    @staticmethod
+    def __add_optp():
+        optp = OptionParser()
+        optp.add_option('-t', '--ttl')
+        optp.add_option('-p', '--prio')
+        optp.set_defaults(ttl=-1, prio=-1)
+        return optp
+    @staticmethod
+    def __getZone(name):
+        return serverPrx().getZone(name)
+
+class Options(Command):
+    def do_cmd(self, argv):
+        srv = serverPrx()
+        for opt in srv.getOptions():
+            print '%s: %s' % (opt.name, opt.value)
+
+class SetOption(Command):
+    command_name = 'set-option'
+    def do_cmd(self, argv):
+        srv = serverPrx()
+        srv.changeOptions([DNS.ServerOption(argv[0], argv[1])])
+
+class Main:
+    def __init__(self, argv):
+        self.__exec_name = sys.argv[0]
+        self.__argv = argv
+        self.__cmds = {}
+        for cmd, cls in ((cmd.lower(), cls) for cmd, cls in globals().iteritems() if
+                isinstance(cls, type)
+                and issubclass(cls, Command)
+                and cls not in (Command, SuperCommand)
+                ):
+            cmdname = getattr(cls, 'command_name', cmd)
+            self.__cmds[cmdname] = cls
+    def usage(self):
+        print 'Usage: %s <command> <args>\n' % sys.argv[0]
+        self.helpCmds()
+    def helpCmds(self):
+        print 'Valid commands are:'
+        for cmd, doc in ((key, cmd.__doc__) for key, cmd in self.__cmds.iteritems()):
+            print '  \033[92m%s\033[0m - %s' % (cmd, doc)
+        print '\nTry run %s <command> help for more information\n' % sys.argv[0]
+    def __call__(self):
+        if len(self.__argv) < 2:
+            self.usage()
+            return 1
+        cmd = self.__argv[1]
+        cmd = self.__cmds.get(cmd, None)
+        if cmd is None:
+            print 'Error: %s - unknown command' % self.__argv[1]
+            self.helpCmds()
+            return 1
+        argv = self.__argv[2:]
+        cmd().run(argv)
+        comm.destroy()
+        return 0
+
+def serverPrx():
+    prx = comm.propertyToProxy('Tartarus.DNS.ServerPrx')
+    return DNS.ServerPrx.checkedCast(prx)
+
+sys.exit(Main(argv)())
+

@@ -1,7 +1,9 @@
 #!/bin/bash
 
+sed s/@HOSTNAME@/`hostname`/g config > .config
+
 export PYTHONPATH=..
-export TARTARUS_CONFIG=./config
+export TARTARUS_CONFIG=./.config
 
 PROG=$1
 shift

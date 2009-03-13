@@ -1,0 +1,48 @@
+#!/usr/bin/python
+
+import sys
+from optparse import OptionParser
+
+import Tartarus
+from Tartarus.iface import SysDB, core
+
+from Tartarus.client import initialize
+comm, argv = initialize()
+
+def main():
+    name, opts = parse_cmdline()
+    g = SysDB.GroupRecord()
+    gm = gM()
+    g.name = name
+    g.description = opts.description
+    try:
+        gM().create(g)
+    except core.DBError:
+        if not opts.force: raise
+
+def parse_cmdline():
+    optp = OptionParser()
+    opt = optp.add_option
+    opt('-d', '--description', help='New group\'s description.')
+    opt('-f', '--force', action='store_true', help='Do not exit with error if group already exists.')
+    optp.set_defaults(description='')
+    opts, argv = optp.parse_args(sys.argv)
+    if len(argv) != 2: raise RuntimeError('You should specify group name.')
+    return argv[1], opts
+
+def gM():
+    prx = comm.propertyToProxy('Tartarus.SysDB.GroupManagerPrx')
+    return SysDB.GroupManagerPrx.checkedCast(prx)
+
+try:
+    main()
+except core.Error, e:
+    print e.reason
+    sys.exit(1)
+except SystemExit:
+    raise
+except:
+    _, e, _ = sys.exc_info()
+    print e
+    sys.exit(1)
+
