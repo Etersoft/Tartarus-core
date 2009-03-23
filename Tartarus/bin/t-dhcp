@@ -212,39 +212,78 @@ class Param(SuperCommand):
         h.unsetParam(key)
         return 0
 
-class Subnet(SuperCommand):
-    'list, create or delete subnets'
-    @cmd
-    def add(self, argv):
-        'add subnet'
-        if len(argv) != 1:
-            raise CommandLineError('wrong number of arguments')
-        prx = serverPrx()
-        prx.addSubnet(argv[0])
-    def help_add(self):
-        print 'Usage: %s subnet add <decl>' % sys.argv[0]
-        print '\nAdd subnet. <decl> should be in CIDR form: <ip-addr>/<mask>\n'
-    @cmd
-    def list(self, argv):
-        'list all available subnets'
-        prx = serverPrx()
-        for s in prx.subnets():
-            print '%s:' % s.decl()
-            for r in s.ranges():
-                start, end = r.addrs()
-                print '%s-%s: %s' % (start, end, 'not realised')
-    @cmd
-    def delete(self, argv):
-        'delete subnet'
-        if len(argv) != 1:
-            raise CommandLineError('wrong number of arguments')
+class Options(Command):
+    pass
+
+class Subnet(Command):
+    Action = Enum('LIST', 'ADD', 'REMOVE')
+    def __init__(self):
+        usage = (
+                'Usage: %(prog)s subnet [-Ro]             - list mode\n'
+                '       %(prog)s range -a <addr>/<mask>   - add mode\n'
+                '       %(prog)s range -r <addr>/<mask>   - remove mode\n'
+                )
+        self.optp = OptionParser(usage=usage % { 'prog': sys.argv[0] })
+        opt = self.optp.add_option
+        Action = self.Action
+        opt('-a', '--add',
+                action='store_const', dest='action', const=Action.ADD,
+                help='Create new range')
+        opt('-r', '--remove',
+                action='store_const', dest='action', const=Action.REMOVE,
+                help='Remove range')
+        opt('-R', '--show-ranges',
+                action='store_true',
+                help='Show subnet\'s ranges (only for list mode)')
+        opt('-o', '--show-options',
+                action='store_true',
+                help='Show subnet options (only for list mode)')
+        self.optp.set_defaults(action=Action.LIST)
+    def do_cmd(self, args):
+        Action = self.Action
+        opts, args = self.optp.parse_args(args)
+        {
+                Action.LIST: self.do_list,
+                Action.ADD: self.do_add,
+                Action.REMOVE: self.do_remove,
+        }[opts.action](opts, args)
+    @classmethod
+    def do_list(cls, opts, args):
+        if len(args) != 0: raise RuntimeError('Wrong arguments')
         srv = serverPrx()
-        s = srv.findSubnet(argv[0])
-        if s is None: raise CommandError('subnet %s is not found' % argv[0])
-        srv.delSubnet(s)
-    def help_delete(self):
-        print 'Usage: %s subnet delete <decl>' % sys.argv[0]
-        print '\nDelete subnet. <decl> should be in CIDR form: <ip-addr>/<mask>\n'
+        for s in srv.subnets():
+            cls.printSubnet(s, opts.show_options, opts.show_ranges)
+    @classmethod
+    def printSubnet(cls, subnet, options=False, ranges=False):
+        cidr = subnet.cidr()
+        print '%s' % (cidr)
+        if options:
+            for o in subnet.options().iteritems():
+                print '  %s: %s' % o
+        if ranges:
+            for r in subnet.ranges():
+                cls.printRange(r)
+    @classmethod
+    def printRange(cls, range):
+        start, end = range.addrs()
+        caps = range.caps()
+        caps_str = ''
+        if caps & DHCP.STATIC: caps_str += 's'
+        if caps & DHCP.KNOWN: caps_str += 'k'
+        if caps & DHCP.UNKNOWN: caps_str += 'u'
+        print '  %s-%s CAPS: %s' % (start, end, caps_str)
+    @classmethod
+    def do_add(cls, opts, args):
+        if len(args) != 1: raise RuntimeError('Wrong arguments')
+        s.addSubnet(args[0])
+    @classmethod
+    def do_remove(cls, opts, args):
+        if len(args) != 1: raise RuntimeError('Wrong arguments')
+        addr, mask = opts[0].split('/')
+        srv = serverPrx()
+        subnet = srv.findSubnet(addr)
+        if not subnet: raise RuntimeError('Subnet not found')
+        srv.delSubnet(subnet.id())
 
 class Range(Command):
     Action = Enum('LIST', 'ADD', 'REMOVE', 'MODIFY')

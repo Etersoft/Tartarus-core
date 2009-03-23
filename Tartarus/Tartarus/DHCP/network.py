@@ -114,10 +114,9 @@ class ServerI(DHCP.Server):
         s = self.__server.addSubnet(decl)
         return self.__mkSubnetPrx(s, current.adapter)
     @auth.mark('admin')
-    def delSubnet(self, s, current):
+    def delSubnet(self, id, current):
         '''void delSubnet(Subnet* s)'''
-        id = s.ice_getIdentity()
-        self.__server.delSubnet(id.name)
+        self.__server.delSubnet(id)
     def hosts(self, current):
         '''HostSeq hosts()'''
         hosts = self.__server.hosts()

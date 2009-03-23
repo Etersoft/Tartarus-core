@@ -52,8 +52,6 @@ sequence<Range*> RangeSeq;
 interface Subnet {
     string id();
     string cidr();
-    //IpRange range(RangeType type);
-    //void setRange(RangeType type, IpRange range) throws core::Error;
     StrStrMap params();
     void setParam(string key, string value) throws core::Error;
     void unsetParam(string key) throws core::Error;
@@ -69,7 +67,7 @@ interface Server {
     SubnetSeq subnets();
     Subnet* findSubnet(string decl) throws core::Error;
     Subnet* addSubnet(string decl) throws core::Error;
-    void delSubnet(Subnet* s) throws core::Error;
+    void delSubnet(string id) throws core::Error;
     HostSeq hosts();
     Host* getHost(string name) throws core::Error;
     Host* addHost(string name, HostId id) throws core::Error;
