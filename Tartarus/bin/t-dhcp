@@ -246,58 +246,6 @@ class Subnet(SuperCommand):
         print 'Usage: %s subnet delete <decl>' % sys.argv[0]
         print '\nDelete subnet. <decl> should be in CIDR form: <ip-addr>/<mask>\n'
 
-class OldRange(SuperCommand):
-    'modify subnets ip ranges'
-    @cmd
-    def add(self, argv):
-        'Add range to subnet'
-        opts, argv = self.opts_add().parse_args(argv)
-        if len(argv) != 3: raise RuntimeError('Wrong arguments')
-        caps = []
-        if opts.static: caps.append(DHCP.RangeCap.STATIC)
-        if opts.known: caps.append(DHCP.RangeCap.KNOWN)
-        if opts.unknown: caps.append(DHCP.RangeCap.UNKNOWN)
-        srv = serverPrx()
-        sbn = srv.findSubnet(argv[0])
-        sbn.addRange(argv[1], argv[2], caps)
-    @staticmethod
-    def opts_add():
-        opts = OptionParser(usage='Usage: %s range add <subnet> <start> <end> <options>' % sys.argv[0])
-        opt = opts.add_option
-        opt('-s', '--static', action='store_true', help='Allow use range for static address allocation')
-        opt('-k', '--known', action='store_true', help='Allow assign addresses from this range to known hosts')
-        opt('-u', '--unknown', action='store_true', help='Allow assign addresses from this range to unknown hosts')
-        return opts
-    def help_add(self):
-        self.opts_add().print_help()
-    @cmd
-    def mod(self, argv):
-        'Modify capabilities of range'
-        opts, argv = self.opts_mod().parse_args(argv)
-        if len(argv) != 1: raise RuntimeError('Wrong parameters')
-        caps = []
-        if opts.static: caps.append(DHCP.RangeCap.STATIC)
-        if opts.known: caps.append(DHCP.RangeCap.KNOWN)
-        if opts.unknown: caps.append(DHCP.RangeCap.UNKNOWN)
-        srv = serverPrx()
-        sbn = srv.findSubnet(argv[0])
-    @staticmethod
-    def opts_mod(self):
-        opt = opts.add_option
-        opt('-s', '--static', action='store_true', help='Allow use range for static address allocation')
-        opt('-k', '--known', action='store_true', help='Allow assign addresses from this range to known hosts')
-        opt('-u', '--unknown', action='store_true', help='Allow assign addresses from this range to unknown hosts')
-        return opts
-    def help_mod(self):
-        self.opts_mod().print_help()
-    @staticmethod
-    def opts_mod():
-        opts = OptionParser(usage='')
-    def remove(self, argv):
-        pass
-    def findRange(ip):
-        pass
-
 class Range(Command):
     Action = Enum('LIST', 'ADD', 'REMOVE', 'MODIFY')
     def __init__(self):
