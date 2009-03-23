@@ -47,7 +47,9 @@ class Server:
         self.__subnets[id] = sn
         return sn
     def hosts(self):
-        return self.__hosts
+        return self.__hosts.itervalues()
+    def getHost(self, name):
+        return self.__hosts[name]
     def addHost(self, name, id):
         h = _Host(name, id)
         self.__hosts[name] = h

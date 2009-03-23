@@ -10,7 +10,7 @@ def save(server, file):
     else:
         sol.text = 'False'
     _add_params(server.params(), root_node)
-    for h in server.hosts().itervalues():
+    for h in server.hosts():
         host_node = etree.SubElement(root_node, 'host', name=h.name())
         if h.identity().type() is Identity.IDENTITY:
             etree.SubElement(host_node, 'id').text = h.identity().id()

@@ -350,40 +350,66 @@ class Range(Command):
         r.setCaps(c)
 
 class Host(Command):
-    pass
-
-class OldHost(SuperCommand):
-    'add, or delete hosts'
+    Action = Enum('LIST', 'ADD', 'REMOVE')
     def __init__(self):
-        super(Host, self).__init__()
-    @cmd
-    def add(self, argv):
-        'add host as trust'
-        if len(argv) not in (2, 3): raise CommandLineError('wrong number of arguments')
-        name = argv[0]
-        if len(argv) == 2:
-            id = DHCP.HostId(DHCP.HostIdType.IDENTITY, argv[1])
-        else:
-            id = DHCP.HostId(DHCP.HostIdType.HARDWARE, '%s %s' % argv[1:])
+        usage = (
+                'Usage: %(prog)s host [<identity>]|[<hardware>] [-o]       - list mode\n'
+                '       %(prog)s host -a <name> <id>|ethernet <mac-addr>   - add mode\n'
+                '       %(prog)s host -r <addr>                            - remove mode\n'
+                )
+        self.optp = OptionParser(usage=usage % { 'prog': sys.argv[0] })
+        opt = self.optp.add_option
+        Action = self.Action
+        opt('-a', '--add',
+                action='store_const', dest='action', const=Action.ADD,
+                help='Create new range')
+        opt('-r', '--remove',
+                action='store_const', dest='action', const=Action.REMOVE,
+                help='Remove range')
+        opt('-o', '--show-options',
+                action='store_true',
+                help='Show range options (only for list mode)')
+        self.optp.set_defaults(action=Action.LIST)
+    def do_cmd(self, args):
+        Action = self.Action
+        opts, args = self.optp.parse_args(args)
+        {
+                Action.LIST: self.do_list,
+                Action.ADD: self.do_add,
+                Action.REMOVE: self.do_remove,
+        }[opts.action](opts, args)
+    @classmethod
+    def do_list(cls, opts, args):
         srv = serverPrx()
-        srv.addHost(name, id)
-    def help_add(self):
-        print 'Usage: %s host add <name> <identity>|ethernet <mac>|token-ring <hw>\n' % sys.argv[0]
-        print 'Add host with name as trust host for this server\n'
-    @cmd
-    def delete(self, argv):
-        'delete host'
-        if len(argv) != 1: raise CommandLineError('you should specify host name')
-        srv = serverPrx()
-        h = srv.hostsByNames(argv[0])[0]
-        if h is None: raise CommandError('host %s not found' % argv[0])
-        srv.delHosts([h])
-    @cmd
-    def list(self, argv):
-        'list all known hosts'
-        srv = serverPrx()
+        if len(args) != 0: RuntimeError('Wrong arguments')
         for h in srv.hosts():
-            print h.name()
+            cls.printHost(h, opts.show_options)
+    @classmethod
+    def printHost(cls, host, options=False):
+        name = host.name()
+        id = host.id()
+        if id.type == DHCP.HostIdType.IDENTITY:
+            str_id = 'id: %s' % id.value
+        else:
+            str_id = 'hw: %s' % id.value
+        print '%s(%s)' % (name, str_id)
+        if not options: return
+        for i in host.params():
+            print '  %s: %s' % i
+    @classmethod
+    def do_add(cls, opts, args):
+        if len(args) == 2:
+            id = DHCP.HostId(DHCP.HostIdType.IDENTITY, args[1])
+        elif len(args) == 3 and args[1] == 'ethernet':
+            id = DHCP.HostId(DHCP.HostIdType.HARDWARE, 'ethernet '+args[1])
+        else: raise RuntimeError('Wrong arguments')
+        srv = serverPrx()
+        srv.addHost(args[0], id)
+    @classmethod
+    def do_remove(cls, opts, args):
+        if len(args) != 1: raise RuntimeError('Wrong arguments')
+        srv = serverPrx()
+        srv.delHost(args[0])
 
 class Main:
     def __init__(self, argv):

@@ -71,9 +71,9 @@ interface Server {
     Subnet* addSubnet(string decl) throws core::Error;
     void delSubnet(Subnet* s) throws core::Error;
     HostSeq hosts();
-    HostSeq hostsByNames(StrSeq names);
+    Host* getHost(string name) throws core::Error;
     Host* addHost(string name, HostId id) throws core::Error;
-    void delHosts(HostSeq hosts) throws core::Error;
+    void delHost(string name) throws core::Error;
     StrStrMap params();
     void setParam(string key, string value) throws core::Error;
     void unsetParam(string key) throws core::Error;

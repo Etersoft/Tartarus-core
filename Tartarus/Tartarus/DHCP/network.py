@@ -13,7 +13,7 @@ class HostI(DHCP.Host):
         self.__name = name
     def __host(self):
         srv = Server.get()
-        return srv.hosts()[self.__name]
+        return srv.getHost(self.__name)
     def name(self, current):
         '''string name()'''
         return self.__host().name()
@@ -121,11 +121,10 @@ class ServerI(DHCP.Server):
     def hosts(self, current):
         '''HostSeq hosts()'''
         hosts = self.__server.hosts()
-        return [self.__mkHostPrx(h, current.adapter) for h in hosts.itervalues()]
-    def hostsByNames(self, names, current):
-        mkprx = lambda h: self.__mkHostPrx(h, current.adapter)
-        host = lambda name: self.__server.hosts().get(name, None)
-        return [mkprx(host(name)) for name in names]
+        return [self.__mkHostPrx(h, current.adapter) for h in hosts]
+    def getHost(self, name, current):
+        host = self.__server.getHost(name)
+        return self.__mkHostPrx(host)
     @auth.mark('admin')
     def addHost(self, name, id, current):
         '''Host* addHost(string name, HostId id)'''
@@ -136,9 +135,9 @@ class ServerI(DHCP.Server):
         h = self.__server.addHost(name, hid)
         return self.__mkHostPrx(h, current.adapter)
     @auth.mark('admin')
-    def delHosts(self, hosts):
+    def delHost(self, name, current):
         '''void delHosts(HostSeq hosts)'''
-        pass
+        self.__server.delHost(name)
     def findRange(self, addr, current):
         r = self.__server.findRange(addr)
         if r: return SubnetI.mkRangePrx(r, current.adapter)
