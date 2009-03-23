@@ -6,10 +6,13 @@ import re
 from optparse import OptionParser
 from functools import wraps
 
+from enum import Enum
+
 from Tartarus.client import initialize
 comm, argv = initialize()
 
 from Tartarus.iface import DHCP
+from Tartarus.DHCP.iptools import IpAddr
 
 class CommandLineError(Exception):
     def __init__(self, msg):
@@ -227,21 +230,9 @@ class Subnet(SuperCommand):
         prx = serverPrx()
         for s in prx.subnets():
             print '%s:' % s.decl()
-            r = s.range(DHCP.RangeType.STATIC)
-            if r.hasValue:
-                print '   STATIC: %s-%s' % (r.start, r.end)
-            else:
-                print '   STATIC: none'
-            r = s.range(DHCP.RangeType.TRUST)
-            if r.hasValue:
-                print '   TRUST: %s-%s' % (r.start, r.end)
-            else:
-                print '   TRUST: none'
-            r = s.range(DHCP.RangeType.UNTRUST)
-            if r.hasValue:
-                print '   UNTRUST: %s-%s' % (r.start, r.end)
-            else:
-                print '   UNTRUST: none'
+            for r in s.ranges():
+                start, end = r.addrs()
+                print '%s-%s: %s' % (start, end, 'not realised')
     @cmd
     def delete(self, argv):
         'delete subnet'
@@ -255,31 +246,165 @@ class Subnet(SuperCommand):
         print 'Usage: %s subnet delete <decl>' % sys.argv[0]
         print '\nDelete subnet. <decl> should be in CIDR form: <ip-addr>/<mask>\n'
 
-class Range(Command):
+class OldRange(SuperCommand):
     'modify subnets ip ranges'
-    def do_cmd(self, argv):
-        if len(argv) != 2 and len(argv) != 4:
-            raise CommandLineError('wrong number of arguments')
-        RT = DHCP.RangeType
-        type = {
-                'static': RT.STATIC,
-                'trust': RT.TRUST,
-                'untrust': RT.UNTRUST
-                }.get(argv[1], None)
-        if type is None: raise CommandLineError('you should specify range type')
+    @cmd
+    def add(self, argv):
+        'Add range to subnet'
+        opts, argv = self.opts_add().parse_args(argv)
+        if len(argv) != 3: raise RuntimeError('Wrong arguments')
+        caps = []
+        if opts.static: caps.append(DHCP.RangeCap.STATIC)
+        if opts.known: caps.append(DHCP.RangeCap.KNOWN)
+        if opts.unknown: caps.append(DHCP.RangeCap.UNKNOWN)
         srv = serverPrx()
         sbn = srv.findSubnet(argv[0])
-        if sbn is None: raise CommandError('subnet %s not found' % argv[0])
-        if len(argv) == 2:
-            sbn.setRange(type, DHCP.IpRange('', '', False))
-        else:
-            start, end = argv[2:]
-            sbn.setRange(type, DHCP.IpRange(start, end, True))
-    def help(self):
-        print 'Usage: %s range <subnet> static|trust|untrust [<start> <end>]\n' % sys.argv[0]
-        print 'Set ip range for subnet or unset if <start> and <end> is not set\n'
+        sbn.addRange(argv[1], argv[2], caps)
+    @staticmethod
+    def opts_add():
+        opts = OptionParser(usage='Usage: %s range add <subnet> <start> <end> <options>' % sys.argv[0])
+        opt = opts.add_option
+        opt('-s', '--static', action='store_true', help='Allow use range for static address allocation')
+        opt('-k', '--known', action='store_true', help='Allow assign addresses from this range to known hosts')
+        opt('-u', '--unknown', action='store_true', help='Allow assign addresses from this range to unknown hosts')
+        return opts
+    def help_add(self):
+        self.opts_add().print_help()
+    @cmd
+    def mod(self, argv):
+        'Modify capabilities of range'
+        opts, argv = self.opts_mod().parse_args(argv)
+        if len(argv) != 1: raise RuntimeError('Wrong parameters')
+        caps = []
+        if opts.static: caps.append(DHCP.RangeCap.STATIC)
+        if opts.known: caps.append(DHCP.RangeCap.KNOWN)
+        if opts.unknown: caps.append(DHCP.RangeCap.UNKNOWN)
+        srv = serverPrx()
+        sbn = srv.findSubnet(argv[0])
+    @staticmethod
+    def opts_mod(self):
+        opt = opts.add_option
+        opt('-s', '--static', action='store_true', help='Allow use range for static address allocation')
+        opt('-k', '--known', action='store_true', help='Allow assign addresses from this range to known hosts')
+        opt('-u', '--unknown', action='store_true', help='Allow assign addresses from this range to unknown hosts')
+        return opts
+    def help_mod(self):
+        self.opts_mod().print_help()
+    @staticmethod
+    def opts_mod():
+        opts = OptionParser(usage='')
+    def remove(self, argv):
+        pass
+    def findRange(ip):
+        pass
 
-class Host(SuperCommand):
+class Range(Command):
+    Action = Enum('LIST', 'ADD', 'REMOVE', 'MODIFY')
+    def __init__(self):
+        usage = (
+                'Usage: %(prog)s range [<addr>]|[<addr>/<mask>] [-o]   - list mode\n'
+                '       %(prog)s range -a <start> <end> <caps>         - add mode\n'
+                '       %(prog)s range -r <addr>                       - remove mode\n'
+                '       %(prog)s range -m <addr> <caps>                - modify mode'
+                )
+        self.optp = OptionParser(usage=usage % { 'prog': sys.argv[0] })
+        opt = self.optp.add_option
+        Action = self.Action
+        opt('-a', '--add',
+                action='store_const', dest='action', const=Action.ADD,
+                help='Create new range')
+        opt('-r', '--remove',
+                action='store_const', dest='action', const=Action.REMOVE,
+                help='Remove range')
+        opt('-m', '--modify',
+                action='store_const', dest='action', const=Action.MODIFY,
+                help='Modify range capabilities')
+        opt('-o', '--show-options',
+                action='store_true',
+                help='Show range options (only for list mode)')
+        self.optp.set_defaults(action=Action.LIST)
+    def do_cmd(self, args):
+        Action = self.Action
+        opts, args = self.optp.parse_args(args)
+        {
+                Action.LIST: self.do_list,
+                Action.ADD: self.do_add,
+                Action.REMOVE: self.do_remove,
+                Action.MODIFY: self.do_modify
+        }[opts.action](opts, args)
+    @classmethod
+    def do_list(cls, opts, args):
+        srv = serverPrx()
+        if len(args) == 0:
+            for s in srv.subnets():
+                ranges = [(IpAddr(r.addrs()[0]).int, r) for r in s.ranges()]
+                ranges.sort(key=lambda r: r[0])
+                for r in (r[1] for r in ranges):
+                    cls.printRange(r, opts.show_options, s)
+        elif len(args) == 1:
+            if '/' in args[0]:
+                s = srv.findSubnet(args[0].split('/')[0])
+                if not s: return
+                ranges = [(IpAddr(r.addrs()[0]).int, r) for r in s.ranges()]
+                ranges.sort(key=lambda r: r[0])
+                for r in (r[1] for r in ranges):
+                    cls.printRange(r, opts.show_options, s)
+            else:
+                r = srv.findRange(args[0])
+                if not r: return
+                cls.printRange(r, opts.show_options)
+    @classmethod
+    def printRange(cls, range, options=False, subnet=None):
+        start, end = range.addrs()
+        if not subnet:
+            srv = serverPrx()
+            subnet = srv.findSubnet(start)
+        caps = range.caps()
+        caps_str = ''
+        if caps & DHCP.STATIC: caps_str += 's'
+        if caps & DHCP.KNOWN: caps_str += 'k'
+        if caps & DHCP.UNKNOWN: caps_str += 'u'
+        print '%s-%s (%s) CAPS: %s' % (start, end, subnet.cidr(), caps_str)
+        if options:
+            for o in range.options().iteritems():
+                print '  %s: %s' % o
+    @classmethod
+    def do_add(cls, opts, args):
+        if len(args) != 3: raise RuntimeError('Wrong arguments')
+        start, end, caps = args
+        c = 0
+        if 's' in caps: c |= DHCP.STATIC
+        if 'k' in caps: c |= DHCP.KNOWN
+        if 'u' in caps: c |= DHCP.UNKNOWN
+        srv = serverPrx()
+        s = srv.findSubnet(start)
+        if not s: raise RuntimeError('Can\'t find subnet for new range')
+        s.addRange(start, end, c)
+    @classmethod
+    def do_remove(cls, opts, args):
+        if len(args) != 1: raise RuntimeError('Wrong arguments')
+        srv = serverPrx()
+        r = srv.findRange(args[0])
+        if not r: raise RuntimeError('Can\'t find range')
+        s = srv.findSubnet(args[0])
+        s.delRange(r.id())
+    @classmethod
+    def do_modify(cls, opts, args):
+        if len(args) != 2: raise RuntimeError('Wrong arguments')
+        addr, caps = args
+        c = 0
+        if 's' in caps: c |= DHCP.STATIC
+        if 'k' in caps: c |= DHCP.KNOWN
+        if 'u' in caps: c |= DHCP.UNKNOWN
+        srv = serverPrx()
+        r = srv.findRange(addr)
+        if not r: raise RuntimeError('Can\'t find range')
+        r.setCaps(c)
+
+class Host(Command):
+    pass
+
+class OldHost(SuperCommand):
     'add, or delete hosts'
     def __init__(self):
         super(Host, self).__init__()

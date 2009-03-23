@@ -27,11 +27,9 @@ interface Host {
 
 sequence<Host*> HostSeq;
 
-enum RangeType {
-    STATIC,
-    TRUST,
-    UNTRUST
-};
+const int STATIC = 1;
+const int KNOWN = 2;
+const int UNKNOWN = 4;
 
 struct IpRange {
     string start;
@@ -41,26 +39,27 @@ struct IpRange {
 
 interface Range {
     string id();
-    RangeType type();
-    string addrs(out string start, out string end);
-    StrStrMap params();
-    void setParam(string key, string value) throws core::Error;
-    void unsetParam(string key) throws core::Error;
+    int caps();
+    void setCaps(int caps);
+    void addrs(out string start, out string end);
+    StrStrMap options();
+    void setOption(string key, string value) throws core::Error;
+    void unsetOption(string key) throws core::Error;
 };
 
 sequence<Range*> RangeSeq;
 
 interface Subnet {
     string id();
-    string decl();
+    string cidr();
     //IpRange range(RangeType type);
-    void setRange(RangeType type, IpRange range) throws core::Error;
+    //void setRange(RangeType type, IpRange range) throws core::Error;
     StrStrMap params();
     void setParam(string key, string value) throws core::Error;
     void unsetParam(string key) throws core::Error;
     RangeSeq ranges();
-    Range* findRange(string ip) throws core::Error;
-    Range* addRange(string start, string end) throws core::Error;
+    Range* getRange(string id) throws core::Error;
+    Range* addRange(string start, string end, int caps) throws core::Error;
     void delRange(string ip) throws core::Error;
 };
 
@@ -78,9 +77,10 @@ interface Server {
     StrStrMap params();
     void setParam(string key, string value) throws core::Error;
     void unsetParam(string key) throws core::Error;
+    Range* findRange(string addr) throws core::Error;
     void commit() throws core::Error;
     void rollback() throws core::Error;
-    bool isConfigured() throws core:;Error;
+    bool isConfigured() throws core::Error;
     void reset() throws core::Error;
 };
 

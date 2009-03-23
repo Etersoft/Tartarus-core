@@ -1,5 +1,5 @@
 from lxml import etree
-from server import Identity, STATIC, TRUST, UNTRUST
+from server import Identity
 
 def save(server, file):
     tree = etree.ElementTree(etree.Element('dhcp'))
@@ -17,14 +17,18 @@ def save(server, file):
         else:
             etree.SubElement(host_node, 'hardware').text = h.identity().hardware()
         _add_params(h.params(), host_node)
-    for s in server.subnets().itervalues():
+    for s in server.subnets():
         sbn_node = etree.SubElement(root_node, 'subnet')
         sbn_node.set('id', s.id())
-        sbn_node.set('decl', s.decl())
-        _add_range(STATIC, s.range(STATIC), sbn_node)
-        _add_range(TRUST, s.range(TRUST), sbn_node)
-        _add_range(UNTRUST, s.range(UNTRUST), sbn_node)
+        sbn_node.set('decl', s.cidr)
         _add_params(s.params(), sbn_node)
+        for range in s.ranges():
+            range_node = etree.SubElement(sbn_node, 'range')
+            range_node.set('id', range.id())
+            range_node.set('start', range.start.str)
+            range_node.set('end', range.end.str)
+            range_node.set('caps', str(range.caps()))
+            _save_params(range.params(), range_node)
     tree.write(file, pretty_print=True)
 
 def load(server, file):
@@ -50,17 +54,13 @@ def load(server, file):
         decl = sbn_node.get('decl')
         sbn = server.restoreSubnet(id, decl)
         _get_params(sbn.params(), sbn_node)
-        for type, start, end in _get_range(sbn_node):
-            sbn.range(type, (start, end))
-
-def _add_range(type, range, node):
-    if range is not ():
-        start, end = range
-        etree.SubElement(node, 'range', type=str(type), start=start, end=end)
-
-def _get_range(node):
-    for r in node.findall('range'):
-        yield int(r.get('type')), r.get('start'), r.get('end')
+        for range_node in sbn_node.findall('range'):
+            id = range_node.get('id')
+            start = range_node.get('start')
+            end = range_node.get('end')
+            caps = int(range_node.get('caps'))
+            range = sbn.restoreRange(id, start, end, caps)
+            _load_params(range.params(), range_node)
 
 def _add_params(params, node):
     for key, value in params.map().iteritems():
@@ -68,9 +68,13 @@ def _add_params(params, node):
         etree.SubElement(n, 'key').text = key
         etree.SubElement(n, 'value').text = value
 
+_save_params = _add_params
+
 def _get_params(params, node):
     for p in node.findall('param'):
         key = p.find('key').text
         value = p.find('value').text
         params.set(key, value)
+
+_load_params = _get_params
 

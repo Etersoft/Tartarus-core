@@ -1,13 +1,7 @@
 import re
-from enum import Enum
+from menum import Enum
 
-class MutableEnum(Enum):
-    def __init__(self, *args, **kwargs):
-        Enum.__init__(self, *args, **kwargs)
-    def __setattr__(self, attr, value):
-        object.__setattr__(self, attr, value)
-
-Context = MutableEnum('GLOBAL', 'SUBNET', 'RANGE', 'HOSTS', 'HOST')
+Context = Enum('GLOBAL', 'SUBNET', 'RANGE', 'HOSTS', 'HOST')
 Context.ALL = (
         Context.GLOBAL,
         Context.SUBNET,

@@ -40,25 +40,13 @@ class SubnetI(DHCP.Subnet):
         self.__srv = Server.get()
         self.__id = id
     def __subnet(self):
-        return self.__srv.subnets()[self.__id]
+        return self.__srv.getSubnet(self.__id)
     def id(self, current):
         '''string id()'''
         return self.__subnet().id()
-    def decl(self, current):
-        '''void info(out string addr, out string mask)'''
+    def cidr(self, current):
         sbn = self.__subnet()
-        return sbn.decl()
-    def range(self, type, current):
-        r = self.__subnet().range(type.value)
-        if r is ():
-            return DHCP.IpRange('', '', False)
-        return DHCP.IpRange(r[0], r[1], True)
-    @auth.mark('admin')
-    def setRange(self, type, range, current):
-        if range.hasValue:
-            self.__subnet().range(type.value, (range.start, range.end))
-        else:
-            self.__subnet().range(type.value, ())
+        return sbn.cidr
     def params(self, current):
         '''StrStrMap params()'''
         return self.__subnet().params().map()
@@ -70,17 +58,56 @@ class SubnetI(DHCP.Subnet):
     def unsetParam(self, key, current):
         '''void unsetParam(string key)'''
         return self.__subnet().params().unset(value)
+    def ranges(self, current):
+        return [self.mkRangePrx(r, current.adapter) for r in self.__subnet().ranges()]
+    def getRange(self, id, current):
+        return self.mkRangePrx(self.__subnet().ranges()[id])
+    @auth.mark('admin')
+    def addRange(self, start, end, caps, current):
+        self.__subnet().addRange(start, end, caps)
+    @auth.mark('admin')
+    def delRange(self, id, current):
+        self.__subnet().delRange(id)
+    @staticmethod
+    def mkRangePrx(range, adapter):
+        if range is None: return None
+        comm = adapter.getCommunicator()
+        id = comm.stringToIdentity('DHCP-Ranges/%s.%s' % (range.subnet().id(), range.id()))
+        prx = adapter.createProxy(id)
+        return DHCP.RangePrx.uncheckedCast(prx)
+
+class RangeI(DHCP.Range):
+    def __init__(self, name):
+        srv = Server.get()
+        sid, rid = name.split('.')
+        self.__range = srv.getSubnet(sid).getRange(rid)
+    def id(self, current):
+        return self.__range.id()
+    def caps(self, current):
+        return self.__range.caps()
+    def setCaps(self, caps, current):
+        self.__range.caps(caps)
+    def addrs(self, current):
+        return self.__range.start.str, self.__range.end.str
+    def options(self, current):
+        return self.__range.params().map()
+    @auth.mark('admin')
+    def setOption(self, key, value, current):
+        return self.__range.params().set(key, value)
+    @auth.mark('admin')
+    def unsetOption(self, key, current):
+        '''void unsetParam(string key)'''
+        return self.__range.params().unset(value)
 
 class ServerI(DHCP.Server):
     def __init__(self):
         self.__server = Server.get()
     def subnets(self, current):
         '''SubnetSeq subnets()'''
-        return [self.__mkSubnetPrx(s, current.adapter) for s in self.__server.subnets().itervalues()]
-    def findSubnet(self, decl, current):
-        for s in self.__server.subnets().itervalues():
-            if s.decl() == decl:
-                return self.__mkSubnetPrx(s, current.adapter)
+        return [self.__mkSubnetPrx(s, current.adapter) for s in self.__server.subnets()]
+    def findSubnet(self, addr, current):
+        s = self.__server.findSubnet(addr)
+        if s: return self.__mkSubnetPrx(s, current.adapter)
     @auth.mark('admin')
     def addSubnet(self, decl, current):
         '''Subnet* addSubnet(addr, mask)'''
@@ -112,6 +139,9 @@ class ServerI(DHCP.Server):
     def delHosts(self, hosts):
         '''void delHosts(HostSeq hosts)'''
         pass
+    def findRange(self, addr, current):
+        r = self.__server.findRange(addr)
+        if r: return SubnetI.mkRangePrx(r, current.adapter)
     def params(self, current):
         '''StrStrMap params()'''
         return self.__server.params().map()
@@ -179,6 +209,15 @@ class SubnetLocator(Ice.ServantLocator):
     def deactivate(self, category):
         pass
 
+class RangeLocator(Ice.ServantLocator):
+    def locate(self, current):
+        r = RangeI(current.id.name)
+        return r
+    def finished(self, current, servant, cookie):
+        pass
+    def deactivate(self, category):
+        pass
+
 class HostLocator(Ice.ServantLocator):
     def locate(self, current):
         hostname = current.id.name
@@ -192,6 +231,7 @@ def init(adapter):
     com = adapter.getCommunicator()
     dec = auth.DecoratingLocator
     adapter.addServantLocator(dec(SubnetLocator()), "DHCP-Subnets")
+    adapter.addServantLocator(dec(RangeLocator()), "DHCP-Ranges")
     adapter.addServantLocator(dec(HostLocator()), "DHCP-Hosts")
 
     loc = auth.SrvLocator()
