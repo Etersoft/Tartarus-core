@@ -8,12 +8,25 @@ from runner import Runner, Status
 from Tartarus import auth
 from Tartarus import logging
 
-class HostI(DHCP.Host):
+class ScopeI(DHCP.Scope):
+    def options(self, current):
+        return self.getObj().params().map()
+    @auth.mark('admin')
+    def setOption(self, key, value, current):
+        self.getObj().params().set(key, value)
+        Config.get().save()
+    @auth.mark('admin')
+    def unsetOption(self, key, current):
+        self.getObj().params().unset(key)
+        Config.get().save()
+
+class HostI(ScopeI, DHCP.Host):
     def __init__(self, name):
         self.__name = name
     def __host(self):
         srv = Server.get()
         return srv.getHost(self.__name)
+    getObj = __host
     def name(self, current):
         '''string name()'''
         return self.__host().name()
@@ -23,17 +36,6 @@ class HostI(DHCP.Host):
         if id.type() == Identity.IDENTITY:
             return DHCP.HostId(DHCP.HostIdType.IDENTITY, id.id())
         return DHCP.HostId(DHCP.HostIdType.HARDWARE, id.hardware())
-    def params(self, current):
-        '''StrStrMap params()'''
-        return self.__host().params().map()
-    @auth.mark('admin')
-    def setParam(self, key, value, current):
-        '''void setParam(string key, string value)'''
-        self.__host().params().set(key, value)
-    @auth.mark('admin')
-    def unsetParam(self, key, current):
-        '''void unsetParam(string key)'''
-        self.__host().params().unset(key)
 
 class SubnetI(DHCP.Subnet):
     def __init__(self, id):
@@ -41,33 +43,28 @@ class SubnetI(DHCP.Subnet):
         self.__id = id
     def __subnet(self):
         return self.__srv.getSubnet(self.__id)
+    getObj = __subnet
     def id(self, current):
         '''string id()'''
         return self.__subnet().id()
     def cidr(self, current):
         sbn = self.__subnet()
         return sbn.cidr
-    def params(self, current):
-        '''StrStrMap params()'''
-        return self.__subnet().params().map()
-    @auth.mark('admin')
-    def setParam(self, key, value, current):
-        '''void setParam(string key, string value)'''
-        return self.__subnet().params().set(key, value)
-    @auth.mark('admin')
-    def unsetParam(self, key, current):
-        '''void unsetParam(string key)'''
-        return self.__subnet().params().unset(value)
     def ranges(self, current):
         return [self.mkRangePrx(r, current.adapter) for r in self.__subnet().ranges()]
     def getRange(self, id, current):
-        return self.mkRangePrx(self.__subnet().ranges()[id])
+        return self.mkRangePrx(self.__subnet().getRange(id), current.adapter)
+    def findRange(self, addr, current):
+        return self.mkRangePrx(self.__subnet().findRange(addr), current.adapter)
     @auth.mark('admin')
     def addRange(self, start, end, caps, current):
-        self.__subnet().addRange(start, end, caps)
+        r = self.__subnet().addRange(start, end, caps)
+        Config.get().save()
+        return self.mkRangePrx(r, current.adapter)
     @auth.mark('admin')
     def delRange(self, id, current):
         self.__subnet().delRange(id)
+        Config.get().save()
     @staticmethod
     def mkRangePrx(range, adapter):
         if range is None: return None
@@ -76,32 +73,29 @@ class SubnetI(DHCP.Subnet):
         prx = adapter.createProxy(id)
         return DHCP.RangePrx.uncheckedCast(prx)
 
-class RangeI(DHCP.Range):
+class RangeI(ScopeI, DHCP.Range):
     def __init__(self, name):
         srv = Server.get()
         sid, rid = name.split('.')
         self.__range = srv.getSubnet(sid).getRange(rid)
+    def getObj(self):
+        return self.__range
     def id(self, current):
         return self.__range.id()
     def caps(self, current):
         return self.__range.caps()
+    @auth.mark('admin')
     def setCaps(self, caps, current):
         self.__range.caps(caps)
+        Config.get().save()
     def addrs(self, current):
         return self.__range.start.str, self.__range.end.str
-    def options(self, current):
-        return self.__range.params().map()
-    @auth.mark('admin')
-    def setOption(self, key, value, current):
-        return self.__range.params().set(key, value)
-    @auth.mark('admin')
-    def unsetOption(self, key, current):
-        '''void unsetParam(string key)'''
-        return self.__range.params().unset(value)
 
-class ServerI(DHCP.Server):
+class ServerI(ScopeI, DHCP.Server):
     def __init__(self):
         self.__server = Server.get()
+    def getObj(self):
+        return self.__server
     def subnets(self, current):
         '''SubnetSeq subnets()'''
         return [self.__mkSubnetPrx(s, current.adapter) for s in self.__server.subnets()]
@@ -112,11 +106,13 @@ class ServerI(DHCP.Server):
     def addSubnet(self, decl, current):
         '''Subnet* addSubnet(addr, mask)'''
         s = self.__server.addSubnet(decl)
+        Config.get().save()
         return self.__mkSubnetPrx(s, current.adapter)
     @auth.mark('admin')
     def delSubnet(self, id, current):
         '''void delSubnet(Subnet* s)'''
         self.__server.delSubnet(id)
+        Config.get().save()
     def hosts(self, current):
         '''HostSeq hosts()'''
         hosts = self.__server.hosts()
@@ -132,33 +128,16 @@ class ServerI(DHCP.Server):
         else:
             hid = Identity(hardware=id.value)
         h = self.__server.addHost(name, hid)
+        Config.get().save()
         return self.__mkHostPrx(h, current.adapter)
     @auth.mark('admin')
     def delHost(self, name, current):
         '''void delHosts(HostSeq hosts)'''
         self.__server.delHost(name)
+        Config.get().save()
     def findRange(self, addr, current):
         r = self.__server.findRange(addr)
         if r: return SubnetI.mkRangePrx(r, current.adapter)
-    def params(self, current):
-        '''StrStrMap params()'''
-        return self.__server.params().map()
-    @auth.mark('admin')
-    def setParam(self, key, value, current):
-        '''void setParam(string key, string value)'''
-        self.__server.params().set(key, value)
-    @auth.mark('admin')
-    def unsetParam(self, key, current):
-        '''void unsetParam(string key)'''
-        self.__server.params().unset(key, value)
-    @auth.mark('admin')
-    def commit(self, current):
-        '''void commit()'''
-        Config.get().save()
-        Config.get().genDHCPCfg()
-    @auth.mark('admin')
-    def rollback(self, current):
-        Config.get().load()
     def isConfigured(self, common):
         return Config.get().isConfigured()
     @auth.mark('admin')
@@ -190,12 +169,15 @@ class DaemonI(DHCP.Daemon):
                 logging.warning(str(e))
     @auth.mark('admin')
     def start(self, current):
+        Config.get().genDHCPCfg()
         self.__runner.start()
         self.__server.startOnLoad(True)
+        Config.get().save()
     @auth.mark('admin')
     def stop(self, current):
         self.__runner.stop()
         self.__server.startOnLoad(False)
+        Config.get().save()
     def running(self, current):
         return self.__runner.status() == Status.RUN
 

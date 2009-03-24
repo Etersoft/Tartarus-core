@@ -17,12 +17,16 @@ struct HostId {
 
 dictionary<string,string> StrStrMap;
 
-interface Host {
+interface Scope {
+    StrStrMap options();
+    void setOption(string key, string value) throws core::Error;
+    void unsetOption(string key) throws core::Error;
+};
+
+
+interface Host extends Scope {
     string name();
     HostId id();
-    StrStrMap params();
-    void setParam(string key, string value) throws core::Error;
-    void unsetParam(string key) throws core::Error;
 };
 
 sequence<Host*> HostSeq;
@@ -37,33 +41,28 @@ struct IpRange {
     bool hasValue;
 };
 
-interface Range {
+interface Range extends Scope {
     string id();
     int caps();
     void setCaps(int caps);
     void addrs(out string start, out string end);
-    StrStrMap options();
-    void setOption(string key, string value) throws core::Error;
-    void unsetOption(string key) throws core::Error;
 };
 
 sequence<Range*> RangeSeq;
 
-interface Subnet {
+interface Subnet extends Scope {
     string id();
     string cidr();
-    StrStrMap params();
-    void setParam(string key, string value) throws core::Error;
-    void unsetParam(string key) throws core::Error;
     RangeSeq ranges();
     Range* getRange(string id) throws core::Error;
+    Range* findRange(string addr) throws core::Error;
     Range* addRange(string start, string end, int caps) throws core::Error;
     void delRange(string ip) throws core::Error;
 };
 
 sequence<Subnet*> SubnetSeq;
 
-interface Server {
+interface Server extends Scope {
     SubnetSeq subnets();
     Subnet* findSubnet(string decl) throws core::Error;
     Subnet* addSubnet(string decl) throws core::Error;
@@ -72,12 +71,7 @@ interface Server {
     Host* getHost(string name) throws core::Error;
     Host* addHost(string name, HostId id) throws core::Error;
     void delHost(string name) throws core::Error;
-    StrStrMap params();
-    void setParam(string key, string value) throws core::Error;
-    void unsetParam(string key) throws core::Error;
     Range* findRange(string addr) throws core::Error;
-    void commit() throws core::Error;
-    void rollback() throws core::Error;
     bool isConfigured() throws core::Error;
     void reset() throws core::Error;
 };
