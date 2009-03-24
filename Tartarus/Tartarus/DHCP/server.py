@@ -100,18 +100,6 @@ class _Subnet(IpSubnet):
         r = _Range(id, start, end, caps, self)
         self.__ranges[id] = r
         return r
-    @staticmethod
-    def __test(decl):
-        if '/' not in decl:
-            raise RuntimeError('Wrong subnet declaration: %s' % decl)
-        addr, imask = decl.split('/')
-        imask = int(imask)
-        smask = IpMask.i2s(imask)
-        addr = IpAddr.s2i(addr)
-        zero_bits = 32 - imask
-        addr = (addr >> zero_bits) << zero_bits
-        addr = IpAddr.i2s(addr)
-        return addr, imask, smask
 
 class _Range(IpRange):
     def __init__(self, id, start, end, caps, subnet):

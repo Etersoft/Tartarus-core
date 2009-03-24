@@ -35,63 +35,68 @@ class ScopeI(DHCP.Scope):
         Config.get().save()
 
 class HostI(ScopeI, DHCP.Host):
-    def __init__(self, name):
-        self.__name = name
-    def __host(self):
-        srv = Server.get()
-        return srv.getHost(self.__name)
-    getObj = __host
+    def __init__(self, host):
+        self.__host = host
+    def prx(self, adapter):
+        comm = adapter.getCommunicator()
+        id = comm.stringToIdentity('DHCP-Hosts/%s' % self.__host.name())
+        prx = adapter.createProxy(id)
+        return DHCP.HostPrx.uncheckedCast(prx)
+    def getObj(self):
+        return self.__host
     def name(self, current):
         '''string name()'''
-        return self.__host().name()
+        return self.__host.name()
     def id(self, current):
         '''HostId id()'''
-        id = self.__host().identity()
+        id = self.__host.identity()
         if id.type() == Identity.IDENTITY:
             return DHCP.HostId(DHCP.HostIdType.IDENTITY, id.id())
         return DHCP.HostId(DHCP.HostIdType.HARDWARE, id.hardware())
 
-class SubnetI(DHCP.Subnet):
-    def __init__(self, id):
-        self.__srv = Server.get()
-        self.__id = id
-    def __subnet(self):
-        return self.__srv.getSubnet(self.__id)
-    getObj = __subnet
+class SubnetI(ScopeI, DHCP.Subnet):
+    def __init__(self, subnet):
+        self.__subnet = subnet
+    def prx(self, adapter):
+        comm = adapter.getCommunicator()
+        id = comm.stringToIdentity('DHCP-Subnets/%s' % self.__subnet.id())
+        prx = adapter.createProxy(id)
+        return DHCP.SubnetPrx.uncheckedCast(prx)
+    def getObj(self):
+        return self.__subnet
     def id(self, current):
         '''string id()'''
-        return self.__subnet().id()
+        return self.__subnet.id()
     def cidr(self, current):
-        sbn = self.__subnet()
-        return sbn.cidr
+        return self.__subnet.cidr
     def ranges(self, current):
-        return [self.mkRangePrx(r, current.adapter) for r in self.__subnet().ranges()]
+        return [RangeI(r).prx(current.adapter) for r in self.__subnet.ranges()]
     def getRange(self, id, current):
-        return self.mkRangePrx(self.__subnet().getRange(id), current.adapter)
+        range = self.__subnet.getRange(id)
+        return RangeI(range).prx(current.adapter)
     def findRange(self, addr, current):
-        return self.mkRangePrx(self.__subnet().findRange(addr), current.adapter)
+        range = self.__subnet.findRange(addr)
+        return RangeI(range).prx(current.adapter)
     @auth.mark('admin')
     def addRange(self, start, end, caps, current):
-        r = self.__subnet().addRange(start, end, caps)
+        r = self.__subnet.addRange(start, end, caps)
         Config.get().save()
-        return self.mkRangePrx(r, current.adapter)
+        return RangeI(r).prx(current.adapter)
     @auth.mark('admin')
     def delRange(self, id, current):
-        self.__subnet().delRange(id)
+        self.__subnet.delRange(id)
         Config.get().save()
-    @staticmethod
-    def mkRangePrx(range, adapter):
-        if range is None: return None
-        comm = adapter.getCommunicator()
-        id = comm.stringToIdentity('DHCP-Ranges/%s.%s' % (range.subnet().id(), range.id()))
-        prx = adapter.createProxy(id)
-        return DHCP.RangePrx.uncheckedCast(prx)
 
 class RangeI(ScopeI, DHCP.Range):
-    def __init__(self, name):
-        srv = Server.get()
-        sid, rid = name.split('.')
-        self.__range = srv.getSubnet(sid).getRange(rid)
+    def __init__(self, range):
+        self.__range = range
+    def prx(self, adapter):
+        sid = self.__range.subnet().id()
+        rid = self.__range.id()
+        comm = adapter.getCommunicator()
+        id = comm.stringToIdentity('DHCP-Ranges/%s.%s' % (sid, rid))
+        prx = adapter.createProxy(id)
+        return DHCP.RangePrx.uncheckedCast(prx)
     def getObj(self):
         return self.__range
     def id(self, current):
@@ -112,16 +117,16 @@ class ServerI(ScopeI, DHCP.Server):
         return self.__server
     def subnets(self, current):
         '''SubnetSeq subnets()'''
-        return [self.__mkSubnetPrx(s, current.adapter) for s in self.__server.subnets()]
+        return [SubnetI(s).prx(current.adapter) for s in self.__server.subnets()]
     def findSubnet(self, addr, current):
         s = self.__server.findSubnet(addr)
-        if s: return self.__mkSubnetPrx(s, current.adapter)
+        if s: return SubnetI(s).prx(current.adapter)
     @auth.mark('admin')
     def addSubnet(self, decl, current):
         '''Subnet* addSubnet(addr, mask)'''
         s = self.__server.addSubnet(decl)
         Config.get().save()
-        return self.__mkSubnetPrx(s, current.adapter)
+        return SubnetI(s).prx(current.adapter)
     @auth.mark('admin')
     def delSubnet(self, id, current):
         '''void delSubnet(Subnet* s)'''
@@ -130,10 +135,10 @@ class ServerI(ScopeI, DHCP.Server):
     def hosts(self, current):
         '''HostSeq hosts()'''
         hosts = self.__server.hosts()
-        return [self.__mkHostPrx(h, current.adapter) for h in hosts]
+        return [HostI(h).prx(current.adapter) for h in hosts]
     def getHost(self, name, current):
         host = self.__server.getHost(name)
-        return self.__mkHostPrx(host, current.adapter)
+        return HostI(host).prx(current.adapter)
     @auth.mark('admin')
     def addHost(self, name, id, current):
         '''Host* addHost(string name, HostId id)'''
@@ -143,7 +148,7 @@ class ServerI(ScopeI, DHCP.Server):
             hid = Identity(hardware=id.value)
         h = self.__server.addHost(name, hid)
         Config.get().save()
-        return self.__mkHostPrx(h, current.adapter)
+        return HostI(h).prx(current.adapter)
     @auth.mark('admin')
     def delHost(self, name, current):
         '''void delHosts(HostSeq hosts)'''
@@ -151,26 +156,12 @@ class ServerI(ScopeI, DHCP.Server):
         Config.get().save()
     def findRange(self, addr, current):
         r = self.__server.findRange(addr)
-        if r: return SubnetI.mkRangePrx(r, current.adapter)
+        if r: return RangeI(r).prx(current.adapter)
     def isConfigured(self, common):
         return Config.get().isConfigured()
     @auth.mark('admin')
     def reset(self, common):
         Config.get().reset()
-    @staticmethod
-    def __mkHostPrx(host, adapter):
-        if host is None: return None
-        comm = adapter.getCommunicator()
-        id = comm.stringToIdentity('DHCP-Hosts/%s' % host.name())
-        prx = adapter.createProxy(id)
-        return DHCP.HostPrx.uncheckedCast(prx)
-    @staticmethod
-    def __mkSubnetPrx(sbn, adapter):
-        if sbn is None: return None
-        comm = adapter.getCommunicator()
-        id = comm.stringToIdentity('DHCP-Subnets/%s' % sbn.id())
-        prx = adapter.createProxy(id)
-        return DHCP.SubnetPrx.uncheckedCast(prx)
 
 class DaemonI(DHCP.Daemon):
     def __init__(self):
@@ -196,26 +187,34 @@ class DaemonI(DHCP.Daemon):
         return self.__runner.status() == Status.RUN
 
 class SubnetLocator(Ice.ServantLocator):
+    def __init__(self):
+        self.__srv = Server.get()
     def locate(self, current):
-        return SubnetI(current.id.name)
+        subnet = self.__srv.getSubnet(current.id.name)
+        return SubnetI(subnet)
     def finished(self, current, servant, cookie):
         pass
     def deactivate(self, category):
         pass
 
 class RangeLocator(Ice.ServantLocator):
+    def __init__(self):
+        self.__srv = Server.get()
     def locate(self, current):
-        r = RangeI(current.id.name)
-        return r
+        sid, rid = current.id.name.split('.')
+        range = self.__srv.getSubnet(sid).getRange(rid)
+        return RangeI(range)
     def finished(self, current, servant, cookie):
         pass
     def deactivate(self, category):
         pass
 
 class HostLocator(Ice.ServantLocator):
+    def __init__(self):
+        self.__srv = Server.get()
     def locate(self, current):
-        hostname = current.id.name
-        return HostI(hostname)
+        host = self.__srv.getHost(current.id.name)
+        return HostI(host)
     def finished(self, current, servant, cookie):
         pass
     def deactivate(self, category):
