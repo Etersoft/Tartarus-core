@@ -82,12 +82,12 @@ interface Daemon {
     bool running();
 };
 
-exception DHCPKeyError extends core::Error
+exception KeyError extends core::Error
 {
     string key;
 };
 
-exception DHCPValueError extends core::Error
+exception ValueError extends core::Error
 {
     string key;
     string value;

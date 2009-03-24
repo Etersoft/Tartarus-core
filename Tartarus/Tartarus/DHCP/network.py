@@ -1,17 +1,31 @@
 import os
+from functools import wraps
 import Ice
 from Tartarus.iface import DHCP
 from server import Server, Identity
 from options import opts
 from config import Config
 from runner import Runner, Status
+from params import KeyError, ValueError
 from Tartarus import auth
 from Tartarus import logging
+
+def exceptm(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return method(self, *args, **kwargs)
+        except KeyError, e:
+            raise DHCP.KeyError(str(e), e.key)
+        except ValueError, e:
+            raise DHCP.ValueError(str(e), e.key, e.value)
+    return wrapper
 
 class ScopeI(DHCP.Scope):
     def options(self, current):
         return self.getObj().params().map()
     @auth.mark('admin')
+    @exceptm
     def setOption(self, key, value, current):
         self.getObj().params().set(key, value)
         Config.get().save()
@@ -119,7 +133,7 @@ class ServerI(ScopeI, DHCP.Server):
         return [self.__mkHostPrx(h, current.adapter) for h in hosts]
     def getHost(self, name, current):
         host = self.__server.getHost(name)
-        return self.__mkHostPrx(host)
+        return self.__mkHostPrx(host, current.adapter)
     @auth.mark('admin')
     def addHost(self, name, id, current):
         '''Host* addHost(string name, HostId id)'''
