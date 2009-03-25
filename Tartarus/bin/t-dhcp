@@ -11,7 +11,7 @@ from Tartarus.client import initialize
 comm, argv = initialize()
 
 from Tartarus.iface import DHCP, core
-from Tartarus.DHCP.iptools import IpAddr
+from Tartarus.system.ipaddr import IpAddr
 
 class CommandLineError(Exception):
     def __init__(self, msg):

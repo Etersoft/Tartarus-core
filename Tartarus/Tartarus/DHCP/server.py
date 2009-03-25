@@ -4,7 +4,7 @@ import re
 import os
 from Cheetah.Template import Template
 
-from iptools import IpSubnet, IpRange
+from Tartarus.system.ipaddr import IpSubnet, IpRange
 
 STATIC = 1;
 KNOWN = 2;
