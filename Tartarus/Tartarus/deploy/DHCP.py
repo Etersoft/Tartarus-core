@@ -1,10 +1,10 @@
 import sys
+import re
 
 from Tartarus.iface import DHCP
 from Tartarus.deploy.common import feature, after, before
 from Tartarus import system
-from socket import inet_aton, inet_ntoa
-from struct import pack, unpack
+from Tartarus.system.ipaddr import IpSubnet, IpRange
 
 @feature('dhcp')
 @before('service_checks_done')
@@ -27,33 +27,35 @@ def dhcp_checks(wiz):
 @after('dhcp_checks', 'service_checks_done')
 @before('service_dialog_done')
 def dhcp_dialog(wiz):
-    dhcp_subnets = []
-    add = lambda decl, range: dhcp_subnets.append((decl, range))
+    subnets = []
     for addr, mask in system.hostname.getsystemnets():
         mask = mask or 24
-        decl, range = _calc(addr, int(mask))
-        if wiz.dialog.yesno('Do you want add subnet %s do DHCP?' % decl):
-            range = wiz.dialog.ask('Range used for dynamic address allocation', range)
-            add(decl, range)
-    wiz.opts['dhcp_subnets'] = dhcp_subnets
+        subnet = IpSubnet('%s/%s' % (addr, mask))
+        if wiz.dialog.yesno('Do you want add subnet %s do DHCP?' % subnet.cidr):
+            range = _ask_range(wiz, subnet)
+            subnets.append((subnet, range))
+    wiz.opts['dhcp_subnets'] = subnets
 
-def _calc(addr, mask):
-    b = 32 - mask
-    if 2**b < 256: return None
-    addr = IpAddr.s2i(addr)
-    addr = (addr >> b) << b
-    start = IpAddr.i2s(addr + 10)
-    end = IpAddr.i2s(addr + 100)
-    addr = IpAddr.i2s(addr) 
-    return '%s/%d' % (addr, mask), '%s-%s' % (start, end)
+_range_re = re.compile('^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}-\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}$')
 
-class IpAddr:
-    @staticmethod
-    def i2s(addr):
-        return inet_ntoa(pack('>I', addr))
-    @staticmethod
-    def s2i(addr):
-        return unpack('>I', inet_aton(addr))[0]
+def _ask_range(wiz, subnet):
+    start = subnet.start.int + 10
+    end = subnet.start.int + 100
+    if end > subnet.end.int: end = subnet.end.int - 1
+    range = IpRange(start, end)
+    default_range = '%s-%s' % (range.start.str, range.end.str)
+    while True:
+        ask = 'Range used for dynamic address allocation in %s subnet' % subnet.cidr
+        answer = wiz.dialog.ask(ask, default_range)
+        if not _range_re.match(answer):
+            wiz.dialog.error('Wrong value for IP range')
+            continue
+        start, end = answer.split('-')
+        range = IpRange(start, end)
+        if range not in subnet:
+            wiz.dialog.error('"%s" range not in %s subnet' % (answer, subnet.cidr))
+            continue
+        return range
 
 @feature('dhcp')
 @after('dhcp_dialog', 'service_dialog_done')
@@ -63,22 +65,13 @@ def dhcp_deploy(wiz):
     prx = wiz.comm.stringToProxy('DHCP/Server')
     srv = DHCP.ServerPrx.checkedCast(prx)
     srv.reset()
-    srv.commit()
     if len(wiz.opts['dhcp_subnets']) == 0: return
-    for decl, range in wiz.opts['dhcp_subnets']:
-        sbn = srv.addSubnet(decl)
-        _set_range(sbn, DHCP.RangeType.UNTRUST, range)
-    srv.commit()
+    for subnet, range in wiz.opts['dhcp_subnets']:
+        sbn = srv.addSubnet(subnet.cidr)
+        sbn.addRange(range.start.str, range.end.str, 7)
     prx = wiz.comm.stringToProxy('DHCP/Daemon')
     daemon = DHCP.DaemonPrx.checkedCast(prx)
     if daemon.running():
         daemon.stop()
     daemon.start()
-    srv.commit()
-
-def _set_range(sbn, type, rdef):
-    if rdef:
-        start, end = rdef.split('-')
-        range = DHCP.IpRange(start, end, True)
-        sbn.setRange(type, range)
 
