@@ -211,6 +211,9 @@ class Record(SuperCommand):
     @cmd
     def find(self, argv):
         'Find record in zone'
+        if len(argv) < 2:
+            self.cmd_help()
+            return
         zone = self.__getZone(argv[0])
         if len(argv) == 3:
             limit = int(argv[2])
@@ -221,22 +224,40 @@ class Record(SuperCommand):
             if r.ttl > -1: repr += ' %s' % r.ttl
             if r.prio > -1: repr += ' %s' % r.prio
             print repr
+    def help_find(self):
+        usage = 'Usage: %s %s %s <zonename> <name of record> [limit]' % (sys.argv[0], sys.argv[1], sys.argv[2])
+        print usage
     @cmd
     def add(self, argv):
+        'Add record to zone'
+        if len(argv) < 4:
+            self.cmd_help()
+            return
         opts, argv = self.__add_optp().parse_args(argv)
         zone = self.__getZone(argv[0])
         type = getattr(DNS.RecordType, argv[2])
         r = DNS.Record(argv[1], type, argv[3], opts.ttl, opts.prio)
         zone.addRecord(r)
+    def help_add(self):
+        usage = 'Usage: %s %s %s <zonename> <name of record> <type of record> <data> <options>...' % (sys.argv[0], sys.argv[1], sys.argv[2])
+        self.__add_optp(usage).print_help()
     @cmd
     def drop(self, argv):
+        'Drop record from zone'
+        if len(argv) < 4:
+            self.cmd_help()
+            return
         type = getattr(DNS.RecordType, argv[2])
         r = DNS.Record(argv[1], type, argv[3])
         zone = self.__getZone(argv[0])
         zone.dropRecord(r)
+    def help_drop(self):
+        usage = 'Usage: %s %s %s <zonename> <name of record> <type of record> <data>' % (sys.argv[0], sys.argv[1], sys.argv[2])
+        print usage
     @staticmethod
-    def __add_optp():
-        optp = OptionParser()
+    def __add_optp(usage=None, defaults=None):
+        optp = OptionParser(usage=usage)
+        optp.remove_option('-h')
         optp.add_option('-t', '--ttl')
         optp.add_option('-p', '--prio')
         optp.set_defaults(ttl=-1, prio=-1)
