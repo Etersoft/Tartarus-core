@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt4
+Release: alt5
 
 %define tname Tartarus
 
@@ -371,6 +371,7 @@ fi
 
 
 %files -n %tname-srv1
+%_sbindir/t-modules
 %_sbindir/*1
 %tconfdir/%{tname}*.conf
 %_initdir/*
@@ -463,6 +464,21 @@ fi
 # {{{1 changelog
 
 %changelog
+* Fri Mar 27 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt5
+- build fixes for sisyphus prebuild of alpha4
++ DHCP: fix deploing of DHCP service
++ Also move DHCP/iptools -> Tartarus.system.ipaddr
++ Add t-modules utility
++ DHCP: bug fixing and code refactoring
++ DHCP: impove error handling and fix some bugs
++ DHCP: Some changes in t-dhcp and DHCP service
++ DHCP: Improve subnet utility
++ DHCP: Improve hosts support
++ DHCP: remove OldRange command
++ DHCP: new improved IP-ranges support
++ DHCP: new mutable enum module
++ DHCP: New module to manipulate IP addresses, ranges, networks
+
 * Fri Mar 13 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt4
 - fix building on x86_64 with new build system
 
