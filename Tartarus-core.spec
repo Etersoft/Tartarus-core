@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt5
+Release: alt6
 
 %define tname Tartarus
 
@@ -464,6 +464,11 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Apr 01 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt6
+- second build fixes for sisyphus prebuild of alpha4
++ DHCP: fix bug in IpListOption type
++ New Tartarus join utility: t-join
+
 * Fri Mar 27 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt5
 - build fixes for sisyphus prebuild of alpha4
 + DHCP: fix deploing of DHCP service
