@@ -4,7 +4,8 @@ def build(bld):
             'Tartarus-join',
             'Tartarus-leave',
             't-deploy-srv',
-            't-modules')
+            't-modules',
+            't-join')
     bins = set(bld.glob('t-*'))
     bins -= frozenset(sbins)
     bld.install_files('${BINDIR}', bins, chmod=0755)
