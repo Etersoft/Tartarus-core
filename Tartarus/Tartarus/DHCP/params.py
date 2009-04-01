@@ -34,13 +34,10 @@ opt = Option.opt
 
 class IpOption(Option):
     __errmsg = 'Wrong value for %s option. It must be ip-address'
-    __re = re.compile('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
     def __init__(self, key, dhcp_key=None, contexts=Context.ALL):
         Option.__init__(self, key, dhcp_key, contexts)
     def check(self, value):
-        if not self.__re.match(value): self.__fail()
-        for p in (int(p) for p in value.split('.')):
-            if p > 255: self.__fail()
+        if not checkIp(value): self.__fail()
     def __fail(self):
         raise ValidationError(self.__errmsg % self.key())
 
@@ -105,13 +102,9 @@ class IpListOption(Option):
     __errmsg = 'Wrong walue for %s option; valid value is list of ip-address separated by comma'
     def __init__(self, key, dhcp_key=None, contexts=Context.ALL):
         Option.__init__(self, key, dhcp_key, contexts)
-        self.__ipopt = IpOption(key)
     def check(self, value):
         for addr in (i.strip() for i in value.split(',')):
-            try:
-                self.__ipopt.check(addr)
-            except:
-                self.__fail()
+            if not checkIp(addr): self.__fail()
     def __fail(self):
         raise ValidationError(self.__errmsg % self.key())
 
@@ -183,4 +176,11 @@ class KeyError(RuntimeError):
         self.key = key
 
 class ValidationError(RuntimeError): pass
+
+ip_re = re.compile('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
+def checkIp(addr):
+    if not ip_re.match(addr): return False
+    for p in (int(p) for p in addr.split('.')):
+        if p > 255: return False
+    return True
 

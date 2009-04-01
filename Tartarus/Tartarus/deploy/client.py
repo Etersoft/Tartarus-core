@@ -1,10 +1,32 @@
-
+from __future__ import with_statement
 import os
+import krb5user
 from Tartarus.system import config, service, pam
+from Tartarus.deploy import save_keys
+from Tartarus.system.krbconf import Krb5Conf
+import Tartarus.system.hostname as hostname
 import Tartarus.system.resolv as resolv
 from Tartarus.deploy.common import feature, after, before
+from Tartarus.client import initialize
+from Tartarus.iface import DHCP, Kerberos, core
 
 _all_template = '/usr/share/Tartarus/templates/all/common.conf.template'
+
+@feature('client')
+def client_chkroot(wiz):
+    if os.getuid() != 0:
+        return 'Only root can do this'
+
+@feature('client')
+def client_conf(wiz):
+    if 'hostname' not in wiz.opts:
+        wiz.opts['hostname'] = wiz.dialog.ask('Hostname for this computer will be', hostname.getname())
+        wiz.opts['domain'] = wiz.dialog.ask('Tartarus domain to join', hostname.getdomain())
+        wiz.opts['fqdn'] = '%s.%s' % (wiz.opts['hostname'], wiz.opts['domain'])
+        wiz.opts['realm'] = wiz.opts['domain'].upper()
+        wiz.opts['kdc'] = 'kerberos.' + wiz.opts['domain']
+        wiz.opts['kadmin'] = 'kerberos.' + wiz.opts['domain']
+        wiz.opts['auto_update'] = True
 
 @feature('client')
 def client_nss_stop(wiz):
@@ -12,32 +34,13 @@ def client_nss_stop(wiz):
         service.service_stop(s)
 
 @feature('client')
-def client_dialog(wiz):
-    if 'fqdn' not in q.answers:
-        domain = Tartarus.system.hostname.getdomain()
-        fqdn = get_checked_fqdn(domain, Tartarus.system.hostname.getfqdn())
-        fqdn_list.append(fqdn)
-
-        localhosts = hosts.get_localhosts()
-        for record in localhosts:
-            for h in record.split():
-                if not h.startswith('localhost') and h.find('.') > 0:
-                    fqdn_list.append(h) 
-
-        user_fqdn = consdialog.choice(
-                'Enter Full Qualified Domain Name (FQDN) of your host', fqdn_list)
-        if user_fqdn != fqdn:
-            domain = Tartarus.system.hostname.getdomain(user_fqdn)
-            fqdn = get_checked_fqdn(domain, user_fqdn)
-            Tartarus.system.hostname.sethostname(fqdn)
-            q.answers['fqdn'] = fqdn
-    if 'domain' not in q.answers:
-        domain = system.hostname.getdomain(q.answers['fqdn'])
-        q.answers['domain'] = domain
-
+def client_krb5conf(wiz):
+    cfg = Krb5Conf()
+    cfg.setRealmDomain(wiz.opts['realm'], wiz.opts['domain'])
+    cfg.setRealm(wiz.opts['realm'], wiz.opts['kdc'], wiz.opts['kadmin'])
+    cfg.setDefaultRealm(wiz.opts['realm'])
 
 @feature('client')
-@after('client_stop_services')
 def client_makeconf(wiz):
     if not os.path.exists('/etc/Tartarus/clients'):
         os.makedirs('/etc/Tartarus/clients')
@@ -48,12 +51,48 @@ def client_makeconf(wiz):
     os.symlink('common.conf', old_conf_path)
 
 @feature('client')
+def client_comm_init(wiz):
+    wiz.comm, _ = initialize()
+
+@feature('client')
+def client_kinit(wiz):
+    admin = wiz.dialog.ask('Tartarus domain administrator login:', 'sysadmin')
+    krb5user.kinitPasswordPromptPosix(admin)
+    spn = 'host/%s' % wiz.opts['fqdn']
+    krb5prx = wiz.comm.propertyToProxy('Tartarus.Kerberos.KadminPrx')
+    kadmin = Kerberos.KadminPrx.checkedCast(krb5prx)
+    try:
+        spr = kadmin.createServicePrincipal('host', wiz.opts['fqdn'])
+    except core.AlreadyExistsError:
+        spr = kadmin.getPrincKeys(spn)
+    save_keys(spr)
+
+@feature('client')
 def client_dnsupdate(wiz):
     service.service_restart('tdnsupdate')
-    if auto_update:
+    if wiz.opts['auto_update']:
         service.service_on('tdnsupdate')
     else:
         service.service_off('tdnsupdate')
+
+@feature('client')
+def client_dhcpreg(wiz):
+    os.rename('/etc/dhcpcd.conf', '/etc/dhcpcd.conf.tsave')
+    with open('/etc/dhcpcd.conf', 'w+') as f:
+        set = False
+        for line in open('/etc/dhcpcd.conf.tsave'):
+            if line.startswith('clientid'):
+                f.write('clientid %s\n' % wiz.opts['hostname'])
+                set = True
+            else:
+                f.write(line)
+        if not set:
+            f.write('clientid %s\n' % wiz.opts['hostname'])
+    prx = wiz.comm.stringToProxy('DHCP/Server')
+    prx = DHCP.ServerPrx.checkedCast(prx)
+    if not prx: raise RuntimeError('Can\'t connect to server')
+    srv = DHCP.ServerPrx.checkedCast(prx)
+    srv.addHost(wiz.opts['hostname'], DHCP.HostId(DHCP.HostIdType.IDENTITY, wiz.opts['hostname']))
 
 @feature('client')
 def client_nss_start(wiz):
