@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt8
+Release: alt9
 
 %define tname Tartarus
 
@@ -464,6 +464,10 @@ fi
 # {{{1 changelog
 
 %changelog
+* Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt9
+- fifth build fixes for sisyphus prebuild of alpha4
++ DHCP: Add '\0' to begin of host identity
+
 * Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt8
 - fourth build fixes for sisyphus prebuild of alpha4
 + dhcpd.conf file do not contains client identifiers in host declaration
