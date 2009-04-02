@@ -92,5 +92,9 @@ exception ValueError extends core::Error
     string value;
 };
 
+exception AlreadyExistsError extends core::Error
+{
+};
+
 };
 }; };

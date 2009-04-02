@@ -27,5 +27,10 @@ def main():
     srv = DHCP.ServerPrx.checkedCast(prx)
     srv.addHost(hname, DHCP.HostId(DHCP.HostIdType.IDENTITY, hname))
 
-sys.exit(main())
+try:
+    sys.exit(main())
+except DHCP.AlreadyExistsError, e:
+    print e.reason
+except SystemExit:
+    pass
 

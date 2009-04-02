@@ -2,7 +2,7 @@ import os
 from functools import wraps
 import Ice
 from Tartarus.iface import DHCP
-from server import Server, Identity
+from server import Server, Identity, AlreadyExistsError
 from options import opts
 from config import Config
 from runner import Runner, Status
@@ -15,6 +15,8 @@ def exceptm(method):
     def wrapper(self, *args, **kwargs):
         try:
             return method(self, *args, **kwargs)
+        except AlreadyExistsError, e:
+            raise DHCP.AlreadyExistsError(str(e))
         except KeyError, e:
             raise DHCP.KeyError(str(e), e.key)
         except ValueError, e:
@@ -140,6 +142,7 @@ class ServerI(ScopeI, DHCP.Server):
         host = self.__server.getHost(name)
         return HostI(host).prx(current.adapter)
     @auth.mark('admin')
+    @exceptm
     def addHost(self, name, id, current):
         '''Host* addHost(string name, HostId id)'''
         if id.type == DHCP.HostIdType.IDENTITY:
