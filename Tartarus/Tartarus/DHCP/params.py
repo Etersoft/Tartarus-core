@@ -1,12 +1,11 @@
 import re
 from menum import Enum
 
-Context = Enum('GLOBAL', 'SUBNET', 'RANGE', 'HOSTS', 'HOST')
+Context = Enum('GLOBAL', 'SUBNET', 'RANGE', 'HOST')
 Context.ALL = (
         Context.GLOBAL,
         Context.SUBNET,
         Context.RANGE,
-        Context.HOSTS,
         Context.HOST)
 
 class Option(object):
@@ -113,7 +112,7 @@ FlagOption('always-reply-rfc1048')
 FlagOption('boot-unknown-clients')
 UIntOption('default-lease-time')
 StringOption('filename')
-IpListOption('fixed-address')
+IpListOption('fixed-address', contexts=[Context.HOST])
 UIntOption('max-lease-time')
 UIntOption('min-lease-time')
 UIntOption('min-secs')

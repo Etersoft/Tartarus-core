@@ -6,9 +6,8 @@ from Cheetah.Template import Template
 
 from Tartarus.system.ipaddr import IpSubnet, IpRange
 
-STATIC = 1;
-KNOWN = 2;
-UNKNOWN = 4;
+KNOWN = 1;
+UNKNOWN = 2;
 
 class Server:
     __instance = None
@@ -117,8 +116,6 @@ class _Range(IpRange):
             self.__caps = caps
         else:
             return self.__caps
-    def staticCap(self):
-        return bool(self.__caps & STATIC)
     def knownCap(self):
         return bool(self.__caps & KNOWN)
     def unknownCap(self):

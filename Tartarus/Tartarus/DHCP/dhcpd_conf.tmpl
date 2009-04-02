@@ -11,7 +11,6 @@ subnet $subnet.prefix.str netmask $subnet.mask.str {
     #end for
 
     #for $range in $subnet.ranges()
-        #if $range.knownCap() or $range.unknownCap()
     pool {
         range $range.start.str $range.end.str;
 
@@ -19,15 +18,13 @@ subnet $subnet.prefix.str netmask $subnet.mask.str {
         $key $value;
         #end for
 
-        #if $range.knownCap()
-        allow known-clients;
-        #end if
-
-        #if $range.unknownCap()
+        #if not $range.knownCap()
         allow unknown-clients;
         #end if
-    }
+        #if not $range.unknownCap()
+        allow known-clients;
         #end if
+    }
     #end for
 }
 #end for
