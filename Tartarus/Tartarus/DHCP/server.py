@@ -147,7 +147,7 @@ class Identity:
         return self.__hardware
     def __str__(self):
         if self.__id:
-            return 'option dhcp-client-identifier %s;' % self.__id
+            return 'option dhcp-client-identifier "%s";' % self.__id
         return 'hardware %s;' % self.__hardware
 
 class _Host:
