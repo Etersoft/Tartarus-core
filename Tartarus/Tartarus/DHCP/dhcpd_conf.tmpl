@@ -32,6 +32,7 @@ subnet $subnet.prefix.str netmask $subnet.mask.str {
 group {
     #for $host in $server.hosts()
     host $host.name() {
+        $host.identity()
         #for $key, $value in $host.params().iter()
         $key $value;
         #end for

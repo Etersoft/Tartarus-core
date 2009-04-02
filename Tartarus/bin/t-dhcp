@@ -263,8 +263,8 @@ class Host(Command):
     def __init__(self):
         usage = (
                 'Usage: %(prog)s host [<identity>]|[<hardware>] [-o]       - list mode\n'
-                '       %(prog)s host -a <name> <id>|ethernet <mac-addr>   - add mode\n'
-                '       %(prog)s host -r <addr>                            - remove mode\n'
+                '       %(prog)s host -a <name> [<id>|ethernet <mac-addr>] - add mode\n'
+                '       %(prog)s host -r <name>                            - remove mode\n'
                 )
         self.optp = OptionParser(usage=usage % { 'prog': sys.argv[0] })
         opt = self.optp.add_option
@@ -309,10 +309,12 @@ class Host(Command):
             print '  %s: %s' % i
     @classmethod
     def do_add(cls, opts, args):
-        if len(args) == 2:
+        if len(args) == 1:
+            id = DHCP.HostId(DHCP.HostIdType.IDENTITY, args[0])
+        elif len(args) == 2:
             id = DHCP.HostId(DHCP.HostIdType.IDENTITY, args[1])
         elif len(args) == 3 and args[1] == 'ethernet':
-            id = DHCP.HostId(DHCP.HostIdType.HARDWARE, 'ethernet '+args[1])
+            id = DHCP.HostId(DHCP.HostIdType.HARDWARE, 'ethernet '+args[2])
         else: raise RuntimeError('Wrong arguments')
         srv = serverPrx()
         srv.addHost(args[0], id)
