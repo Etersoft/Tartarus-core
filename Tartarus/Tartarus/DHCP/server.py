@@ -50,6 +50,8 @@ class Server:
     def getHost(self, name):
         return self.__hosts[name]
     def addHost(self, name, id):
+        if name in self.__hosts:
+            raise AlreadyExistsError('Host %s already exists' % name)
         h = _Host(name, id)
         self.__hosts[name] = h
         return h
@@ -164,9 +166,6 @@ class _Host:
     def params(self):
         return self.__params
 
-STATIC, TRUST, UNTRUST = range(3)
-
-_tmpl = '''
-
-'''
+class AlreadyExistsError(RuntimeError):
+    pass
 

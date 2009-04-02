@@ -5,7 +5,6 @@ from Tartarus.system import config, service, pam
 from Tartarus.deploy import save_keys
 from Tartarus.system.krbconf import Krb5Conf
 import Tartarus.system.hostname as hostname
-import Tartarus.system.resolv as resolv
 from Tartarus.deploy.common import feature, after, before
 from Tartarus.client import initialize
 from Tartarus.iface import DHCP, Kerberos, core
@@ -21,11 +20,17 @@ def client_chkroot(wiz):
 def client_conf(wiz):
     if 'hostname' not in wiz.opts:
         wiz.opts['hostname'] = wiz.dialog.ask('Hostname for this computer will be', hostname.getname())
+    if 'domain' not in wiz.opts:
         wiz.opts['domain'] = wiz.dialog.ask('Tartarus domain to join', hostname.getdomain())
+    if 'fqdn' not in wiz.opts:
         wiz.opts['fqdn'] = '%s.%s' % (wiz.opts['hostname'], wiz.opts['domain'])
+    if 'realm' not in wiz.opts:
         wiz.opts['realm'] = wiz.opts['domain'].upper()
+    if 'kdc' not in wiz.opts:
         wiz.opts['kdc'] = 'kerberos.' + wiz.opts['domain']
+    if 'kadmin' not in wiz.opts:
         wiz.opts['kadmin'] = 'kerberos.' + wiz.opts['domain']
+    if 'auto_update' not in wiz.opts:
         wiz.opts['auto_update'] = True
 
 @feature('client')
@@ -103,46 +108,4 @@ def client_nss_start(wiz):
 @feature('client')
 def client_netauth(wiz):
     pam.set_tartarus_auth()
-
-def deploy_client_start(opts):
-    for s in ['tnscd', 'nscd']:
-        service.service_stop(s)
-    if not os.path.exists('/etc/Tartarus/clients'):
-        os.makedirs('/etc/Tartarus/clients')
-    config.gen_config_from_file('/etc/Tartarus/clients/common.conf',
-                                _all_template, opts, True)
-    old_conf_path = '/etc/Tartarus/clients/all.config'
-    if os.path.exists(old_conf_path): os.unlink(old_conf_path)
-    os.symlink('common.conf', old_conf_path)
-
-def deploy_client_dnsupdate(opts_, auto_update = False):
-    service.service_restart('tdnsupdate')
-    if auto_update:
-        service.service_on('tdnsupdate')
-    else:
-        service.service_off('tdnsupdate')
-
-def deploy_client_finish(opts_):
-    for s in ['tnscd', 'nscd']:
-        service.service_restart(s)
-        service.service_on(s)
-    pam.set_tartarus_auth()
-
-def deploy_server_pre():
-    service.tartarus_start_deploy()
-
-def deploy_server_start(opts):
-    deploy_client_start(opts)
-
-def deploy_server_stop(opts):
-    for s in ['krb5kdc', 'kadmin', 'powerdns', 'Tartarus']:
-        service.service_on(s)
-        service.service_restart(s)
-    deploy_client_finish(opts)
-
-def leave_client(opts_):
-    for s in ['tnscd', 'nscd']:
-        service.service_off(s)
-        service.service_stop(s)
-    pam.set_local_auth()
 
