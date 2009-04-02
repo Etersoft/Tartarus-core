@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt7
+Release: alt8
 
 %define tname Tartarus
 
@@ -464,6 +464,11 @@ fi
 # {{{1 changelog
 
 %changelog
+* Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt8
+- fourth build fixes for sisyphus prebuild of alpha4
++ dhcpd.conf file do not contains client identifiers in host declaration
++ error when adding host with ethernet identity by t-dhcp
+ 
 * Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt7
 - third build fixes for sisyphus prebuild of alpha4
 + DHCP: Check contexts for options
