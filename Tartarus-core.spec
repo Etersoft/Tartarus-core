@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt9
+Release: alt10
 
 %define tname Tartarus
 
@@ -434,7 +434,8 @@ fi
 %_bindir/t-dns
 
 %files -n %tname-DHCP-client
-%_bindir/t-dhcp
+%_sbindir/t-dhcp*
+%_bindir/t-dhcp*
 
 %files -n %tname-slice
 
@@ -464,6 +465,12 @@ fi
 # {{{1 changelog
 
 %changelog
+* Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt10
+- sixth build fixes for sisyphus prebuild of alpha4
++ DHCP: Raise exception if host already exists on server
++ Remove old deploy and join code
++ New utility t-dhcpreg also has been added
+
 * Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt9
 - fifth build fixes for sisyphus prebuild of alpha4
 + DHCP: Add '\0' to begin of host identity
