@@ -1,12 +1,11 @@
 import re
 from menum import Enum
 
-Context = Enum('GLOBAL', 'SUBNET', 'RANGE', 'HOSTS', 'HOST')
+Context = Enum('GLOBAL', 'SUBNET', 'RANGE', 'HOST')
 Context.ALL = (
         Context.GLOBAL,
         Context.SUBNET,
         Context.RANGE,
-        Context.HOSTS,
         Context.HOST)
 
 class Option(object):
@@ -113,7 +112,7 @@ FlagOption('always-reply-rfc1048')
 FlagOption('boot-unknown-clients')
 UIntOption('default-lease-time')
 StringOption('filename')
-IpListOption('fixed-address')
+IpListOption('fixed-address', contexts=[Context.HOST])
 UIntOption('max-lease-time')
 UIntOption('min-lease-time')
 UIntOption('min-secs')
@@ -144,11 +143,14 @@ IntOption('time-offset', 'option time-offset')
 IpListOption('time-servers', 'option time-servers')
 
 class Params:
-    def __init__(self):
+    def __init__(self, context):
         self.__map = {}
+        self.__context = context
     def set(self, key, value):
         o = opt(key)
         if not o: raise KeyError(key)
+        if self.__context not in o.contexts():
+            raise ContextError(key, self.__context, o.contexts())
         try:
             o.check(value)
         except ValidationError, e:
@@ -174,6 +176,15 @@ class KeyError(RuntimeError):
     def __init__(self, key):
         RuntimeError.__init__(self, 'Invalid option key: "%s"' % key)
         self.key = key
+
+class ContextError(RuntimeError):
+    def __init__(self, key, context, valid_contexts):
+        RuntimeError.__init__(self,
+                'Option %s do not allowed in %s context, valid contexts are: %s'
+                % (key, context, ', '.join((str(i) for i in valid_contexts))))
+        self.key = key
+        self.context = context
+        self.valid_contexts = valid_contexts
 
 class ValidationError(RuntimeError): pass
 

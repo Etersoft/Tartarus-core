@@ -68,7 +68,7 @@ def dhcp_deploy(wiz):
     if len(wiz.opts['dhcp_subnets']) == 0: return
     for subnet, range in wiz.opts['dhcp_subnets']:
         sbn = srv.addSubnet(subnet.cidr)
-        sbn.addRange(range.start.str, range.end.str, 7)
+        sbn.addRange(range.start.str, range.end.str, 3)
     prx = wiz.comm.stringToProxy('DHCP/Daemon')
     daemon = DHCP.DaemonPrx.checkedCast(prx)
     if daemon.running():

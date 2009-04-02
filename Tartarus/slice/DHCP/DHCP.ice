@@ -31,9 +31,8 @@ interface Host extends Scope {
 
 sequence<Host*> HostSeq;
 
-const int STATIC = 1;
-const int KNOWN = 2;
-const int UNKNOWN = 4;
+const int KNOWN = 1;
+const int UNKNOWN = 2;
 
 struct IpRange {
     string start;

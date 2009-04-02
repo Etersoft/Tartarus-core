@@ -84,8 +84,8 @@ class Subnet(Command):
     def __init__(self):
         usage = (
                 'Usage: %(prog)s subnet [-Ro]             - list mode\n'
-                '       %(prog)s range -a <addr>/<mask>   - add mode\n'
-                '       %(prog)s range -r <addr>/<mask>   - remove mode\n'
+                '       %(prog)s subnet -a <addr>/<mask>  - add mode\n'
+                '       %(prog)s subnet -r <addr>/<mask>  - remove mode\n'
                 )
         self.optp = OptionParser(usage=usage % { 'prog': sys.argv[0] })
         opt = self.optp.add_option
@@ -134,7 +134,6 @@ class Subnet(Command):
         start, end = range.addrs()
         caps = range.caps()
         caps_str = ''
-        if caps & DHCP.STATIC: caps_str += 's'
         if caps & DHCP.KNOWN: caps_str += 'k'
         if caps & DHCP.UNKNOWN: caps_str += 'u'
         print '  %s-%s CAPS: %s' % (start, end, caps_str)
@@ -221,7 +220,6 @@ class Range(Command):
             subnet = srv.findSubnet(start)
         caps = range.caps()
         caps_str = ''
-        if caps & DHCP.STATIC: caps_str += 's'
         if caps & DHCP.KNOWN: caps_str += 'k'
         if caps & DHCP.UNKNOWN: caps_str += 'u'
         print '%s-%s (%s) CAPS: %s' % (start, end, subnet.cidr(), caps_str)
@@ -233,7 +231,6 @@ class Range(Command):
         if len(args) != 3: raise CommandLineError('Wrong number of arguments')
         start, end, caps = args
         c = 0
-        if 's' in caps: c |= DHCP.STATIC
         if 'k' in caps: c |= DHCP.KNOWN
         if 'u' in caps: c |= DHCP.UNKNOWN
         srv = serverPrx()
@@ -253,7 +250,6 @@ class Range(Command):
         if len(args) != 2: raise CommandLineError('Wrong number of arguments')
         addr, caps = args
         c = 0
-        if 's' in caps: c |= DHCP.STATIC
         if 'k' in caps: c |= DHCP.KNOWN
         if 'u' in caps: c |= DHCP.UNKNOWN
         srv = serverPrx()

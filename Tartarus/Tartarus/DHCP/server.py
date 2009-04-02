@@ -1,4 +1,4 @@
-from params import Params
+from params import Params, Context
 from uuid import uuid4 as uuid
 import re
 import os
@@ -6,9 +6,8 @@ from Cheetah.Template import Template
 
 from Tartarus.system.ipaddr import IpSubnet, IpRange
 
-STATIC = 1;
-KNOWN = 2;
-UNKNOWN = 4;
+KNOWN = 1;
+UNKNOWN = 2;
 
 class Server:
     __instance = None
@@ -21,7 +20,7 @@ class Server:
         self.__start_on_load = False
         self.reset()
     def reset(self):
-        self.__params = Params()
+        self.__params = Params(Context.GLOBAL)
         self.__subnets = {}
         self.__hosts = {}
     def params(self):
@@ -72,7 +71,7 @@ class _Subnet(IpSubnet):
     def __init__(self, id, decl):
         IpSubnet.__init__(self, decl)
         self.__id = id
-        self.__params = Params()
+        self.__params = Params(Context.SUBNET)
         self.__ranges = {}
     def id(self):
         return self.__id
@@ -109,7 +108,7 @@ class _Range(IpRange):
         self.__end = end
         self.__caps = caps
         self.__subnet = subnet
-        self.__params = Params()
+        self.__params = Params(Context.RANGE)
     def id(self):
         return self.__id
     def caps(self, caps=None):
@@ -117,8 +116,6 @@ class _Range(IpRange):
             self.__caps = caps
         else:
             return self.__caps
-    def staticCap(self):
-        return bool(self.__caps & STATIC)
     def knownCap(self):
         return bool(self.__caps & KNOWN)
     def unknownCap(self):
@@ -157,7 +154,7 @@ class _Host:
     def __init__(self, name, id):
         self.__name = name
         self.__id = id
-        self.__params = Params()
+        self.__params = Params(Context.HOST)
     def name(self):
         return self.__name
     def identity(self):
