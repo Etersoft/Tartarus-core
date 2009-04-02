@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt6
+Release: alt7
 
 %define tname Tartarus
 
@@ -464,6 +464,12 @@ fi
 # {{{1 changelog
 
 %changelog
+* Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt7
+- third build fixes for sisyphus prebuild of alpha4
++ DHCP: Check contexts for options
++ DHCP: remove static range support, because I do not known how to
+        implement that
+
 * Wed Apr 01 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt6
 - second build fixes for sisyphus prebuild of alpha4
 + DHCP: fix bug in IpListOption type
