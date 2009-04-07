@@ -1,105 +1,148 @@
 import os
+from functools import wraps
 import Ice
 from Tartarus.iface import DHCP
-from server import Server, Identity
+from server import Server, Identity, AlreadyExistsError
 from options import opts
 from config import Config
 from runner import Runner, Status
+from params import KeyError, ValueError
 from Tartarus import auth
 from Tartarus import logging
 
-class HostI(DHCP.Host):
-    def __init__(self, name):
-        self.__name = name
-    def __host(self):
-        srv = Server.get()
-        return srv.hosts()[self.__name]
+def exceptm(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return method(self, *args, **kwargs)
+        except AlreadyExistsError, e:
+            raise DHCP.AlreadyExistsError(str(e))
+        except KeyError, e:
+            raise DHCP.KeyError(str(e), e.key)
+        except ValueError, e:
+            raise DHCP.ValueError(str(e), e.key, e.value)
+    return wrapper
+
+class ScopeI(DHCP.Scope):
+    def options(self, current):
+        return self.getObj().params().map()
+    @auth.mark('admin')
+    @exceptm
+    def setOption(self, key, value, current):
+        self.getObj().params().set(key, value)
+        Config.get().save()
+    @auth.mark('admin')
+    def unsetOption(self, key, current):
+        self.getObj().params().unset(key)
+        Config.get().save()
+
+class HostI(ScopeI, DHCP.Host):
+    def __init__(self, host):
+        self.__host = host
+    def prx(self, adapter):
+        comm = adapter.getCommunicator()
+        id = comm.stringToIdentity('DHCP-Hosts/%s' % self.__host.name())
+        prx = adapter.createProxy(id)
+        return DHCP.HostPrx.uncheckedCast(prx)
+    def getObj(self):
+        return self.__host
     def name(self, current):
         '''string name()'''
-        return self.__host().name()
+        return self.__host.name()
     def id(self, current):
         '''HostId id()'''
-        id = self.__host().identity()
+        id = self.__host.identity()
         if id.type() == Identity.IDENTITY:
             return DHCP.HostId(DHCP.HostIdType.IDENTITY, id.id())
         return DHCP.HostId(DHCP.HostIdType.HARDWARE, id.hardware())
-    def params(self, current):
-        '''StrStrMap params()'''
-        return self.__host().params().map()
-    @auth.mark('admin')
-    def setParam(self, key, value, current):
-        '''void setParam(string key, string value)'''
-        self.__host().params().set(key, value)
-    @auth.mark('admin')
-    def unsetParam(self, key, current):
-        '''void unsetParam(string key)'''
-        self.__host().params().unset(key)
 
-class SubnetI(DHCP.Subnet):
-    def __init__(self, id):
-        self.__srv = Server.get()
-        self.__id = id
-    def __subnet(self):
-        return self.__srv.subnets()[self.__id]
+class SubnetI(ScopeI, DHCP.Subnet):
+    def __init__(self, subnet):
+        self.__subnet = subnet
+    def prx(self, adapter):
+        comm = adapter.getCommunicator()
+        id = comm.stringToIdentity('DHCP-Subnets/%s' % self.__subnet.id())
+        prx = adapter.createProxy(id)
+        return DHCP.SubnetPrx.uncheckedCast(prx)
+    def getObj(self):
+        return self.__subnet
     def id(self, current):
         '''string id()'''
-        return self.__subnet().id()
-    def decl(self, current):
-        '''void info(out string addr, out string mask)'''
-        sbn = self.__subnet()
-        return sbn.decl()
-    def range(self, type, current):
-        r = self.__subnet().range(type.value)
-        if r is ():
-            return DHCP.IpRange('', '', False)
-        return DHCP.IpRange(r[0], r[1], True)
+        return self.__subnet.id()
+    def cidr(self, current):
+        return self.__subnet.cidr
+    def ranges(self, current):
+        return [RangeI(r).prx(current.adapter) for r in self.__subnet.ranges()]
+    def getRange(self, id, current):
+        range = self.__subnet.getRange(id)
+        return RangeI(range).prx(current.adapter)
+    def findRange(self, addr, current):
+        range = self.__subnet.findRange(addr)
+        return RangeI(range).prx(current.adapter)
     @auth.mark('admin')
-    def setRange(self, type, range, current):
-        if range.hasValue:
-            self.__subnet().range(type.value, (range.start, range.end))
-        else:
-            self.__subnet().range(type.value, ())
-    def params(self, current):
-        '''StrStrMap params()'''
-        return self.__subnet().params().map()
+    def addRange(self, start, end, caps, current):
+        r = self.__subnet.addRange(start, end, caps)
+        Config.get().save()
+        return RangeI(r).prx(current.adapter)
     @auth.mark('admin')
-    def setParam(self, key, value, current):
-        '''void setParam(string key, string value)'''
-        return self.__subnet().params().set(key, value)
-    @auth.mark('admin')
-    def unsetParam(self, key, current):
-        '''void unsetParam(string key)'''
-        return self.__subnet().params().unset(value)
+    def delRange(self, id, current):
+        self.__subnet.delRange(id)
+        Config.get().save()
 
-class ServerI(DHCP.Server):
+class RangeI(ScopeI, DHCP.Range):
+    def __init__(self, range):
+        self.__range = range
+    def prx(self, adapter):
+        sid = self.__range.subnet().id()
+        rid = self.__range.id()
+        comm = adapter.getCommunicator()
+        id = comm.stringToIdentity('DHCP-Ranges/%s.%s' % (sid, rid))
+        prx = adapter.createProxy(id)
+        return DHCP.RangePrx.uncheckedCast(prx)
+    def getObj(self):
+        return self.__range
+    def id(self, current):
+        return self.__range.id()
+    def caps(self, current):
+        return self.__range.caps()
+    @auth.mark('admin')
+    def setCaps(self, caps, current):
+        self.__range.caps(caps)
+        Config.get().save()
+    def addrs(self, current):
+        return self.__range.start.str, self.__range.end.str
+
+class ServerI(ScopeI, DHCP.Server):
     def __init__(self):
         self.__server = Server.get()
+    def getObj(self):
+        return self.__server
     def subnets(self, current):
         '''SubnetSeq subnets()'''
-        return [self.__mkSubnetPrx(s, current.adapter) for s in self.__server.subnets().itervalues()]
-    def findSubnet(self, decl, current):
-        for s in self.__server.subnets().itervalues():
-            if s.decl() == decl:
-                return self.__mkSubnetPrx(s, current.adapter)
+        return [SubnetI(s).prx(current.adapter) for s in self.__server.subnets()]
+    def findSubnet(self, addr, current):
+        s = self.__server.findSubnet(addr)
+        if s: return SubnetI(s).prx(current.adapter)
     @auth.mark('admin')
     def addSubnet(self, decl, current):
         '''Subnet* addSubnet(addr, mask)'''
         s = self.__server.addSubnet(decl)
-        return self.__mkSubnetPrx(s, current.adapter)
+        Config.get().save()
+        return SubnetI(s).prx(current.adapter)
     @auth.mark('admin')
-    def delSubnet(self, s, current):
+    def delSubnet(self, id, current):
         '''void delSubnet(Subnet* s)'''
-        id = s.ice_getIdentity()
-        self.__server.delSubnet(id.name)
+        self.__server.delSubnet(id)
+        Config.get().save()
     def hosts(self, current):
         '''HostSeq hosts()'''
         hosts = self.__server.hosts()
-        return [self.__mkHostPrx(h, current.adapter) for h in hosts.itervalues()]
-    def hostsByNames(self, names, current):
-        mkprx = lambda h: self.__mkHostPrx(h, current.adapter)
-        host = lambda name: self.__server.hosts().get(name, None)
-        return [mkprx(host(name)) for name in names]
+        return [HostI(h).prx(current.adapter) for h in hosts]
+    def getHost(self, name, current):
+        host = self.__server.getHost(name)
+        return HostI(host).prx(current.adapter)
     @auth.mark('admin')
+    @exceptm
     def addHost(self, name, id, current):
         '''Host* addHost(string name, HostId id)'''
         if id.type == DHCP.HostIdType.IDENTITY:
@@ -107,49 +150,21 @@ class ServerI(DHCP.Server):
         else:
             hid = Identity(hardware=id.value)
         h = self.__server.addHost(name, hid)
-        return self.__mkHostPrx(h, current.adapter)
-    @auth.mark('admin')
-    def delHosts(self, hosts):
-        '''void delHosts(HostSeq hosts)'''
-        pass
-    def params(self, current):
-        '''StrStrMap params()'''
-        return self.__server.params().map()
-    @auth.mark('admin')
-    def setParam(self, key, value, current):
-        '''void setParam(string key, string value)'''
-        self.__server.params().set(key, value)
-    @auth.mark('admin')
-    def unsetParam(self, key, current):
-        '''void unsetParam(string key)'''
-        self.__server.params().unset(key, value)
-    @auth.mark('admin')
-    def commit(self, current):
-        '''void commit()'''
         Config.get().save()
-        Config.get().genDHCPCfg()
+        return HostI(h).prx(current.adapter)
     @auth.mark('admin')
-    def rollback(self, current):
-        Config.get().load()
+    def delHost(self, name, current):
+        '''void delHosts(HostSeq hosts)'''
+        self.__server.delHost(name)
+        Config.get().save()
+    def findRange(self, addr, current):
+        r = self.__server.findRange(addr)
+        if r: return RangeI(r).prx(current.adapter)
     def isConfigured(self, common):
         return Config.get().isConfigured()
     @auth.mark('admin')
     def reset(self, common):
         Config.get().reset()
-    @staticmethod
-    def __mkHostPrx(host, adapter):
-        if host is None: return None
-        comm = adapter.getCommunicator()
-        id = comm.stringToIdentity('DHCP-Hosts/%s' % host.name())
-        prx = adapter.createProxy(id)
-        return DHCP.HostPrx.uncheckedCast(prx)
-    @staticmethod
-    def __mkSubnetPrx(sbn, adapter):
-        if sbn is None: return None
-        comm = adapter.getCommunicator()
-        id = comm.stringToIdentity('DHCP-Subnets/%s' % sbn.id())
-        prx = adapter.createProxy(id)
-        return DHCP.SubnetPrx.uncheckedCast(prx)
 
 class DaemonI(DHCP.Daemon):
     def __init__(self):
@@ -162,27 +177,47 @@ class DaemonI(DHCP.Daemon):
                 logging.warning(str(e))
     @auth.mark('admin')
     def start(self, current):
+        Config.get().genDHCPCfg()
         self.__runner.start()
         self.__server.startOnLoad(True)
+        Config.get().save()
     @auth.mark('admin')
     def stop(self, current):
         self.__runner.stop()
         self.__server.startOnLoad(False)
+        Config.get().save()
     def running(self, current):
         return self.__runner.status() == Status.RUN
 
 class SubnetLocator(Ice.ServantLocator):
+    def __init__(self):
+        self.__srv = Server.get()
     def locate(self, current):
-        return SubnetI(current.id.name)
+        subnet = self.__srv.getSubnet(current.id.name)
+        return SubnetI(subnet)
+    def finished(self, current, servant, cookie):
+        pass
+    def deactivate(self, category):
+        pass
+
+class RangeLocator(Ice.ServantLocator):
+    def __init__(self):
+        self.__srv = Server.get()
+    def locate(self, current):
+        sid, rid = current.id.name.split('.')
+        range = self.__srv.getSubnet(sid).getRange(rid)
+        return RangeI(range)
     def finished(self, current, servant, cookie):
         pass
     def deactivate(self, category):
         pass
 
 class HostLocator(Ice.ServantLocator):
+    def __init__(self):
+        self.__srv = Server.get()
     def locate(self, current):
-        hostname = current.id.name
-        return HostI(hostname)
+        host = self.__srv.getHost(current.id.name)
+        return HostI(host)
     def finished(self, current, servant, cookie):
         pass
     def deactivate(self, category):
@@ -192,6 +227,7 @@ def init(adapter):
     com = adapter.getCommunicator()
     dec = auth.DecoratingLocator
     adapter.addServantLocator(dec(SubnetLocator()), "DHCP-Subnets")
+    adapter.addServantLocator(dec(RangeLocator()), "DHCP-Ranges")
     adapter.addServantLocator(dec(HostLocator()), "DHCP-Hosts")
 
     loc = auth.SrvLocator()

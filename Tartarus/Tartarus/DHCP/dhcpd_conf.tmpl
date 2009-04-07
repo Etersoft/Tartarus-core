@@ -4,32 +4,35 @@ ddns-update-style none;
 $key $value;
 #end for
 
-#for $subnet in $server.subnets().itervalues()
-subnet $subnet.addr() netmask $subnet.mask() {
+#for $subnet in $server.subnets()
+subnet $subnet.prefix.str netmask $subnet.mask.str {
     #for $key, $value in $subnet.params().iter()
     $key $value;
     #end for
 
-    #set $r = $subnet.range(1)
-    #if $r != ()
+    #for $range in $subnet.ranges()
     pool {
-        range $r[0] $r[1];
-        deny unknown-clients;
-    }
-    #end if
-    #set $r = $subnet.range(2)
-    #if $r != ()
-    pool {
-        range $r[0] $r[1];
+        range $range.start.str $range.end.str;
+
+        #for $key, $value in $range.params().iter()
+        $key $value;
+        #end for
+
+        #if not $range.knownCap()
         allow unknown-clients;
+        #end if
+        #if not $range.unknownCap()
+        allow known-clients;
+        #end if
     }
-    #end if
+    #end for
 }
 #end for
 
 group {
-    #for $host in $server.hosts().itervalues()
+    #for $host in $server.hosts()
     host $host.name() {
+        $host.identity()
         #for $key, $value in $host.params().iter()
         $key $value;
         #end for

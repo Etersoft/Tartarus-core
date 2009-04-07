@@ -1,0 +1,36 @@
+#!/usr/bin/python
+from __future__ import with_statement
+import sys
+import os
+
+from Tartarus.client import initialize
+import Tartarus.system.hostname as hostname
+import Tartarus.iface.DHCP as DHCP
+
+def main():
+    comm, _ = initialize()
+    hname = hostname.getname()
+    os.rename('/etc/dhcpcd.conf', '/etc/dhcpcd.conf.tsave')
+    with open('/etc/dhcpcd.conf', 'w+') as f:
+        set = False
+        for line in open('/etc/dhcpcd.conf.tsave'):
+            if line.startswith('clientid'):
+                f.write('clientid %s\n' % hname)
+                set = True
+            else:
+                f.write(line)
+        if not set:
+            f.write('clientid %s\n' % hname)
+    prx = comm.stringToProxy('DHCP/Server')
+    prx = DHCP.ServerPrx.checkedCast(prx)
+    if not prx: raise RuntimeError('Can\'t connect to server')
+    srv = DHCP.ServerPrx.checkedCast(prx)
+    srv.addHost(hname, DHCP.HostId(DHCP.HostIdType.IDENTITY, hname))
+
+try:
+    sys.exit(main())
+except DHCP.AlreadyExistsError, e:
+    print e.reason
+except SystemExit:
+    pass
+
