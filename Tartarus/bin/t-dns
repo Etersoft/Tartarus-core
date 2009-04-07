@@ -299,7 +299,7 @@ class Main:
             print '  \033[92m%s\033[0m - %s' % (cmd, doc)
         print '\nTry run %s <command> help for more information\n' % sys.argv[0]
     def __call__(self):
-        if len(self.__argv) < 2:
+        if (len(self.__argv) < 2) or (self.__argv[1] == 'help') or (self.__argv[1] == '--help'):
             self.usage()
             return 1
         cmd = self.__argv[1]
