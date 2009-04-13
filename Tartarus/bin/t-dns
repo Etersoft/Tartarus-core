@@ -82,6 +82,7 @@ class SuperCommand(Command):
     def cmd_help(self):
         if hasattr(self, 'help_' + self.__subcmd):
             getattr(self, 'help_' + self.__subcmd)()
+            print '\n%s\n' % getattr(self, self.__subcmd).__doc__
         else:
             name = type(self).__name__.lower()
             print 'Usage: %s %s %s' % (sys.argv[0], name, self.__subcmd)
@@ -95,11 +96,16 @@ class SuperCommand(Command):
         print '\nTry run %s %s <subcommand> help for more information\n' % (sys.argv[0], name)
 
 class Zone(SuperCommand):
-    __soa_fields = 'nameserver hostmaster serial refresh retry expire ttl'.split()
     "Manipulate with DNS zones"
+    __soa_fields = 'nameserver hostmaster serial refresh retry expire ttl'.split()
+
     @cmd
     def list(self, argv):
         "Show all zones"
+        if len(argv) > 0:
+            raise CommandLineError('you shouldn\'t specify parameters %s' % argv[0:])
+            self.cmd_help()
+            return
         srv = serverPrx()
         for zone in srv.getZones():
             name = zone.getName()
@@ -111,17 +117,26 @@ class Zone(SuperCommand):
     def show(self, argv):
         "Show zone soa record"
         if len(argv) != 1:
+            raise CommandLineError('you should specify one parameter')
             self.cmd_help()
             return
         name = argv[0]
         srv = serverPrx()
-        zone = srv.getZone(name)
+        try:
+            zone = srv.getZone(name)
+        except Exception, e:
+            print '\033[91mError:\033[0m %s\n' % "Can\'t find zone by name \'%s\'.." % name
+            sys.exit(1)
         print name
         self.__printSOA(zone.getSOA())
+    def help_show(self):
+        usage = 'Usage: %s zone show <name of zone>' % sys.argv[0]
+        print usage
     @cmd
     def create(self, argv):
         'Add DNS zone to server'
         if len(argv) < 1:
+            raise CommandLineError('you should specify parameters')
             self.cmd_help()
             return
         name = argv[0]
@@ -133,22 +148,26 @@ class Zone(SuperCommand):
         srv = serverPrx()
         srv.createZone(name, soa)
     def help_create(self):
-        usage = 'Usage: %s zone create <name> ...' % sys.argv[0]
-        op = self.__soaOptP(usage)
-        op.print_help()
+        usage = 'Usage: %s zone create <name of zone>... ' % sys.argv[0]
+        print usage
     @cmd
     def delete(self, argv):
         'Delete zone by name'
         if len(argv) != 1:
+            raise CommandLineError('you should specify one parameter')
             self.cmd_help()
             return
         name = argv[0]
         srv = serverPrx()
         srv.deleteZone(name)
+    def help_delete(self):
+        usage = 'Usage: %s zone delete <name of zone> ' % sys.argv[0]
+        print usage
     @cmd
     def soa(self, argv):
         'Modify SOA record'
         if len(argv) < 1:
+            raise CommandLineError('you should specify parameters')
             self.cmd_help()
             return
         name = argv[0]
@@ -165,7 +184,7 @@ class Zone(SuperCommand):
         print name
         self.__printSOA(soa)
     def help_soa(self):
-        usage = 'Usage: %s zone soa <name> <options>...' % sys.argv[0]
+        usage = 'Usage: %s zone soa <name> <options>' % sys.argv[0]
         self.__soaOptP(usage).print_help()
     @staticmethod
     def __soaOptP(usage=None, defaults=None):
@@ -208,10 +227,12 @@ class Zone(SuperCommand):
         print '       ttl:        %s' % soa.ttl
 
 class Record(SuperCommand):
+    "Manipulate with DNS records"
     @cmd
     def find(self, argv):
         'Find record in zone'
         if len(argv) < 2:
+            raise CommandLineError('you should specify parameters')
             self.cmd_help()
             return
         zone = self.__getZone(argv[0])
@@ -231,6 +252,7 @@ class Record(SuperCommand):
     def add(self, argv):
         'Add record to zone'
         if len(argv) < 4:
+            raise CommandLineError('you should specify parameters')
             self.cmd_help()
             return
         opts, argv = self.__add_optp().parse_args(argv)
@@ -245,6 +267,7 @@ class Record(SuperCommand):
     def drop(self, argv):
         'Drop record from zone'
         if len(argv) < 4:
+            raise CommandLineError('you should specify parameters')
             self.cmd_help()
             return
         type = getattr(DNS.RecordType, argv[2])
@@ -267,16 +290,35 @@ class Record(SuperCommand):
         return serverPrx().getZone(name)
 
 class Options(Command):
+    "Show a list of set options to DNS server"
     def do_cmd(self, argv):
+        if len(argv) > 0:
+            raise CommandLineError('options %s are not need' % argv[0:])
+            self.help()
+            return
         srv = serverPrx()
         for opt in srv.getOptions():
             print '%s: %s' % (opt.name, opt.value)
 
 class SetOption(Command):
+    "Manipulate with options to DNS server"
     command_name = 'set-option'
     def do_cmd(self, argv):
+        if len(argv) < 2:
+            self.help()
+            return callable(argv[1:])
         srv = serverPrx()
         srv.changeOptions([DNS.ServerOption(argv[0], argv[1])])
+
+    @classmethod
+    def help(cls):
+        name = cls.__name__.lower()
+        name = getattr(cls, 'command_name', name)
+        print 'Usage: %s %s <name of option> <value of option>\n' % (sys.argv[0], name)
+        print cls.__doc__
+        print
+
+
 
 class Main:
     def __init__(self, argv):
@@ -305,7 +347,7 @@ class Main:
         cmd = self.__argv[1]
         cmd = self.__cmds.get(cmd, None)
         if cmd is None:
-            print 'Error: %s - unknown command' % self.__argv[1]
+            print '\033[91mError:\033[0m %s - unknown command\n' % self.__argv[1]
             self.helpCmds()
             return 1
         argv = self.__argv[2:]
