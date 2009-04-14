@@ -44,6 +44,8 @@ def client_krb5conf(wiz):
     cfg.setRealmDomain(wiz.opts['realm'], wiz.opts['domain'])
     cfg.setRealm(wiz.opts['realm'], wiz.opts['kdc'], wiz.opts['kadmin'])
     cfg.setDefaultRealm(wiz.opts['realm'])
+    cfg.setPamKeyring()
+    cfg.save()
 
 @feature('client')
 def client_makeconf(wiz):

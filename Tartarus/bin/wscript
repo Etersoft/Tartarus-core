@@ -5,6 +5,7 @@ def build(bld):
             't-deploy-srv',
             't-modules',
             't-dhcpreg',
+            't-krb-mkservice',
             't-join')
     bins = set(bld.glob('t-*'))
     bins -= frozenset(sbins)

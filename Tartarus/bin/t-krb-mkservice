@@ -1,0 +1,25 @@
+#!/usr/bin/python
+import sys
+
+from Tartarus.client import initialize
+from Tartarus.deploy import save_keys
+import Tartarus.system.hostname as hostname
+import Tartarus.iface.Kerberos as Kerberos
+
+if len(sys.argv) != 2 or '--help' in sys.argv:
+    print 'Usage: %s <service>' % sys.argv[0]
+    sys.exit(0)
+
+comm, _ = initialize()
+fqdn = hostname.getfqdn()
+
+spn = '%s/%s' % (sys.argv[1], fqdn)
+
+krb5prx = comm.propertyToProxy('Tartarus.Kerberos.KadminPrx')
+kadmin = Kerberos.KadminPrx.checkedCast(krb5prx)
+try:
+    spr = kadmin.createServicePrincipal(sys.argv[1], fqdn)
+except core.AlreadyExistsError:
+    spr = kadmin.getPrincKeys(spn)
+save_keys(spr)
+

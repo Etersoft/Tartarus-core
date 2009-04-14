@@ -1,3 +1,4 @@
+import os
 import tpg
 
 class Krb5Conf:
@@ -32,8 +33,14 @@ class Krb5Conf:
         s = self.__sections.section('libdefaults')
         return (s.tag('dns_lookup_realm') == 'true'
                 and s.tag('dns_lookup_kdc') == 'true')
+    def setPamKeyring(self):
+        pam_sec = Subsection()
+        pam_sec.setTag('ccname_template', 'KEYRING:krb5cc_%U')
+        app_def_sec = self.__sections.section('appdefaults')
+        app_def_sec.setTag('pam', pam_sec)
     def save(self):
-        open('/etc/krb5.conf', 'w+').write(str(self.__sections))
+        open('/etc/krb5.conf.new', 'w+').write(str(self.__sections))
+        os.rename('/etc/krb5.conf.new', '/etc/krb5.conf')
 
 class Sections:
     def __init__(self):
@@ -96,7 +103,7 @@ class CfgReader(tpg.Parser):
     r'''
     separator spaces    '\s';
 
-    token word   '[\w:./]+';
+    token word   '[\w:./%]+';
 
     START / sections ->                     $ sections = Sections()
         ( SECTION/section                   $ sections.addSection(section)
