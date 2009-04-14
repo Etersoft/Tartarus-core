@@ -135,8 +135,8 @@ class Zone(SuperCommand):
     @cmd
     def create(self, argv):
         'Add DNS zone to server'
-        if len(argv) < 1:
-            raise CommandLineError('you should specify parameters')
+        if len(argv) != 1:
+            raise CommandLineError('you should specify one parameter')
             self.cmd_help()
             return
         name = argv[0]
@@ -148,7 +148,7 @@ class Zone(SuperCommand):
         srv = serverPrx()
         srv.createZone(name, soa)
     def help_create(self):
-        usage = 'Usage: %s zone create <name of zone>... ' % sys.argv[0]
+        usage = 'Usage: %s zone create <name of zone> ' % sys.argv[0]
         print usage
     @cmd
     def delete(self, argv):
