@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt10
+Release: alt11
 
 %define tname Tartarus
 
@@ -465,6 +465,10 @@ fi
 # {{{1 changelog
 
 %changelog
+* Tue Apr 21 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt11
+- seventh build fixes for sisyphus prebuild of alpha4
++ deploy: add domain checks for server.
+
 * Thu Apr 02 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt10
 - sixth build fixes for sisyphus prebuild of alpha4
 + DHCP: Raise exception if host already exists on server
