@@ -9,14 +9,23 @@ def server_nss_stop(wiz):
 
 @feature('server')
 def server_domain(wiz):
-    if 'domain' in wiz.opts: return
-    wiz.opts['domain'] = system.hostname.getdomain()
+    domain = system.hostname.getdomain()
+    if 'domain' in wiz.opts:
+        domain = wiz.opts.pop('domain')
     if not wiz.dialog.yesno("This utility will deploy "
                             "Tartarus domain for this server\n"
-                            "Domain name: %s\n"
+                            "Domain name: [%s]\n"
                             "Do you want to proceed?"
-                            % wiz.opts['domain']):
+                            % domain):
         return 'Aborted.'
+    # Must contain '.' as domain name, start with valid symbols,
+    # and not have intersections with localhost.localdomain domain
+    # (TODO: check it properly)
+    if domain.find('.') < 0 or len(domain) < 2 or domain.endswith('.localdomain') or domain.endswith('.localdomain.'):
+        return "Can\'t deploy in to \'%s\' domain.\n" \
+               "Please check your network instalation.\n" \
+               "Aborted." % domain
+    wiz.opts['domain'] = domain
 
 @feature('server')
 @after('service_checks_done')
