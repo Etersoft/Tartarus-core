@@ -90,9 +90,9 @@ class Wizard:
                 raise RuntimeError('Method "%s" allready registered')
             Wizard.__methods[mname] = method
             if name not in Wizard.__features_map:
-                Wizard.__features_map[name] = [method.__name__]
+                Wizard.__features_map[name] = [mname]
             else:
-                Wizard.__features_map[name].append(method.__name__)
+                Wizard.__features_map[name].append(mname)
             return method
         return registrator
     def disable(self, name):
