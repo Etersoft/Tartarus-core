@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt11
+Release: alt12
 
 %define tname Tartarus
 
@@ -465,6 +465,16 @@ fi
 # {{{1 changelog
 
 %changelog
+* Tue Apr 21 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt12
+- eighth build fixes for sisyphus prebuild of alpha4
++ DNS: Fixed #135. End. Added a processing of parametres for commands
+  and subcommands.
++ DNS: Fixed #135. Begin. Added a processing of parametres for
+  commands and subcommands.
++ t-dns. bug 137. was added check on exist of config file.
++ were added help or --help.
++ were added helps to record.
+
 * Tue Apr 21 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt11
 - seventh build fixes for sisyphus prebuild of alpha4
 + deploy: add domain checks for server.
