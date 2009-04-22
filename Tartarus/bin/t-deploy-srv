@@ -59,6 +59,8 @@ def main():
     except KeyboardInterrupt:
         msg = "\n\nDeployment canceled!\n"
         code = -1
+    except Failure:
+        code, msg = _format_exception()
     except Exception:
         traceback.print_exc()
         code, msg = _format_exception()
