@@ -111,3 +111,9 @@ def client_nss_start(wiz):
 def client_netauth(wiz):
     pam.set_tartarus_auth()
 
+@feature('leave')
+def client_leave(wiz):
+    for s in ['tnscd', 'nscd']:
+        service.service_off(s)
+        service.service_stop(s)
+    pam.set_local_auth()
