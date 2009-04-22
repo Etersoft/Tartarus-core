@@ -1,0 +1,48 @@
+#!/usr/bin/python
+
+import sys
+import traceback
+
+from Tartarus.deploy.common import Failure, Wizard
+import Tartarus.deploy.client
+
+def _main():
+    w = Wizard()
+    w.opts = {}
+    w.run('leave')
+
+def _format_exception():
+    et, ev, _  = sys.exc_info()
+
+    if et is Failure:
+        msg = ev.message
+        code = -1
+    elif et is OSError:
+        code =  ev.errno
+        msg = "OS Error: %s" % ev.strerror
+    else:
+        code =  -1
+        msg = str().join(traceback.format_exception(et, ev, None))
+
+    if not msg.endswith('\n'):
+        msg += '\n'
+
+    return (code, msg)
+
+def main():
+    try:
+        _main()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        msg = "\n\nDeployment canceled!\n"
+        code = -1
+    except Failure:
+        code, msg = _format_exception()
+    except Exception:
+        traceback.print_exc()
+        code, msg = _format_exception()
+    sys.stderr.write(msg)
+    sys.exit(code)
+
+if __name__ == '__main__':
+    main()

@@ -1,7 +1,7 @@
 def build(bld):
     sbins = (
             'Tartarus-srv1',
-            'Tartarus-leave',
+            't-leave',
             't-deploy-srv',
             't-modules',
             't-dhcpreg',
