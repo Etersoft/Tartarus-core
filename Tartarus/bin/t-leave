@@ -9,7 +9,7 @@ import Tartarus.deploy.client
 def _main():
     w = Wizard()
     w.opts = {}
-    w.run('client')
+    w.run('leave')
 
 def _format_exception():
     et, ev, _  = sys.exc_info()

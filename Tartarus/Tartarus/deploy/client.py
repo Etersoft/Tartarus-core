@@ -21,9 +21,19 @@ def client_conf(wiz):
     if 'hostname' not in wiz.opts:
         wiz.opts['hostname'] = wiz.dialog.ask('Hostname for this computer will be', hostname.getname())
     if 'domain' not in wiz.opts:
-        wiz.opts['domain'] = wiz.dialog.ask('Tartarus domain to join', hostname.getdomain())
+        domain = wiz.dialog.ask('Tartarus domain to join', hostname.getdomain())
+        # Must contain '.' as domain name, start with valid symbols,
+        # and not have intersections with localhost.localdomain domain
+        # (TODO: check it properly)
+        if domain.find('.') < 0 or len(domain) < 2 or domain.endswith('.localdomain') or domain.endswith('.localdomain.'):
+            return "Can\'t enter in to \'%s\' domain.\n" \
+                   "Please check your network instalation.\n" \
+                   "Aborted." % domain
+        domain = wiz.opts['domain']
     if 'fqdn' not in wiz.opts:
-        wiz.opts['fqdn'] = '%s.%s' % (wiz.opts['hostname'], wiz.opts['domain'])
+        fqdn = '%s.%s' % (wiz.opts['hostname'], wiz.opts['domain'])
+        hostname.sethostname(fqdn)
+        wiz.opts['fqdn'] = fqdn
     if 'realm' not in wiz.opts:
         wiz.opts['realm'] = wiz.opts['domain'].upper()
     if 'kdc' not in wiz.opts:
@@ -44,6 +54,7 @@ def client_krb5conf(wiz):
     cfg.setRealmDomain(wiz.opts['realm'], wiz.opts['domain'])
     cfg.setRealm(wiz.opts['realm'], wiz.opts['kdc'], wiz.opts['kadmin'])
     cfg.setDefaultRealm(wiz.opts['realm'])
+    cfg.save()
 
 @feature('client')
 def client_makeconf(wiz):
@@ -60,6 +71,7 @@ def client_comm_init(wiz):
     wiz.comm, _ = initialize()
 
 @feature('client')
+@after('client_krb5conf')
 def client_kinit(wiz):
     admin = wiz.dialog.ask('Tartarus domain administrator login:', 'sysadmin')
     krb5user.kinitPasswordPromptPosix(admin)
@@ -80,24 +92,24 @@ def client_dnsupdate(wiz):
     else:
         service.service_off('tdnsupdate')
 
-@feature('client')
-def client_dhcpreg(wiz):
-    os.rename('/etc/dhcpcd.conf', '/etc/dhcpcd.conf.tsave')
-    with open('/etc/dhcpcd.conf', 'w+') as f:
-        set = False
-        for line in open('/etc/dhcpcd.conf.tsave'):
-            if line.startswith('clientid'):
-                f.write('clientid %s\n' % wiz.opts['hostname'])
-                set = True
-            else:
-                f.write(line)
-        if not set:
-            f.write('clientid %s\n' % wiz.opts['hostname'])
-    prx = wiz.comm.stringToProxy('DHCP/Server')
-    prx = DHCP.ServerPrx.checkedCast(prx)
-    if not prx: raise RuntimeError('Can\'t connect to server')
-    srv = DHCP.ServerPrx.checkedCast(prx)
-    srv.addHost(wiz.opts['hostname'], DHCP.HostId(DHCP.HostIdType.IDENTITY, wiz.opts['hostname']))
+#@feature('client')
+#def client_dhcpreg(wiz):
+#    os.rename('/etc/dhcpcd.conf', '/etc/dhcpcd.conf.tsave')
+#    with open('/etc/dhcpcd.conf', 'w+') as f:
+#        set = False
+#        for line in open('/etc/dhcpcd.conf.tsave'):
+#            if line.startswith('clientid'):
+#                f.write('clientid %s\n' % wiz.opts['hostname'])
+#                set = True
+#            else:
+#                f.write(line)
+#        if not set:
+#            f.write('clientid %s\n' % wiz.opts['hostname'])
+#    prx = wiz.comm.stringToProxy('DHCP/Server')
+#    prx = DHCP.ServerPrx.checkedCast(prx)
+#    if not prx: raise RuntimeError('Can\'t connect to server')
+#    srv = DHCP.ServerPrx.checkedCast(prx)
+#    srv.addHost(wiz.opts['hostname'], DHCP.HostId(DHCP.HostIdType.IDENTITY, wiz.opts['hostname']))
 
 @feature('client')
 def client_nss_start(wiz):
@@ -109,3 +121,9 @@ def client_nss_start(wiz):
 def client_netauth(wiz):
     pam.set_tartarus_auth()
 
+@feature('leave')
+def client_leave(wiz):
+    for s in ['tnscd', 'nscd']:
+        service.service_off(s)
+        service.service_stop(s)
+    pam.set_local_auth()
