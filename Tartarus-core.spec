@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt13
+Release: alt14
 
 %define tname Tartarus
 
@@ -465,6 +465,10 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Apr 22 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt14
+- tenth build fixes for sisyphus prebuild of alpha4
++ deploy client: fix domain check.
+
 * Wed Apr 22 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt13
 - nineth build fixes for sisyphus prebuild of alpha4
 + deploy: remove old utilities.
