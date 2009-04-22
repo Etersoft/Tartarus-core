@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt12
+Release: alt13
 
 %define tname Tartarus
 
@@ -349,7 +349,7 @@ fi
 
 %preun -n %tname-leave
 if [ "$1" = "0" ]; then
-    Tartarus-leave -f
+    t-leave -f
 fi
 
 
@@ -465,6 +465,15 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Apr 22 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt13
+- nineth build fixes for sisyphus prebuild of alpha4
++ deploy: remove old utilities.
++ deploy client: fix domain check and set fqdn as hostname.
++ deploy client: fixed join and leave.
++ deploy client: comment dhcpreg.
++ deploy client: fixed krb5.conf initialization process.
+- fix postun for Tartarus-leave to use t-leave
+
 * Tue Apr 21 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt12
 - eighth build fixes for sisyphus prebuild of alpha4
 + DNS: Fixed #135. End. Added a processing of parametres for commands
