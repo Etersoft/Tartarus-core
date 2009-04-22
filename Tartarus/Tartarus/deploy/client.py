@@ -29,7 +29,7 @@ def client_conf(wiz):
             return "Can\'t enter in to \'%s\' domain.\n" \
                    "Please check your network instalation.\n" \
                    "Aborted." % domain
-        domain = wiz.opts['domain']
+        wiz.opts['domain'] = domain
     if 'fqdn' not in wiz.opts:
         fqdn = '%s.%s' % (wiz.opts['hostname'], wiz.opts['domain'])
         hostname.sethostname(fqdn)
