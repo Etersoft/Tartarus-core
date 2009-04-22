@@ -21,9 +21,19 @@ def client_conf(wiz):
     if 'hostname' not in wiz.opts:
         wiz.opts['hostname'] = wiz.dialog.ask('Hostname for this computer will be', hostname.getname())
     if 'domain' not in wiz.opts:
-        wiz.opts['domain'] = wiz.dialog.ask('Tartarus domain to join', hostname.getdomain())
+        domain = wiz.dialog.ask('Tartarus domain to join', hostname.getdomain())
+        # Must contain '.' as domain name, start with valid symbols,
+        # and not have intersections with localhost.localdomain domain
+        # (TODO: check it properly)
+        if domain.find('.') < 0 or len(domain) < 2 or domain.endswith('.localdomain') or domain.endswith('.localdomain.'):
+            return "Can\'t enter in to \'%s\' domain.\n" \
+                   "Please check your network instalation.\n" \
+                   "Aborted." % domain
+        domain = wiz.opts['domain']
     if 'fqdn' not in wiz.opts:
-        wiz.opts['fqdn'] = '%s.%s' % (wiz.opts['hostname'], wiz.opts['domain'])
+        fqdn = '%s.%s' % (wiz.opts['hostname'], wiz.opts['domain'])
+        hostname.sethostname(fqdn)
+        wiz.opts['fqdn'] = fqdn
     if 'realm' not in wiz.opts:
         wiz.opts['realm'] = wiz.opts['domain'].upper()
     if 'kdc' not in wiz.opts:
