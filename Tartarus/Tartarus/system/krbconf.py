@@ -33,11 +33,14 @@ class Krb5Conf:
         s = self.__sections.section('libdefaults')
         return (s.tag('dns_lookup_realm') == 'true'
                 and s.tag('dns_lookup_kdc') == 'true')
-    def setPamKeyring(self):
-        pam_sec = Subsection()
-        pam_sec.setTag('ccname_template', 'KEYRING:krb5cc_%U')
-        app_def_sec = self.__sections.section('appdefaults')
-        app_def_sec.setTag('pam', pam_sec)
+    def setPamConfig(self):
+        appdef_sec = self.__sections.section('appdefaults')
+        pam_sec = appdef_sec.tag('pam')
+        if not isinstance(pam_sec, Subsection):
+            pam_sec = Subsection()
+        pam_sec.setTag('retain_after_close', 'yes')
+        pam_sec.setTag('ccache', '/tmp/krb5cc_%u')
+        appdef_sec.setTag('pam', pam_sec)
     def save(self):
         open('/etc/krb5.conf.new', 'w+').write(str(self.__sections))
         os.rename('/etc/krb5.conf.new', '/etc/krb5.conf')
