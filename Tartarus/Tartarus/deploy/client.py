@@ -44,6 +44,7 @@ def client_krb5conf(wiz):
     cfg.setRealmDomain(wiz.opts['realm'], wiz.opts['domain'])
     cfg.setRealm(wiz.opts['realm'], wiz.opts['kdc'], wiz.opts['kadmin'])
     cfg.setDefaultRealm(wiz.opts['realm'])
+    cfg.save()
 
 @feature('client')
 def client_makeconf(wiz):
@@ -60,6 +61,7 @@ def client_comm_init(wiz):
     wiz.comm, _ = initialize()
 
 @feature('client')
+@after('client_krb5conf')
 def client_kinit(wiz):
     admin = wiz.dialog.ask('Tartarus domain administrator login:', 'sysadmin')
     krb5user.kinitPasswordPromptPosix(admin)
