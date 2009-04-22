@@ -82,24 +82,24 @@ def client_dnsupdate(wiz):
     else:
         service.service_off('tdnsupdate')
 
-@feature('client')
-def client_dhcpreg(wiz):
-    os.rename('/etc/dhcpcd.conf', '/etc/dhcpcd.conf.tsave')
-    with open('/etc/dhcpcd.conf', 'w+') as f:
-        set = False
-        for line in open('/etc/dhcpcd.conf.tsave'):
-            if line.startswith('clientid'):
-                f.write('clientid %s\n' % wiz.opts['hostname'])
-                set = True
-            else:
-                f.write(line)
-        if not set:
-            f.write('clientid %s\n' % wiz.opts['hostname'])
-    prx = wiz.comm.stringToProxy('DHCP/Server')
-    prx = DHCP.ServerPrx.checkedCast(prx)
-    if not prx: raise RuntimeError('Can\'t connect to server')
-    srv = DHCP.ServerPrx.checkedCast(prx)
-    srv.addHost(wiz.opts['hostname'], DHCP.HostId(DHCP.HostIdType.IDENTITY, wiz.opts['hostname']))
+#@feature('client')
+#def client_dhcpreg(wiz):
+#    os.rename('/etc/dhcpcd.conf', '/etc/dhcpcd.conf.tsave')
+#    with open('/etc/dhcpcd.conf', 'w+') as f:
+#        set = False
+#        for line in open('/etc/dhcpcd.conf.tsave'):
+#            if line.startswith('clientid'):
+#                f.write('clientid %s\n' % wiz.opts['hostname'])
+#                set = True
+#            else:
+#                f.write(line)
+#        if not set:
+#            f.write('clientid %s\n' % wiz.opts['hostname'])
+#    prx = wiz.comm.stringToProxy('DHCP/Server')
+#    prx = DHCP.ServerPrx.checkedCast(prx)
+#    if not prx: raise RuntimeError('Can\'t connect to server')
+#    srv = DHCP.ServerPrx.checkedCast(prx)
+#    srv.addHost(wiz.opts['hostname'], DHCP.HostId(DHCP.HostIdType.IDENTITY, wiz.opts['hostname']))
 
 @feature('client')
 def client_nss_start(wiz):
