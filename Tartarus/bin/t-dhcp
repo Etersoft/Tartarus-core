@@ -8,7 +8,13 @@ from optparse import OptionParser
 from enum import Enum
 
 from Tartarus.client import initialize
-comm, argv = initialize()
+try:
+    comm, argv = initialize()
+except:
+    e = sys.exc_info()[1]
+    print ('Can\'t initialize runtime. '
+           'Probably, this computer won\'t be joined to Tartarus domain.\n'
+           'Error message: %s' % str(e))
 
 from Tartarus.iface import DHCP, core
 from Tartarus.system.ipaddr import IpAddr
