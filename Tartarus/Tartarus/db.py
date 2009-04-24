@@ -115,6 +115,7 @@ class _Helper(object):
                     "Database engine not supported", self.engine)
 
         self.Error = self.module.Error
+        self.IntegrityError = getattr(self.module, "IntegrityError", None)
 
         self.options = {}
         for k in ['dsn', 'user', 'password', 'port', 'host', 'database']:
@@ -194,8 +195,9 @@ def wrap(msg = None):
                 else:
                     message = "Database failure"
                 if h.trace > 8:
-                    logging.warning("FAILED: %s: %s: %s" %
-                            (h.options['database'], message, e.message))
+                    logging.warning("FAILED: %s: %s: %s: %s" %
+                            (h.options['database'], type(e).__name__,
+                             message, e.message))
                 raise h.DBError(message, e.message)
         return wrapper
     return decor
