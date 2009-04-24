@@ -195,11 +195,16 @@ class GroupManagerI(I.GroupManager):
     def modify(self, con, group, current):
         if not self._good_name.match(group.name):
             raise C.ValueError("Invalid group name: %s" % group.name)
-        cur = self._dbh.execute(con,
-                "UPDATE groups SET "
-                "name=%s, description=%s "
-                "WHERE gid == %s",
-                group.name, group.description, group.gid - self._go)
+        try:
+            cur = self._dbh.execute(con,
+                                    "UPDATE groups SET "
+                                    "name=%s, description=%s "
+                                    "WHERE gid == %s",
+                                    group.name, group.description,
+                                    group.gid - self._go)
+        except self._dbh.IntegrityError:
+            raise C.AlreadyExistsError("Group already exists",
+                                       group.name)
         if cur.rowcount != 1:
             raise I.GroupNotFound("Group not found",
                     "modifying group", group.gid)
@@ -218,10 +223,14 @@ class GroupManagerI(I.GroupManager):
             raise C.ValueError("Current site policy does not allow to "
                                "create groups that already exist on server",
                                newgroup.name)
-        self._dbh.execute(con,
-                "INSERT INTO groups (name, description) "
-                "VALUES (%s, %s)",
-                newgroup.name, newgroup.description)
+        try:
+            self._dbh.execute(con,
+                    "INSERT INTO groups (name, description) "
+                    "VALUES (%s, %s)",
+                    newgroup.name, newgroup.description)
+        except self._dbh.IntegrityError:
+            raise C.AlreadyExistsError("Group already exists",
+                                       newgroup.name)
         cur = self._dbh.execute(con,
                 "SELECT gid FROM groups WHERE name=%s",
                 newgroup.name)
