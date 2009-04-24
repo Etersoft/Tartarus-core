@@ -256,9 +256,13 @@ class GroupManagerI(I.GroupManager):
     @db.wrap("adding user to multiple groups")
     def addUserToGroups(self, con, uid, groups, current):
         gen = ( (uid - self._uo, gid - self._go) for gid in groups )
-        self._dbh.execute_many(con,
-                "INSERT INTO real_group_entries (uid, gid) "
-                "VALUES (%s, %s)", gen)
+        try:
+            self._dbh.execute_many(con,
+                    "INSERT INTO real_group_entries (uid, gid) "
+                    "VALUES (%s, %s)", gen)
+        except self._dbh.IntegrityError:
+            raise C.NotFoundError("Group not found",
+                                  "adding user to multiple groups")
         con.commit()
 
     @auth.mark('write')

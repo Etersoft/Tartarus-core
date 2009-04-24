@@ -16,6 +16,13 @@ class userToGroupsTest(TestWithUser):
         del self.gids
         TestWithUser.tearDown(self)
 
+    def testNonExistance(self):
+        self.ur.uid = self.um.create(self.ur)
+        self.assertRaises(self.ICore.NotFoundError,
+                          self.gm.addUserToGroups,
+                          self.ur.uid,
+                          [-1]) # we hope such group does not exist
+
     def testAddDell(self):
         self.ur.uid = self.um.create(self.ur)
         self.gm.addUserToGroups(self.ur.uid, self.gids)
