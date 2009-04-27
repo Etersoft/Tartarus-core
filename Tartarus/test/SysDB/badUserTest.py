@@ -9,7 +9,7 @@ class badUserTest(TestWithUser):
                                self.name, '/bin/bash')
         self.assertRaises(self.ICore.ValueError, self.um.create, ur)
 
-    def testCreate(self):
+    def testModify(self):
         ur = self.I.UserRecord(-1, self.gid, self.name,
                                self.name, '/bin/bash')
         ur.uid = self.um.create(ur)

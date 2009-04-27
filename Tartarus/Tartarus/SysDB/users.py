@@ -111,11 +111,15 @@ class UserManagerI(I.UserManager):
             raise C.ValueError("Invalid user name: %s" % user.name)
         uid = user.uid - self._uo
         gid = user.gid - self._go
-        cur = self._dbh.execute(con,
-                "UPDATE users SET "
-                "name=%s, gid=%s, fullname=%s, shell=%s "
-                "WHERE uid == %s",
-                user.name, gid, user.fullName, user.shell, uid)
+        try:
+            cur = self._dbh.execute(con,
+                    "UPDATE users SET "
+                    "name=%s, gid=%s, fullname=%s, shell=%s "
+                    "WHERE uid == %s",
+                    user.name, gid, user.fullName, user.shell, uid)
+        except self._dbh.IntegrityError:
+            raise C.AlreadyExistsError("User already exists",
+                                       user.name)
         if cur.rowcount != 1:
             raise I.UserNotFound("User not found",
                     "changing user record", user.uid)
@@ -137,11 +141,15 @@ class UserManagerI(I.UserManager):
                                newuser.name)
         if len(newuser.shell) == 0:
             newuser.shell = None
-        self._dbh.execute(con,
-                "INSERT INTO users (name, gid, fullname, shell) "
-                "VALUES (%s, %s, %s, %s)",
-                newuser.name, newuser.gid - self._go,
-                newuser.fullName, newuser.shell)
+        try:
+            self._dbh.execute(con,
+                    "INSERT INTO users (name, gid, fullname, shell) "
+                    "VALUES (%s, %s, %s, %s)",
+                    newuser.name, newuser.gid - self._go,
+                    newuser.fullName, newuser.shell)
+        except self._dbh.IntegrityError:
+            raise C.AlreadyExistsError("User already exists",
+                                       newuser.name)
         cur = self._dbh.execute(con,
                 "SELECT uid FROM users WHERE name = %s", newuser.name)
         res = cur.fetchall()

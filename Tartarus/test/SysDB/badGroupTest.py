@@ -8,7 +8,7 @@ class badGroupTest(TestWithGroup):
         gr = self.I.GroupRecord(-1, '1' + self.gname, self.gname)
         self.assertRaises(self.ICore.ValueError, self.gm.create, gr)
 
-    def testCreate(self):
+    def testModify(self):
         gr = self.I.GroupRecord(-1, self.gname, self.gname)
         gr.uid = self.gm.create(gr)
 
