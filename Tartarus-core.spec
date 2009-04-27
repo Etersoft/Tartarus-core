@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt14
+Release: alt15
 
 %define tname Tartarus
 
@@ -72,6 +72,8 @@ Requires: %tname-leave = %version-%release
 Requires: %tname-common = %version-%release
 Requires: %tname-Kerberos-slice = %version-%release
 Requires: %tname-SysDB-slice = %version-%release
+Requires: %tname-DHCP-slice = %version-%release
+Requires: %tname-DNS-slice = %version-%release
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
@@ -245,6 +247,18 @@ Requires: python-module-%tname = %version-%release
 
 %description -n %tname-DHCP-client
 %tname DHCP adminitrative utility.
+
+This module is built for python %__python_version
+
+
+%package -n %tname-Kerberos-client
+Summary: %tname Kerberos adminitrative utility.
+Group: System/Configuration/Other
+Requires: %tname-Kerberos-slice = %version-%release
+Requires: python-module-%tname = %version-%release
+
+%description -n %tname-Kerberos-client
+%tname Kerberos adminitrative utility.
 
 This module is built for python %__python_version
 
@@ -437,6 +451,9 @@ fi
 %_sbindir/t-dhcp*
 %_bindir/t-dhcp*
 
+%files -n %tname-Kerberos-client
+%_sbindir/t-krb*
+
 %files -n %tname-slice
 
 %files -n %tname-core-slice
@@ -465,6 +482,19 @@ fi
 # {{{1 changelog
 
 %changelog
+* Mon Apr 27 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt15
+- eleventh build fixes for sisyphus prebuild of alpha4
++ SysDB: improved error handling in GroupManger::addUserToGroups.
++ SysDB: Fixed #132.
++ db: a couple of small improvements.
++ SysDB: fixed test names to run more tests in bad*.
++ Configure pam_krb5 when joining to store ccache in
+  /tmp/krb5cc_<uid> file.
++ JOIN: Add pam::ccname_template tag in krb5.conf when joining.
++ DHCP: Check error in t-dhcp initialization process.
++ Add new t-krb-mkservice utility.
+- fix Tartarus-join requires for slices
+
 * Wed Apr 22 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt14
 - tenth build fixes for sisyphus prebuild of alpha4
 + deploy client: fix domain check.
