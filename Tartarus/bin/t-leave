@@ -8,8 +8,13 @@ import Tartarus.deploy.client
 
 def _main():
     w = Wizard()
-    w.opts = {}
-    w.run('leave')
+    msg = 'Do you really want to leave Tartarus?'
+    if w.dialog.yesno(msg, False):
+        w.opts = {}
+        w.run('leave')
+    else:
+        print "Aborted.\n"
+        return
 
 def _format_exception():
     et, ev, _  = sys.exc_info()
