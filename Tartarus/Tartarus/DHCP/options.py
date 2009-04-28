@@ -21,6 +21,8 @@ class _Options:
 o = _Options._defOpt
 o('cfg_fname', 'Tartarus.DHCP.ConfigFile', '/etc/dhcp/tartarus.dhcpd.conf.xml')
 o('dhcp_cfg_fname', 'Tartarus.DHCP.DHCPConfigFile', '/etc/dhcp/tartarus.dhcpd.conf')
+o('deploy', 'Tartarus.DHCP.deploy', '0')
+o('trace', 'Tartarus.DHCP.trace', '0')
 del o
 
 init = _Options.init

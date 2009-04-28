@@ -27,7 +27,7 @@ class Config:
         os.rename(self.__cfg_fname_new, self.__cfg_fname)
     def load(self):
         self.__server.reset()
-        if os.path.exists(self.__cfg_fname):
+        if not opts().deploy and os.path.exists(self.__cfg_fname):
             storage.load(self.__server, open(self.__cfg_fname))
     def genDHCPCfg(self):
         self.__server.genConfig(open(self.__dhcp_cfg_fname_new, 'w+'))
