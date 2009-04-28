@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt15
+Release: alt16
 
 %define tname Tartarus
 
@@ -50,10 +50,7 @@ Requires: %tname-DNS = %version-%release
 Requires: %tname-DHCP = %version-%release
 Requires: %tname-Kadmin5 = %version-%release
 Requires: %tname-SysDB = %version-%release
-Requires: %tname-DNS-slice = %version-%release
-Requires: %tname-DHCP-slice = %version-%release
-Requires: %tname-Kerberos-slice = %version-%release
-Requires: %tname-SysDB-slice = %version-%release
+Requires: %tname-slices = %version-%release
 Requires: python-module-dnet
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
@@ -70,10 +67,7 @@ Summary: Tartarus client deployment
 Group: System/Configuration/Other
 Requires: %tname-leave = %version-%release
 Requires: %tname-common = %version-%release
-Requires: %tname-Kerberos-slice = %version-%release
-Requires: %tname-SysDB-slice = %version-%release
-Requires: %tname-DHCP-slice = %version-%release
-Requires: %tname-DNS-slice = %version-%release
+Requires: %tname-slices = %version-%release
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
@@ -87,6 +81,7 @@ Tartarus client deployment.
 Summary: Tartarus client leave
 Group: System/Configuration/Other
 Requires: %tname-common = %version-%release
+Requires: %tname-slices = %version-%release
 Requires: python-module-%tname = %version-%release
 Requires: python-module-%tname-deploy = %version-%release
 Requires: python-module-%tname-system = %version-%release
@@ -265,15 +260,15 @@ This module is built for python %__python_version
 
 # {{{1 Slices
 
-%package -n %tname-slice
+%package -n %tname-slices
 Summary: Interface defenision files for %tname objects.
 Group: Development/Other
-Provides: %tname-SysDB-slice = %version-%release
-Provides: %tname-Kerberos-slice = %version-%release
-Provides: %tname-DNS-slice = %version-%release
-Provides: %tname-DHCP-slice = %version-%release
+Requires: %tname-SysDB-slice = %version-%release
+Requires: %tname-Kerberos-slice = %version-%release
+Requires: %tname-DNS-slice = %version-%release
+Requires: %tname-DHCP-slice = %version-%release
 
-%description -n %tname-slice
+%description -n %tname-slices
 Interface defenision files for %tname core objects.
 
 
@@ -454,7 +449,7 @@ fi
 %files -n %tname-Kerberos-client
 %_sbindir/t-krb*
 
-%files -n %tname-slice
+%files -n %tname-slices
 
 %files -n %tname-core-slice
 %dir %tslicedir
@@ -482,6 +477,12 @@ fi
 # {{{1 changelog
 
 %changelog
+* Tue Apr 28 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt16
+- twelfth build fixes for sisyphus prebuild of alpha4
++ t-leave: was added a condition.
++ deploy DHCP: fixed dhcp load config problem with update to versions.
+- add Tartarus-slices requires for all deployment staff
+
 * Mon Apr 27 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt15
 - eleventh build fixes for sisyphus prebuild of alpha4
 + SysDB: improved error handling in GroupManger::addUserToGroups.
