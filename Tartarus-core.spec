@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt16
+Release: alt17
 
 %define tname Tartarus
 
@@ -376,7 +376,7 @@ fi
 # FIXME: this should have a better place
 %ttemplatedir
 # and this too
-%_sysconfdir/pam.d/*
+%config(noreplace) %_sysconfdir/pam.d/*
 
 
 %files -n %tname-srv1
@@ -477,6 +477,12 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Apr 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt17
+- thirteenth build fixes for sisyphus prebuild of alpha4
++ t-leave: add force option for using in scripts.
+- fix uninstall staff with using force option for t-leave
+- fix upgrade staff with noreplace of PAM configs
+
 * Tue Apr 28 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt16
 - twelfth build fixes for sisyphus prebuild of alpha4
 + t-leave: was added a condition.
