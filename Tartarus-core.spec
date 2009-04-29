@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt17
+Release: alt18
 
 %define tname Tartarus
 
@@ -358,7 +358,7 @@ fi
 
 %preun -n %tname-leave
 if [ "$1" = "0" ]; then
-    t-leave -f
+    t-leave -f ||:
 fi
 
 
@@ -477,6 +477,12 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Apr 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt18
+- fourteenth build fixes for sisyphus prebuild of alpha4
++ deploy: improve error handling.
++ t-grouplst. Bug 139. Corrected 
+- fix uninstall staff to ignore errors of t-leave
+
 * Wed Apr 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt17
 - thirteenth build fixes for sisyphus prebuild of alpha4
 + t-leave: add force option for using in scripts.
