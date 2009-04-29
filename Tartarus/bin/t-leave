@@ -3,18 +3,25 @@
 import sys
 import traceback
 
+from optparse import OptionParser
 from Tartarus.deploy.common import Failure, Wizard
 import Tartarus.deploy.client
 
+
 def _main():
+    parser = OptionParser()
+    parser.add_option("-f", "--force", action="store_true", dest="force", default=False,
+                      help="force leave from Tartarus domain")
+
+    (options, args) = parser.parse_args()
+
     w = Wizard()
-    msg = 'Do you really want to leave Tartarus?'
-    if w.dialog.yesno(msg, False):
+    msg = 'Do you really want to leave Tartarus Domains?'
+    if options.force or w.dialog.yesno(msg, False):
         w.opts = {}
         w.run('leave')
     else:
         print "Aborted.\n"
-        return
 
 def _format_exception():
     et, ev, _  = sys.exc_info()
