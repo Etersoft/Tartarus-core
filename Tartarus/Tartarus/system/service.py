@@ -11,7 +11,7 @@ def get_service_script(name):
         raise ServiceNotFound('service "%s" not found' % name)
     return script
 
-def get_switch_command():
+def get_switch_command(service):
     # Check for service exists
     get_service_script(service)
     return 'chkconfig'
@@ -27,7 +27,7 @@ def service_command(service, command):
 
 def service_switch(service, state):
     try:
-        command = get_switch_command()
+        command = get_switch_command(service)
         subprocess.check_call([command, service, state])
     except subprocess.CalledProcessError, e:
         raise Error('switch state for service "%s" to "%s" failed: %s'
