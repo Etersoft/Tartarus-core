@@ -21,11 +21,12 @@ def main():
     if over:
         print >> sys.stderr, 'WARNING: There are more then %d groups.' % opts.limit
     if opts.users:
+        print opts.users
         for g in groups:
             uids = gm.getUsers(g.gid)
             users = uM().getUsers(uids)
-            users = ','.join(('%d(%s)' % (u.gid, u.name) for u in users))
-            print '%d(%s): %s' % (g.gid, g.name, users)
+            users = ','.join(('%s(%d)' % (u.name, u.gid) for u in users))
+            print '%s(%d): %s' % (g.name, g.gid, users)
     else:
         for g in groups:
             s = '%s(%d)' % (g.name, g.gid)

@@ -2,17 +2,23 @@ from Tartarus.system import Error
 import subprocess
 from os import path
 
+class ServiceNotFound(Error):
+    pass
+
 def get_service_script(name):
-    return path.join('/etc/init.d/', name)
+    script = path.join('/etc/init.d/', name)
+    if not path.exists(script):
+        raise ServiceNotFound('service "%s" not found' % name)
+    return script
 
 def get_switch_command():
+    # Check for service exists
+    get_service_script(service)
     return 'chkconfig'
 
 def service_command(service, command):
     try:
         script = get_service_script(service)
-        if not path.exists(script):
-            raise Error('service "%s" not found' % service)
         subprocess.check_call([script, command])
     except subprocess.CalledProcessError, e:
         raise Error('command "%s" for service "%s" failed: %s'

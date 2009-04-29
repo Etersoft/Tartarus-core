@@ -4,9 +4,9 @@ import sys
 import traceback
 
 from optparse import OptionParser
+from Tartarus.system import Error
 from Tartarus.deploy.common import Failure, Wizard
-import Tartarus.deploy.client
-
+import Tartarus.deploy.leave
 
 def _main():
     parser = OptionParser()
@@ -16,17 +16,20 @@ def _main():
     (options, args) = parser.parse_args()
 
     w = Wizard()
-    msg = 'Do you really want to leave Tartarus Domains?'
+    msg = 'Do you really want to leave Tartarus Domain?'
     if options.force or w.dialog.yesno(msg, False):
         w.opts = {}
         w.run('leave')
     else:
-        print "Aborted.\n"
+        return "Aborted.\n"
 
 def _format_exception():
     et, ev, _  = sys.exc_info()
 
-    if et is Failure:
+    if et is Error:
+        msg = ev.message
+        code = -1
+    elif et is Failure:
         msg = ev.message
         code = -1
     elif et is OSError:
@@ -43,11 +46,15 @@ def _format_exception():
 
 def main():
     try:
-        _main()
+        msg = _main()
+        if msg:
+            sys.stdout.write(msg)
         sys.exit(0)
     except KeyboardInterrupt:
         msg = "\n\nDeployment canceled!\n"
         code = -1
+    except Error:
+        code, msg = _format_exception()
     except Failure:
         code, msg = _format_exception()
     except Exception:
