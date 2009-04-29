@@ -7,6 +7,7 @@ import Ice
 
 import Tartarus
 from Tartarus.client import initialize
+from Tartarus.system import Error
 from Tartarus.deploy.common import Failure, Wizard
 import Tartarus.deploy.server
 import Tartarus.deploy.service
@@ -34,7 +35,10 @@ def _main():
 def _format_exception():
     et, ev, _  = sys.exc_info()
 
-    if et is Failure:
+    if et is Error:
+        msg = ev.message
+        code = -1
+    elif et is Failure:
         msg = ev.message
         code = -1
     elif et is Ice.InitializationException:
@@ -59,6 +63,8 @@ def main():
     except KeyboardInterrupt:
         msg = "\n\nDeployment canceled!\n"
         code = -1
+    except Error:
+        code, msg = _format_exception()
     except Failure:
         code, msg = _format_exception()
     except Exception:
