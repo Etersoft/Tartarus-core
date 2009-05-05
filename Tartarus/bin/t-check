@@ -1,0 +1,12 @@
+#!/usr/bin/python
+
+from Tartarus.system.check import *
+
+def main():
+    check_fqdn()
+    check_host()
+    check_domain()
+    check_krb5_lookup()
+
+if __name__ == '__main__':
+    main()
