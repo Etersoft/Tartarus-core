@@ -3,10 +3,29 @@
 from Tartarus.system.check import *
 
 def main():
-    check_fqdn()
-    check_host()
-    check_domain()
-    check_krb5_lookup()
+    try:
+        print "Check host and domain: "
+        check_host_domain()
+    except Error, e:
+        print '\033[91mFAIL\033[0m (%s)\n' % e
+    else:
+        print '\033[92mDONE\033[0m\n'
+
+    try:
+        print "Check kerberos: "
+        check_krb5_lookup()
+    except Error, e:
+        print '\033[91mFAIL\033[0m (%s)\n' % e
+    else:
+        print '\033[92mDONE\033[0m\n'
+
+    try:
+        print "Check DNS: "
+        check_DNS()
+    except Error, e:
+        print '\033[91mFAIL\033[0m (%s)\n' % e
+    else:
+        print '\033[92mDONE\033[0m\n'
 
 if __name__ == '__main__':
     main()
