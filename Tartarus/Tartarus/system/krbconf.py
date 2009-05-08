@@ -105,6 +105,7 @@ class Subsection(Tags):
 class CfgReader(tpg.Parser):
     r'''
     separator spaces    '\s';
+    separator comment   '#.*?\n';
 
     token word   '[\w:./%]+';
 
