@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt18
+Release: alt19
 
 %define tname Tartarus
 
@@ -191,6 +191,18 @@ Requires: krb5-kdc
 This module is built for python %__python_version
 
 
+%package -n %tname-Kerberos-client
+Summary: %tname Kerberos adminitrative utility.
+Group: System/Configuration/Other
+Requires: %tname-Kerberos-slice = %version-%release
+Requires: python-module-%tname = %version-%release
+
+%description -n %tname-Kerberos-client
+%tname Kerberos adminitrative utility.
+
+This module is built for python %__python_version
+
+
 %package -n %tname-SysDB
 Summary: %tname SysDB service.
 Group: System/Servers
@@ -246,14 +258,14 @@ Requires: python-module-%tname = %version-%release
 This module is built for python %__python_version
 
 
-%package -n %tname-Kerberos-client
-Summary: %tname Kerberos adminitrative utility.
-Group: System/Configuration/Other
-Requires: %tname-Kerberos-slice = %version-%release
+%package -n %tname-Time
+Summary: %tname Time service.
+Group: System/Servers
 Requires: python-module-%tname = %version-%release
+Requires: %tname = %version-%release
 
-%description -n %tname-Kerberos-client
-%tname Kerberos adminitrative utility.
+%description -n %tname-Time
+%tname Time service.
 
 This module is built for python %__python_version
 
@@ -267,6 +279,7 @@ Requires: %tname-SysDB-slice = %version-%release
 Requires: %tname-Kerberos-slice = %version-%release
 Requires: %tname-DNS-slice = %version-%release
 Requires: %tname-DHCP-slice = %version-%release
+Requires: %tname-Time-slice = %version-%release
 
 %description -n %tname-slices
 Interface defenision files for %tname core objects.
@@ -314,6 +327,15 @@ Requires: %tname-core-slice = %version-%release
 
 %description -n %tname-DHCP-slice
 Interface defenision files for %tname DHCP objects.
+
+
+%package -n %tname-Time-slice
+Summary: Interface defenision files for %tname Time objects.
+Group: Development/Other
+Requires: %tname-core-slice = %version-%release
+
+%description -n %tname-Time-slice
+Interface defenision files for %tname Time objects.
 
 
 # {{{1 Libraries
@@ -434,6 +456,10 @@ fi
 %tconfdir/*/DHCP*
 %tmoduledir/DHCP
 
+%files -n %tname-Time
+%tconfdir/*/Time*
+%tmoduledir/Time
+
 %files -n %tname-SysDB-client
 %_bindir/t-passwd
 %_bindir/t-user*
@@ -467,6 +493,9 @@ fi
 %files -n %tname-DHCP-slice
 %tslicedir/DHCP
 
+%files -n %tname-Time-slice
+%tslicedir/Time
+
 
 %files -n %tname-devel
 %tincludedir
@@ -477,6 +506,11 @@ fi
 # {{{1 changelog
 
 %changelog
+* Tue May 12 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt19
+- fifteenth build fixes for sisyphus prebuild of alpha4
++ Add Time service.
++ krbconf: CfgReader add ignore comments.
+
 * Wed Apr 29 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt18
 - fourteenth build fixes for sisyphus prebuild of alpha4
 + deploy: improve error handling.
