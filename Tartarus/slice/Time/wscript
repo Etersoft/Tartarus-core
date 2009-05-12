@@ -1,0 +1,16 @@
+def build(bld):
+    bld.new_task_gen(
+            features='slice2cpp cxx cstaticlib pcgen',
+            source='Time.ice',
+            target='tartarus-slice-Kerberos',
+            slice_includes='..',
+            headers_path='${INCLUDEDIR}/Tartarus/Time',
+            includes='. ..',
+            pc_filename = 'tartarus-slice-time.pc',
+            pc_env_defines = 'includedir',
+            pc_name = 'tartarus-slice-time',
+            pc_description = 'Tartarus library for using Time service',
+            pc_requires = ['tartarus-slice-core = ${version}'],
+            pc_libs = '-ltartarus-slice-time',
+            pc_cflags='-I${includedir}/Tartarus')
+
