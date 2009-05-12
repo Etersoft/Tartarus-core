@@ -28,3 +28,7 @@ class TimeI(I.Server):
     @auth.mark('read')
     def getLocalTime(self, current):
         return self._tm(time.localtime())
+
+    @auth.mark('read')
+    def getTime(self, current):
+        return int(time.time())
