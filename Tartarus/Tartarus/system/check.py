@@ -2,14 +2,42 @@
 import Tartarus.system.hostname as hostname
 from dns.resolver import query, NXDOMAIN
 from Tartarus.system import Error
-import string
+import os, string, time
 import Ice, IcePy
 
 class ObjectNotExists(Exception):
     def __init__(self, msg):
         super(ObjectNotExists, self).__init__(msg)
 
-def _serverPrx(domain):
+def _serverTimePrx(domain):
+    pr = Ice.createProperties()
+    idata = Ice.InitializationData()
+    idata.properties = pr
+    pr.load("/etc/Tartarus/deploy/client-deploy.conf")
+    comm = Ice.initialize(idata)
+    prx = comm.stringToProxy('Time/Server: ssl -h %s -p 12345' % domain)
+    return t.getTime()
+
+def _getLocalTime():
+    return int(time.time())
+
+def check_Time(domain = None):
+    if not domain:
+        try:
+            domain = hostname.getdomain()
+        except:
+            raise Error('Can\'t get domain name.\n Please check your network instalation.\n Aborted.')
+    try:
+        serverTm = _serverTimePrx(domain)
+        if ob == None:
+            Error('Time service is not responding')
+        localTm = _getLocalTime()
+        if abs(serverTm-localTm) > 180:
+            raise Error('UTC time on server is not equal to utc local time.\n Please set time.\n Aborted.')
+    except Ice.ObjectNotExistException:
+        raise ObjectNotExists('Object Time doesn\'t exist')
+
+def _serverDNSPrx(domain):
     pr = Ice.createProperties()
     idata = Ice.InitializationData()
     idata.properties = pr
@@ -25,7 +53,7 @@ def check_DNS(domain = None):
         except:
             raise Error('Can\'t get domain name.\n Please check your network instalation.\n Aborted.')
     try:
-        ob = _serverPrx(domain)
+        ob = _serverDNSPrx(domain)
         if ob == None:
             Error('DNS is not responding')
     except Ice.ObjectNotExistException:
@@ -134,6 +162,14 @@ def main():
     try:
         print "Check host and domain: "
         check_host_domain()
+    except Error, e:
+        print '\033[91mFAIL\033[0m (%s)\n' % e
+    else:
+        print '\033[92mDONE\033[0m\n'
+
+    try:
+        print "Check time on server and localtime: "
+        check_Time()
     except Error, e:
         print '\033[91mFAIL\033[0m (%s)\n' % e
     else:

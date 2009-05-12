@@ -12,6 +12,14 @@ def main():
         print '\033[92mDONE\033[0m\n'
 
     try:
+        print "Check time on server and localtime: "
+        check_Time()
+    except Error, e:
+        print '\033[91mFAIL\033[0m (%s)\n' % e
+    else:
+        print '\033[92mDONE\033[0m\n'
+
+    try:
         print "Check kerberos: "
         check_krb5_lookup()
     except Error, e:
