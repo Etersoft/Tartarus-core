@@ -32,6 +32,9 @@ interface Server
 
     tm getLocalTime()
         throws core::Error;
+
+    int getTime()
+        throws core::Error;
 };
 };
 
