@@ -1,6 +1,6 @@
 
 Version: 0.8.2
-Release: alt19
+Release: alt20
 
 %define tname Tartarus
 
@@ -506,6 +506,10 @@ fi
 # {{{1 changelog
 
 %changelog
+* Tue May 12 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt20
+- sixteenth build fixes for sisyphus prebuild of alpha4
++ Time: add getTime() method for unixtime.
+
 * Tue May 12 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.2-alt19
 - fifteenth build fixes for sisyphus prebuild of alpha4
 + Add Time service.
