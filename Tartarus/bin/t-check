@@ -1,39 +1,39 @@
 #!/usr/bin/python
-
-from Tartarus.system.check import *
+from Tartarus.system import check
+import sys
 
 def main():
     try:
-        print "Check host and domain: "
-        check_host_domain()
+        sys.stdout.write("\nCheck host and domain: ")
+        check.check_host_domain()
     except Error, e:
-        print '\033[91mFAIL\033[0m (%s)\n' % e
+        sys.stdout.write('\033[91mFAIL\033[0m\n%s\n' % e)
     else:
-        print '\033[92mDONE\033[0m\n'
+        sys.stdout.write('\033[92mDONE\033[0m\n')
 
     try:
-        print "Check time on server and localtime: "
-        check_Time()
+        sys.stdout.write("\nCheck time on server and localtime: ")
+        check.check_Time()
     except Error, e:
-        print '\033[91mFAIL\033[0m (%s)\n' % e
+        sys.stdout.write('\033[91mFAIL\033[0m\n%s\n' % e)
     else:
-        print '\033[92mDONE\033[0m\n'
+        sys.stdout.write('\033[92mDONE\033[0m\n')
 
     try:
-        print "Check kerberos: "
-        check_krb5_lookup()
+        sys.stdout.write("\nCheck kerberos: ")
+        check.check_krb5_lookup()
     except Error, e:
-        print '\033[91mFAIL\033[0m (%s)\n' % e
+        sys.stdout.write('\033[91mFAIL\033[0m\n%s\n' % e)
     else:
-        print '\033[92mDONE\033[0m\n'
+        sys.stdout.write('\033[92mDONE\033[0m\n')
 
     try:
-        print "Check DNS: "
-        check_DNS()
+        sys.stdout.write("\nCheck DNS: ")
+        check.check_DNS()
     except Error, e:
-        print '\033[91mFAIL\033[0m (%s)\n' % e
+        sys.stdout.write('\033[91mFAIL\033[0m\n%s\n' % e)
     else:
-        print '\033[92mDONE\033[0m\n'
+        sys.stdout.write('\033[92mDONE\033[0m\n')
 
 if __name__ == '__main__':
     main()
