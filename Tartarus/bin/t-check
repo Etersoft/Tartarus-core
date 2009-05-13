@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from Tartarus.system import check
+from Tartarus.system import check, Error
 import sys
 
 def main():
