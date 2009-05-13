@@ -4,6 +4,7 @@ from dns.resolver import query, NXDOMAIN
 from Tartarus.system import Error
 import os, string, time
 import Ice, IcePy
+from Tartarus.iface import Time
 
 class ObjectNotExists(Exception):
     def __init__(self, msg):
@@ -16,6 +17,7 @@ def _serverTimePrx(domain):
     pr.load("/etc/Tartarus/deploy/client-deploy.conf")
     comm = Ice.initialize(idata)
     prx = comm.stringToProxy('Time/Server: ssl -h %s -p 12345' % domain)
+    t = Time.ServerPrx.checkedCast(prx)
     return t.getTime()
 
 def _getLocalTime():
@@ -29,7 +31,7 @@ def check_Time(domain = None):
             raise Error('Can\'t get domain name.\n Please check your network instalation.\n Aborted.')
     try:
         serverTm = _serverTimePrx(domain)
-        if ob == None:
+        if serverTm == None:
             Error('Time service is not responding')
         localTm = _getLocalTime()
         if abs(serverTm-localTm) > 180:
