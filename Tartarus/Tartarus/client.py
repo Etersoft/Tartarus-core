@@ -2,6 +2,7 @@ import sys
 import os
 import Ice
 import Tartarus
+from Tartarus import modules
 
 def initialize(cfgs='common', prefixes=[]):
     cfgs = _to_list(cfgs)
@@ -9,6 +10,7 @@ def initialize(cfgs='common', prefixes=[]):
     argv = sys.argv[:]
     _parse_cmd_line(props, prefixes, argv)
     cfg = props.getPropertyWithDefault('Tartarus.Config', None)
+
     if cfg:
         _check_load(props, cfg)
         return _init(props), argv
@@ -19,8 +21,12 @@ def initialize(cfgs='common', prefixes=[]):
         if os.path.isabs(cfg):
             _check_load(props, cfg)
         else:
-            _check_load (props, "/etc/Tartarus/clients/%s.conf" % cfg)
-    return _init(props), argv
+            props.load("/etc/Tartarus/Tartarus-clients.conf")
+            conf_dir = props.getProperty("Tartarus.configDir")
+            modules.load_config( props, conf_dir)
+            #_check_load (props, "/etc/Tartarus/clients/%s.conf" % cfg)
+    tmp = _init(props)
+    return tmp, argv
 
 def _parse_cmd_line(props, prefixes, argv):
     props.parseIceCommandLineOptions(argv)

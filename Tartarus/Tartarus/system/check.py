@@ -5,19 +5,19 @@ import Ice, IcePy
 from dns.resolver import query, NXDOMAIN
 from Tartarus.iface import Time
 from Tartarus.system import Error
+from Tartarus.client import initialize
+comm, argv = initialize('deploy.conf')
+
 
 class ObjectNotExists(Exception):
     def __init__(self, msg):
         super(ObjectNotExists, self).__init__(msg)
 
 def _serverTimePrx(domain):
-    pr = Ice.createProperties()
-    idata = Ice.InitializationData()
-    idata.properties = pr
-    pr.load("/etc/Tartarus/deploy/client-deploy.conf")
-    comm = Ice.initialize(idata)
-    prx = comm.stringToProxy('Time/Server: ssl -h %s -p 12345' % domain)
-    t = Time.ServerPrx.checkedCast(prx)
+
+    prx_str = comm.propertyToProxy('Tartarus.deployPrx.Time') + ' -h %s' % domain
+    prx = comm.stringToProxy(prx_str)
+    t = IcePy.ObjectPrx.checkedCast(prx)
     return t.getTime()
 
 def _getLocalTime():
@@ -52,12 +52,8 @@ def check_Time(domain = None):
     return success, error
 
 def _serverDNSPrx(domain):
-    pr = Ice.createProperties()
-    idata = Ice.InitializationData()
-    idata.properties = pr
-    pr.load("/etc/Tartarus/deploy/client-deploy.conf")
-    comm = Ice.initialize(idata)
-    prx = comm.stringToProxy(' DNS/Server: ssl -h %s -p 12345' % domain)
+    prx_str = comm.propertyToProxy('Tartarus.deployPrx.DNS') + ' -h %s' % domain
+    prx = comm.stringToProxy(prx_str)
     return IcePy.ObjectPrx.checkedCast(prx)
 
 def _exist_DNS(domain = None):

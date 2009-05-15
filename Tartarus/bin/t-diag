@@ -20,7 +20,6 @@ def _make_tmpfile(realm, kdc):
     os.environ['KRB5_CONFIG']=path
 
 def main():
-
     sys.stdout.write("\nCheck of host and domain: ")
     success, error = check.check_host_domain()
     if (error == []):
