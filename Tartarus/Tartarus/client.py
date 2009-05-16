@@ -2,7 +2,6 @@ import sys
 import os
 import Ice
 import Tartarus
-from Tartarus import modules
 
 def initialize(cfgs='common', prefixes=[]):
     cfgs = _to_list(cfgs)
@@ -13,20 +12,25 @@ def initialize(cfgs='common', prefixes=[]):
 
     if cfg:
         _check_load(props, cfg)
-        return _init(props), argv
-    if 'TARTARUS_CONFIG' in os.environ:
+    elif 'TARTARUS_CONFIG' in os.environ:
         _check_load(props, os.environ['TARTARUS_CONFIG'])
-        return _init(props), argv
+    else:
+        try:
+            props.load("/etc/Tartarus/Tartarus-clients.conf")
+        except:
+            pass
+
+    conf_dir = props.getProperty("Tartarus.configDir")
+    if not conf_dir:
+        conf_dir = "/etc/Tartarus/clients"
+
     for cfg in cfgs:
         if os.path.isabs(cfg):
             _check_load(props, cfg)
         else:
-            props.load("/etc/Tartarus/Tartarus-clients.conf")
-            conf_dir = props.getProperty("Tartarus.configDir")
-            modules.load_config( props, conf_dir)
-            #_check_load (props, "/etc/Tartarus/clients/%s.conf" % cfg)
-    tmp = _init(props)
-    return tmp, argv
+            _check_load(props, "%s/%s.conf" % (conf_dir, cfg))
+
+    return _init(props), argv
 
 def _parse_cmd_line(props, prefixes, argv):
     props.parseIceCommandLineOptions(argv)
