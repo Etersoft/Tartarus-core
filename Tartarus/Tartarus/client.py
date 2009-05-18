@@ -3,7 +3,7 @@ import os
 import Ice
 import Tartarus
 
-def initialize(cfgs='common', prefixes=[]):
+def initialize(cfgs='common', prefixes=[], domain = None):
     cfgs = _to_list(cfgs)
     props = Ice.createProperties()
     argv = sys.argv[:]
@@ -29,7 +29,7 @@ def initialize(cfgs='common', prefixes=[]):
             _check_load(props, cfg)
         else:
             _check_load(props, "%s/%s.conf" % (conf_dir, cfg))
-
+    _check_props(props, domain)
     return _init(props), argv
 
 def _parse_cmd_line(props, prefixes, argv):
@@ -61,6 +61,20 @@ def _check_load(ice_props, config):
             print "File with configuration '%s' was not found" % config
         er = ConfigError (e)
         sys.exit(1)
+
+def _check_props(ice_props, domain):
+    for key, value in ice_props.getPropertiesForPrefix("").iteritems():
+        if "ssl" and "-p" in value.split():
+            if "-h" in value.split():
+                continue
+            else:
+                if domain == None:
+                    raise ConfigError ('\033[91mError:\033[0m %s\n' % "Domain was not set.")
+                value += " -h %s" % domain
+                ice_props.setProperty(key, value)
+
+    return ice_props
+
 
 class ConfigError(Exception):
     def __init__(self, error):

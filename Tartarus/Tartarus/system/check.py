@@ -5,32 +5,33 @@ import Ice, IcePy
 from dns.resolver import query, NXDOMAIN
 from Tartarus.iface import Time
 from Tartarus.system import Error
-from Tartarus.client import initialize
-comm, argv = initialize('deploy')
+
+from Tartarus.iface import DNS
 
 
 class ObjectNotExists(Exception):
     def __init__(self, msg):
         super(ObjectNotExists, self).__init__(msg)
 
-def _serverTimePrx(domain):
+def _serverTimePrx(comm):
+    prx = comm.propertyToProxy('Tartarus.Time.ServerPrx')
 
-    prx_str = comm.propertyToProxy('Tartarus.deployPrx.Time') + ' -h %s' % domain
-    prx = comm.stringToProxy(prx_str)
-    t = IcePy.ObjectPrx.checkedCast(prx)
+    t = Time.ServerPrx.checkedCast(prx)
     return t.getTime()
 
 def _getLocalTime():
     return int(time.time())
 
-def _compare_Time(domain = None):
+def _compare_Time(comm, domain = None):
     if not domain:
         try:
             domain = hostname.getdomain()
         except:
             raise Error(' Can\'t get domain name.\n Please check your network instalation.\n Aborted.')
+    if not comm:
+        raise Error(' Can\'t get Ice communicator.\n Aborted.')
     try:
-        serverTm = _serverTimePrx(domain)
+        serverTm = _serverTimePrx(comm)
         if serverTm == None:
             Error(' Time service is not responding')
         localTm = _getLocalTime()
@@ -40,41 +41,42 @@ def _compare_Time(domain = None):
     except Ice.ObjectNotExistException:
         raise ObjectNotExists(' Object Time doesn\'t exist')
 
-def check_Time(domain = None):
+def check_Time(comm, domain = None):
     success = []
     error = []
     try:
-        time = _compare_Time()
+        time = _compare_Time(comm, domain)
     except Error, e:
         error.append('%s' % e)
     else:
         success.append('%s sec' % time)
     return success, error
 
-def _serverDNSPrx(domain):
-    prx_str = comm.propertyToProxy('Tartarus.deployPrx.DNS') + ' -h %s' % domain
-    prx = comm.stringToProxy(prx_str)
-    return IcePy.ObjectPrx.checkedCast(prx)
+def _serverDNSPrx(comm, domain):
+    prx = comm.propertyToProxy('Tartarus.DNS.ServerPrx')
+    return DNS.ServerPrx.checkedCast(prx)
 
-def _exist_DNS(domain = None):
+def _exist_DNS(comm, domain = None):
     if not domain:
         try:
             domain = hostname.getdomain()
         except:
             raise Error('DNS: Can\'t get domain name.\n Please check your network instalation.\n Aborted.')
+    if not comm:
+        raise Error(' Can\'t get Ice communicator.\n Aborted.')
     try:
-        ob = _serverDNSPrx(domain)
+        ob = _serverDNSPrx(comm, domain)
         if ob == None:
             raise Error('DNS: DNS is not responding')
         return "DNS: DNS exists and is responding"
     except Ice.ObjectNotExistException:
         raise ObjectNotExists('DNS: Object doesn\'t exist')
 
-def check_DNS(domain = None):
+def check_DNS(comm, domain = None):
     success = []
     error = []
     try:
-        dns = _exist_DNS()
+        dns = _exist_DNS(comm, domain)
     except Error, e:
         error.append('%s' % e)
     else:
@@ -141,11 +143,11 @@ def _check_dns_PTR(realm):
     except NXDOMAIN:
         raise Error(' PTR record for ip %s was not found' % str(ip))
 
-def check_krb5_lookup():
+def check_krb5_lookup(domain = None):
     success = []
     error = []
     try:
-        realm, realmstr = _check_krb5_realm()
+        realm, realmstr = _check_krb5_realm(domain)
     except Error, e:
         error.append('%s' % e)
     else:
@@ -229,25 +231,25 @@ def _check_fqdn(fqdn = None):
 
     return "Full hostname: %s" % fqdn
 
-def check_host_domain():
+def check_host_domain(host = None, domain = None, fqdn = None):
     success = []
     error = []
     try:
-        hostname = _check_host()
+        hostname = _check_host(host)
     except Error, e:
         error.append('%s' % e)
     else:
         success.append('%s' % hostname)
 
     try:
-        domainname = _check_domain()
+        domainname = _check_domain(domain)
     except Error, e:
         error.append('%s' % e)
     else:
         success.append('%s' % domainname)
 
     try:
-        fullhostname = _check_fqdn()
+        fullhostname = _check_fqdn(fqdn)
     except Error, e:
         error.append('%s' % e)
     else:

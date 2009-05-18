@@ -1,6 +1,8 @@
 #!/usr/bin/python
 from Tartarus.system import check, krbconf
 import sys, os, tempfile
+from Tartarus.client import initialize
+
 
 
 def _make_tmpfile(realm, kdc):
@@ -26,16 +28,20 @@ def main():
         sys.stdout.write('\033[92mDONE\033[0m\n')
     else:
         sys.stdout.write('\033[91mFAIL\033[0m\n')
+
     for i in success:
+        if i.split()[0].startswith("Domain"):
+            domain = i.split()[1]
         sys.stdout.write('\t%s\n' % i)
     if (error != []):
         for y in error:
             sys.stdout.write('\t%s\n' % y)
 
     _make_tmpfile("SARATOV.ETERSOFT.RU", "kerberos.saratov.etersoft.ru")
+    comm, argv = initialize('deploy', domain= domain)
 
     sys.stdout.write("\nCheck of DNS: ")
-    success, error = check.check_DNS()
+    success, error = check.check_DNS(comm)
     if (error == []):
         sys.stdout.write('\033[92mDONE\033[0m\n')
     else:
@@ -59,7 +65,7 @@ def main():
             sys.stdout.write('\t%s\n' % y)
 
     sys.stdout.write("\nCheck of time on server and localtime: ")
-    success, error = check.check_Time()
+    success, error = check.check_Time(comm)
     if (error == []):
         sys.stdout.write('\033[92mDONE\033[0m\n')
     else:
