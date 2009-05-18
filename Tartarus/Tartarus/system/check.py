@@ -6,7 +6,7 @@ from dns.resolver import query, NXDOMAIN
 from Tartarus.iface import Time
 from Tartarus.system import Error
 from Tartarus.client import initialize
-comm, argv = initialize('deploy.conf')
+comm, argv = initialize('deploy')
 
 
 class ObjectNotExists(Exception):
