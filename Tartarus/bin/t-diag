@@ -2,8 +2,8 @@
 from Tartarus.system import check, krbconf
 import sys, os, tempfile
 from Tartarus.client import initialize
-
-
+from Tartarus.deploy.common import Wizard
+import krb5user
 
 def _make_tmpfile(realm, kdc):
     tmp = tempfile.TemporaryFile()
@@ -37,8 +37,15 @@ def main():
         for y in error:
             sys.stdout.write('\t%s\n' % y)
 
+    w = Wizard()
+    w.opts = {}
+    login = w.dialog.ask('Login:', '')
+    login += "@" + domain.upper()
+    krb5user.kinitPasswordPromptPosix(login)
+
     _make_tmpfile("SARATOV.ETERSOFT.RU", "kerberos.saratov.etersoft.ru")
     comm, argv = initialize('deploy', domain= domain)
+
 
     sys.stdout.write("\nCheck of DNS: ")
     success, error = check.check_DNS(comm)
