@@ -13,9 +13,8 @@ class ObjectNotExists(Exception):
     def __init__(self, msg):
         super(ObjectNotExists, self).__init__(msg)
 
-def _serverTimePrx(comm):
+def _getServerTime(comm):
     prx = comm.propertyToProxy('Tartarus.Time.ServerPrx')
-
     t = Time.ServerPrx.checkedCast(prx)
     return t.getTime()
 
@@ -31,7 +30,7 @@ def _compare_Time(comm, domain = None):
     if not comm:
         raise Error(' Can\'t get Ice communicator.\n Aborted.')
     try:
-        serverTm = _serverTimePrx(comm)
+        serverTm = _getServerTime(comm)
         if serverTm == None:
             Error(' Time service is not responding')
         localTm = _getLocalTime()
