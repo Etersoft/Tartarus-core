@@ -71,7 +71,7 @@ def _check_props(ice_props, domain):
                 continue
             else:
                 if domain == None:
-                    raise ConfigError ('\033[91mError:\033[0m %s\n' % "Domain was not set.")
+                    raise ConfigError ("Domain was not set.")
                     sys.exit(1)
                 value += " -h %s" % domain
                 ice_props.setProperty(key, value)

@@ -3,6 +3,7 @@ import os, sys
 import time
 from Tartarus.client import initialize
 from Tartarus.system import check
+
 def _comp_time (time):
     if time < 10:
         time = '%i%i' %(0, time)
