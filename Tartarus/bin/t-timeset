@@ -1,13 +1,19 @@
 #!/usr/bin/python
+
 import os, sys
 import time
 from Tartarus.client import initialize
-from Tartarus.system import check
+from Tartarus.iface import Time
 
 def _comp_time (time):
     if time < 10:
-        time = '%i%i' %(0, time)
+        time = '%i%i' % (0, time)
     return time
+
+def _getServerTime(comm):
+    prx = comm.propertyToProxy('Tartarus.Time.ServerPrx')
+    t = Time.ServerPrx.checkedCast(prx)
+    return t.getTime()
 
 class TimeSetError(Exception):
     def __init__(self, error):
@@ -15,9 +21,7 @@ class TimeSetError(Exception):
         self.error = error
 
 def main(argv=None):
-
     tm = argv
-
     if argv is None:
         if len(sys.argv) == 2:
             argv = sys.argv
@@ -28,13 +32,17 @@ def main(argv=None):
                 TimeSetError(e)
                 sys.exit(1)
         else:
-
             comm, argv = initialize()
-            server_time = check._getServerTime(comm)
+            server_time = _getServerTime(comm)
             tm = server_time
 
     lc = time.localtime(tm)
-    str_time = '%s%s%s%s%i.%s' % (_comp_time(lc.tm_mon), _comp_time(lc.tm_mday), _comp_time(lc.tm_hour), _comp_time(lc.tm_min), lc.tm_year, _comp_time(lc.tm_sec))
+    str_time = '%s%s%s%s%i.%s' % (_comp_time(lc.tm_mon),
+                                  _comp_time(lc.tm_mday),
+                                  _comp_time(lc.tm_hour),
+                                  _comp_time(lc.tm_min),
+                                             lc.tm_year,
+                                  _comp_time(lc.tm_sec))
 
     os.system("/bin/date %s" % str_time)
     os.system("/sbin/hwclock --systohc")

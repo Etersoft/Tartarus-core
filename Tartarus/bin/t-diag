@@ -56,29 +56,7 @@ def main(argv=None):
         for y in error:
             sys.stdout.write('\t%s\n' % y)
 
-    w = Wizard()
-    w.opts = {}
-    login = w.dialog.ask('Login:', '')
-    login += "@" + domain.upper()
-    krb5user.kinitPasswordPromptPosix(login)
-
-    _make_tmpfile("SARATOV.ETERSOFT.RU", "kerberos.saratov.etersoft.ru")
-    comm, argv = initialize('deploy', domain= domain)
-
-
-    sys.stdout.write("\nCheck of DNS: ")
-    success, error = check.check_DNS(comm)
-    if (error == []):
-        sys.stdout.write('\033[92mDONE\033[0m\n')
-    else:
-        sys.stdout.write('\033[91mFAIL\033[0m\n')
-    for i in success:
-        sys.stdout.write('\t%s\n' % i)
-    if (error != []):
-        for y in error:
-            sys.stdout.write('\t%s\n' % y)
-
-    sys.stdout.write("\nCheck of kerberos: ")
+    sys.stdout.write("\nCheck of kerberos DNS-records: ")
     success, error = check.check_krb5_lookup()
     if (error == []):
         sys.stdout.write('\033[92mDONE\033[0m\n')
@@ -89,6 +67,15 @@ def main(argv=None):
     if (error != []):
         for y in error:
             sys.stdout.write('\t%s\n' % y)
+
+    w = Wizard()
+    w.opts = {}
+    login = w.dialog.ask('\nNext operations needs credentials\nLogin:', 'sysadmin')
+    login += "@" + domain.upper()
+    krb5user.kinitPasswordPromptPosix(login)
+
+    _make_tmpfile("SARATOV.ETERSOFT.RU", "kerberos.saratov.etersoft.ru")
+    comm, argv = initialize('deploy', domain = domain)
 
     sys.stdout.write("\nCheck of time on server and localtime: ")
     success, error = check.check_Time(comm)
@@ -101,5 +88,18 @@ def main(argv=None):
     if (error != []):
         for y in error:
             sys.stdout.write('\t%s\n' % y)
+
+    sys.stdout.write("\nCheck of DNS Service: ")
+    success, error = check.check_DNS(comm)
+    if (error == []):
+        sys.stdout.write('\033[92mDONE\033[0m\n')
+    else:
+        sys.stdout.write('\033[91mFAIL\033[0m\n')
+    for i in success:
+        sys.stdout.write('\t%s\n' % i)
+    if (error != []):
+        for y in error:
+            sys.stdout.write('\t%s\n' % y)
+
 if __name__ == '__main__':
     main()
