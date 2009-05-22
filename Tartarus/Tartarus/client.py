@@ -3,23 +3,35 @@ import os
 import Ice
 import Tartarus
 
-def initialize(cfgs='common', prefixes=[]):
+def initialize(cfgs='common', prefixes=[], domain = None):
     cfgs = _to_list(cfgs)
     props = Ice.createProperties()
     argv = sys.argv[:]
     _parse_cmd_line(props, prefixes, argv)
     cfg = props.getPropertyWithDefault('Tartarus.Config', None)
+
     if cfg:
         _check_load(props, cfg)
-        return _init(props), argv
-    if 'TARTARUS_CONFIG' in os.environ:
+    elif 'TARTARUS_CONFIG' in os.environ:
         _check_load(props, os.environ['TARTARUS_CONFIG'])
-        return _init(props), argv
+    else:
+        try:
+            props.load("/etc/Tartarus/Tartarus-clients.conf")
+        except:
+            pass
+
+    conf_dir = props.getProperty("Tartarus.configDir")
+    if not conf_dir:
+        conf_dir = "/etc/Tartarus/clients"
+
     for cfg in cfgs:
         if os.path.isabs(cfg):
             _check_load(props, cfg)
         else:
-            _check_load (props, "/etc/Tartarus/clients/%s.conf" % cfg)
+            _check_load(props, "%s/%s.conf" % (conf_dir, cfg))
+
+    if domain != None:
+        _check_props(props, domain)
     return _init(props), argv
 
 def _parse_cmd_line(props, prefixes, argv):
@@ -51,6 +63,21 @@ def _check_load(ice_props, config):
             print "File with configuration '%s' was not found" % config
         er = ConfigError (e)
         sys.exit(1)
+
+def _check_props(ice_props, domain):
+    for key, value in ice_props.getPropertiesForPrefix("").iteritems():
+        if ("ssl" in value.split()) and ("-p" in value.split()):
+            if "-h" in value.split():
+                continue
+            else:
+                if domain == None:
+                    raise ConfigError ("Domain was not set.")
+                    sys.exit(1)
+                value += " -h %s" % domain
+                ice_props.setProperty(key, value)
+
+    return ice_props
+
 
 class ConfigError(Exception):
     def __init__(self, error):

@@ -6,7 +6,6 @@ import Tartarus.iface.DNS as I
 import Tartarus.iface.core as ICore
 
 import utils, cfgfile
-
 def _get_princ_and_addr(current):
     try:
         info = IceSSL.getConnectionInfo(current.con)

@@ -1,0 +1,53 @@
+#!/usr/bin/python
+
+import os, sys
+import time
+from Tartarus.client import initialize
+from Tartarus.iface import Time
+
+def _comp_time (time):
+    if time < 10:
+        time = '%i%i' % (0, time)
+    return time
+
+def _getServerTime(comm):
+    prx = comm.propertyToProxy('Tartarus.Time.ServerPrx')
+    t = Time.ServerPrx.checkedCast(prx)
+    return t.getTime()
+
+class TimeSetError(Exception):
+    def __init__(self, error):
+        super(TimeSetError, self).__init__(error)
+        self.error = error
+
+def main(argv=None):
+    tm = argv
+    if argv is None:
+        if len(sys.argv) == 2:
+            argv = sys.argv
+            try:
+                tm =  int(argv[1])
+            except Exception, e:
+                print '\033[91mError:\033[0m %s\n' % " specify unix time in seconds which you want to set"
+                TimeSetError(e)
+                sys.exit(1)
+        else:
+            comm, argv = initialize()
+            server_time = _getServerTime(comm)
+            tm = server_time
+
+    lc = time.localtime(tm)
+    str_time = '%s%s%s%s%i.%s' % (_comp_time(lc.tm_mon),
+                                  _comp_time(lc.tm_mday),
+                                  _comp_time(lc.tm_hour),
+                                  _comp_time(lc.tm_min),
+                                             lc.tm_year,
+                                  _comp_time(lc.tm_sec))
+
+    os.system("/bin/date %s" % str_time)
+    os.system("/sbin/hwclock --systohc")
+
+if __name__ == "__main__":
+    main()
+
+

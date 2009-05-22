@@ -4,7 +4,7 @@ import Options
 srcdir = '.'
 blddir = '.waf-build'
 APPNAME = 'Tartarus-core'
-VERSION = '0.8.2'
+VERSION = '0.8.3'
 
 def set_options(opt):
     opt.tool_options('gnu_dirs')

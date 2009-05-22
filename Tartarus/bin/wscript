@@ -6,6 +6,7 @@ def build(bld):
             't-modules',
             't-dhcpreg',
             't-krb-mkservice',
+            't-timeset',
             't-join')
     bins = set(bld.glob('t-*'))
     bins -= frozenset(sbins)
