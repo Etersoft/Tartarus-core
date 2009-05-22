@@ -72,6 +72,7 @@ def main(argv=None):
     w.opts = {}
     login = w.dialog.ask('\nNext operations needs credentials\nLogin:', 'sysadmin')
     login += "@" + domain.upper()
+    print login
     krb5user.kinitPasswordPromptPosix(login)
 
     _make_tmpfile("SARATOV.ETERSOFT.RU", "kerberos.saratov.etersoft.ru")

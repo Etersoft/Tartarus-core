@@ -3,19 +3,18 @@ import os, sys, string, time
 import Ice, IcePy
 
 from dns.resolver import query, NXDOMAIN
-from Tartarus.iface import Time
-from Tartarus.system import Error
 
-from Tartarus.iface import DNS
+from Tartarus.system import Error
+from Tartarus.client import getTimePrx, getDNSPrx
+
 
 
 class ObjectNotExists(Exception):
     def __init__(self, msg):
         super(ObjectNotExists, self).__init__(msg)
 
-def _getServerTime(comm):
-    prx = comm.propertyToProxy('Tartarus.Time.ServerPrx')
-    t = Time.ServerPrx.checkedCast(prx)
+def getServerTime(comm):
+    t = getTimePrx(comm)
     return t.getTime()
 
 def _getLocalTime():
@@ -30,7 +29,7 @@ def _compare_Time(comm, domain = None):
     if not comm:
         raise Error(' Can\'t get Ice communicator.\n Aborted.')
     try:
-        serverTm = _getServerTime(comm)
+        serverTm = getServerTime(comm)
         if serverTm == None:
             Error(' Time service is not responding')
         localTm = _getLocalTime()
@@ -51,9 +50,9 @@ def check_Time(comm, domain = None):
         success.append('%s sec' % time)
     return success, error
 
-def _serverDNSPrx(comm, domain):
-    prx = comm.propertyToProxy('Tartarus.DNS.ServerPrx')
-    return DNS.ServerPrx.checkedCast(prx)
+#def _serverDNSPrx(comm, domain):
+    #prx = comm.propertyToProxy('Tartarus.DNS.ServerPrx')
+    #return DNS.ServerPrx.checkedCast(prx)
 
 def _exist_DNS(comm, domain = None):
     if not domain:
@@ -64,7 +63,8 @@ def _exist_DNS(comm, domain = None):
     if not comm:
         raise Error(' Can\'t get Ice communicator.\n Aborted.')
     try:
-        ob = _serverDNSPrx(comm, domain)
+        ob = getDNSPrx (comm)
+        #ob = _serverDNSPrx(comm, domain)
         if ob == None:
             raise Error('DNS: DNS is not responding')
         return "DNS: DNS exists and is responding"

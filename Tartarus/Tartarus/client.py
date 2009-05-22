@@ -2,6 +2,16 @@ import sys
 import os
 import Ice
 import Tartarus
+from Tartarus.iface import DNS
+from Tartarus.iface import Time
+
+_TimeServerPrx_ = "Tartarus.Time.ServerPrx"
+_SysDBUserPrx_ = "Tartarus.SysDB.UserManagerPrx"
+_SysDBGroupPrx_ = "Tartarus.SysDB.GroupManagerPrx"
+_KerberosKadminPrx_ = "Tartarus.Kerberos.KadminPrx"
+_DNSServerPrx_ = "Tartarus.DNS.ServerPrx"
+
+_PrxList_ = [_TimeServerPrx_, _SysDBUserPrx_, _SysDBGroupPrx_, _KerberosKadminPrx_, _DNSServerPrx_]
 
 def initialize(cfgs='common', prefixes=[], domain = None):
     cfgs = _to_list(cfgs)
@@ -30,8 +40,7 @@ def initialize(cfgs='common', prefixes=[], domain = None):
         else:
             _check_load(props, "%s/%s.conf" % (conf_dir, cfg))
 
-    if domain != None:
-        _check_props(props, domain)
+    _check_props(props, domain)
     return _init(props), argv
 
 def _parse_cmd_line(props, prefixes, argv):
@@ -58,7 +67,7 @@ def _check_load(ice_props, config):
     try:
         ice_props.load(config)
     except Exception, e:
-        print '\033[91mError:\033[0m %s\n' % "Maybe the given workstation is not entered into the domain.."
+        print "Maybe the given workstation is not entered into the domain.."
         if not(os.path.isfile(config)):
             print "File with configuration '%s' was not found" % config
         er = ConfigError (e)
@@ -66,18 +75,24 @@ def _check_load(ice_props, config):
 
 def _check_props(ice_props, domain):
     for key, value in ice_props.getPropertiesForPrefix("").iteritems():
-        if ("ssl" in value.split()) and ("-p" in value.split()):
-            if "-h" in value.split():
-                continue
-            else:
-                if domain == None:
-                    raise ConfigError ("Domain was not set.")
-                    sys.exit(1)
-                value += " -h %s" % domain
-                ice_props.setProperty(key, value)
+        if (key in _PrxList_) and ('-h' not in value.split()):
+            if domain == None:
+                raise ConfigError ("Domain was not set.")
+                sys.exit(1)
+            value += " -h %s" % domain
+            ice_props.setProperty(key, value)
 
     return ice_props
 
+def getTimePrx(comm):
+    prx = comm.propertyToProxy(_TimeServerPrx_)
+    t = Time.ServerPrx.checkedCast(prx)
+    return t
+
+def getDNSPrx(comm):
+    prx = comm.propertyToProxy(_DNSServerPrx_)
+    t = DNS.ServerPrx.checkedCast(prx)
+    return t
 
 class ConfigError(Exception):
     def __init__(self, error):
