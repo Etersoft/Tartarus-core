@@ -3,34 +3,28 @@ import os, sys, string, time
 import Ice, IcePy
 
 from dns.resolver import query, NXDOMAIN
-from Tartarus.iface import Time
-from Tartarus.system import Error
 
-from Tartarus.iface import DNS
+from Tartarus.system import Error
+from Tartarus.client import getTimePrx, getDNSPrx
+
 
 
 class ObjectNotExists(Exception):
     def __init__(self, msg):
         super(ObjectNotExists, self).__init__(msg)
 
-def _getServerTime(comm):
-    prx = comm.propertyToProxy('Tartarus.Time.ServerPrx')
-    t = Time.ServerPrx.checkedCast(prx)
+def getServerTime(comm):
+    t = getTimePrx(comm)
     return t.getTime()
 
 def _getLocalTime():
     return int(time.time())
 
-def _compare_Time(comm, domain = None):
-    if not domain:
-        try:
-            domain = hostname.getdomain()
-        except:
-            raise Error(' Can\'t get domain name.\n Please check your network instalation.\n Aborted.')
+def _compare_Time(comm):
     if not comm:
         raise Error(' Can\'t get Ice communicator.\n Aborted.')
     try:
-        serverTm = _getServerTime(comm)
+        serverTm = getServerTime(comm)
         if serverTm == None:
             Error(' Time service is not responding')
         localTm = _getLocalTime()
@@ -40,46 +34,38 @@ def _compare_Time(comm, domain = None):
     except Ice.ObjectNotExistException:
         raise ObjectNotExists(' Object Time doesn\'t exist')
 
-def check_Time(comm, domain = None):
+def check_Time(comm):
     success = []
     error = []
     try:
-        time = _compare_Time(comm, domain)
+        time = _compare_Time(comm)
     except Error, e:
         error.append('%s' % e)
     else:
         success.append('%s sec' % time)
     return success, error
 
-def _serverDNSPrx(comm, domain):
-    prx = comm.propertyToProxy('Tartarus.DNS.ServerPrx')
-    return DNS.ServerPrx.checkedCast(prx)
-
-def _exist_DNS(comm, domain = None):
-    if not domain:
-        try:
-            domain = hostname.getdomain()
-        except:
-            raise Error('DNS: Can\'t get domain name.\n Please check your network instalation.\n Aborted.')
+def _exist_DNS(comm):
     if not comm:
         raise Error(' Can\'t get Ice communicator.\n Aborted.')
     try:
-        ob = _serverDNSPrx(comm, domain)
+        ob = getDNSPrx (comm)
         if ob == None:
             raise Error('DNS: DNS is not responding')
         return "DNS: DNS exists and is responding"
     except Ice.ObjectNotExistException:
         raise ObjectNotExists('DNS: Object doesn\'t exist')
 
-def check_DNS(comm, domain = None):
+def check_DNS(comm):
     success = []
     error = []
     try:
-        dns = _exist_DNS(comm, domain)
+        dns = _exist_DNS(comm)
     except Error, e:
         error.append('%s' % e)
     else:
         success.append('%s' % dns)
+
     return success, error
 
 def _check_krb5_realm(domain = None):
@@ -91,7 +77,7 @@ def _check_krb5_realm(domain = None):
     realm_query = '_kerberos.' + domain
     try:
         realm = iter(query(realm_query,'TXT')).next().strings[0]
-        return realm, 'Kerberos realm for domain "%s" is %s' % (str(domain),str(realm))
+        return realm, 'Kerberos realm for domain "%s" is "%s"' % (str(domain),str(realm))
     except NXDOMAIN:
         raise Error(' Kerberos realm for domain "%s" not found'
                     % domain)
@@ -100,7 +86,7 @@ def _check_krb5_kdc(realm):
     try:
         kdc_query = '_kerberos._udp.' + realm + '.'
         result = iter(query(kdc_query,'SRV')).next()
-        return 'Kdc for REALM "%s" is %s.' % (str(realm), str(result))
+        return result, 'Kdc for REALM "%s" is "%s".' % (str(realm), str(result))
     except NXDOMAIN:
         raise Error('Kdc for REALM "%s" not found' % realm)
 
@@ -108,7 +94,7 @@ def _check_krb5_passwd(realm):
     try:
         kdc_query = '_kpasswd._udp.' + realm + '.'
         result = iter(query(kdc_query,'SRV')).next()
-        return 'Kpasswd for REALM "%s" is %s.' % (str(realm), str(result))
+        return 'Kpasswd for REALM "%s" is "%s".' % (str(realm), str(result))
     except NXDOMAIN:
         raise Error('Kpasswd for REALM "%s" not found' % realm)
 
@@ -116,21 +102,21 @@ def _check_dns_CNAME(realm):
     try:
         kdc_query = 'kerberos.' + realm + '.'
         result = iter(query(kdc_query,'CNAME')).next()
-        return 'CNAME record for kerberos is %s.' % str(result)
+        return 'CNAME record for kerberos is "%s".' % str(result)
     except NXDOMAIN:
         raise Error('CNAME record for kerberos not found')
 
-def _check_dns_A(realm):
+def _check_record_A(record):
     try:
-        kdc_query = realm + '.'
+        kdc_query = str(record) + '.'
         result = iter(query(kdc_query,'A')).next()
-        return result, 'A record for REALM "%s" is %s.' % (str(realm), str(result))
+        return result, 'A record for REALM "%s" is "%s".' % (str(record), str(result))
     except NXDOMAIN:
         raise Error(' A record for REALM was not found')
 
 
-def _check_dns_PTR(realm):
-    ip, _ = _check_dns_A(realm)
+def _check_record_PTR(record):
+    ip, _ = _check_record_A(record)
     try:
         rev_ip = str(ip).split('.')
         rev_ip.reverse()
@@ -138,13 +124,20 @@ def _check_dns_PTR(realm):
         rev_ip = rev_ip + '.in-addr.arpa.'
         kdc_query = rev_ip
         result = iter(query(kdc_query,'PTR')).next()
-        return 'PTR record for ip "%s" is %s.' % ( str(ip), str(result))
+        if (record != str(result)):
+            ip_record, _ = _check_record_A(str(record))
+            if (ip != ip_record):
+                raise Error ('ip "%s"  was got for this record "%s". But PTR record for this ip is "%s".' % (str(ip), record, str(result))) 
+        return 'PTR record for ip "%s" is "%s".' % ( str(ip), str(result))
     except NXDOMAIN:
         raise Error(' PTR record for ip %s was not found' % str(ip))
 
 def check_krb5_lookup(domain = None):
     success = []
     error = []
+    realm = domain.upper()
+    realmstr = 'Default kerberos realm for domain "%s" is %s' % (str(domain),str(realm))
+
     try:
         realm, realmstr = _check_krb5_realm(domain)
     except Error, e:
@@ -153,11 +146,35 @@ def check_krb5_lookup(domain = None):
         success.append('%s' % realmstr)
 
     try:
-        kdc = _check_krb5_kdc(realm)
+        _, arecord = _check_record_A(domain)
     except Error, e:
         error.append('%s' % e)
     else:
-        success.append('%s' % kdc)
+        success.append('%s' % arecord)
+
+    try:
+        ptrrec = _check_record_PTR(domain)
+    except Error, e:
+        error.append('%s' % e)
+    else:
+        success.append('%s' % ptrrec)
+
+    print "domain", domain
+    kdc = "kerberos." + domain
+    kdcstr = 'Default Kdc for REALM "%s" is "%s".' % (str(realm), kdc)
+    try:
+        kdc, kdcstr = _check_krb5_kdc(realm)
+    except Error, e:
+        error.append('%s' % e)
+    else:
+        success.append('%s' % kdcstr)
+
+    try:
+        _, arecord = _check_record_A(str(kdc).split().pop().strip("."))
+    except Error, e:
+        error.append('%s' % e)
+    else:
+        success.append('%s' % arecord)
 
     try:
         kpasswd = _check_krb5_passwd(realm)
@@ -172,21 +189,7 @@ def check_krb5_lookup(domain = None):
         error.append('%s' % e)
     else:
         success.append('%s' % cname)
-
-    try:
-        _, arecord = _check_dns_A(realm)
-    except Error, e:
-        error.append('%s' % e)
-    else:
-        success.append('%s' % arecord)
-
-    try:
-        ptrrec = _check_dns_PTR(realm)
-    except Error, e:
-        error.append('%s' % e)
-    else:
-        success.append('%s' % ptrrec)
-    return success, error
+    return realm, kdc, success, error
 
 def _check_host(host = None):
     if not host:

@@ -4,7 +4,7 @@ import os, sys
 import time
 from Tartarus.client import initialize
 from Tartarus.iface import Time
-
+from Tartarus.system import check
 def _comp_time (time):
     if time < 10:
         time = '%i%i' % (0, time)
@@ -33,7 +33,7 @@ def main(argv=None):
                 sys.exit(1)
         else:
             comm, argv = initialize()
-            server_time = _getServerTime(comm)
+            server_time = check.getServerTime(comm)
             tm = server_time
 
     lc = time.localtime(tm)
