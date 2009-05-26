@@ -57,7 +57,7 @@ def main(argv=None):
             sys.stdout.write('\t%s\n' % y)
 
     sys.stdout.write("\nCheck of kerberos DNS-records: ")
-    success, error = check.check_krb5_lookup()
+    realm, kdc, success, error = check.check_krb5_lookup(domain)
     if (error == []):
         sys.stdout.write('\033[92mDONE\033[0m\n')
     else:
@@ -72,10 +72,9 @@ def main(argv=None):
     w.opts = {}
     login = w.dialog.ask('\nNext operations needs credentials\nLogin:', 'sysadmin')
     login += "@" + domain.upper()
-    print login
     krb5user.kinitPasswordPromptPosix(login)
 
-    _make_tmpfile("SARATOV.ETERSOFT.RU", "kerberos.saratov.etersoft.ru")
+    _make_tmpfile(realm, kdc)
     comm, argv = initialize('deploy', domain = domain)
 
     sys.stdout.write("\nCheck of time on server and localtime: ")
