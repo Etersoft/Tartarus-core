@@ -1,6 +1,6 @@
 
 Version: 0.8.3
-Release: alt1
+Release: alt2
 
 %define tname Tartarus
 
@@ -514,6 +514,10 @@ fi
 # {{{1 changelog
 
 %changelog
+* Tue May 26 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.3-alt2
+- First bugfixes to 0.8.3
++ clean code from silly bugs
+
 * Fri May 22 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.3-alt1
 - Release of version 0.8.3
 + Add t-diag and t-timeset utilities.
