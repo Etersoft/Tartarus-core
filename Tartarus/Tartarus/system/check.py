@@ -159,7 +159,6 @@ def check_krb5_lookup(domain = None):
     else:
         success.append('%s' % ptrrec)
 
-    print "domain", domain
     kdc = "kerberos." + domain
     kdcstr = 'Default Kdc for REALM "%s" is "%s".' % (str(realm), kdc)
     try:
@@ -195,10 +194,9 @@ def _check_host(host = None):
     if not host:
         try:
             host = hostname.getname()
-            return "Hostname: %s" % host
         except:
             raise Error('Hostname: Can\'t get hostname.\n Please check your network instalation.\n Aborted.')
-
+    return "Hostname: %s" % host
 
 def _check_domain(domain = None):
     if not domain:

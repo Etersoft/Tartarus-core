@@ -26,7 +26,7 @@ def initialize(cfgs='common', prefixes=[], domain = None):
         _check_load(props, os.environ['TARTARUS_CONFIG'])
     else:
         try:
-            props.load("/etc/Tartarus/Tartarus-clients.conf")
+            _check_load(props, "/etc/Tartarus/Tartarus-clients.conf")
         except:
             pass
 
@@ -40,6 +40,8 @@ def initialize(cfgs='common', prefixes=[], domain = None):
         else:
             _check_load(props, "%s/%s.conf" % (conf_dir, cfg))
 
+    if domain == None:
+        domain = props.getProperty("Tartarus.Domain")
     _check_props(props, domain)
     return _init(props), argv
 
@@ -73,13 +75,12 @@ def _check_load(ice_props, config):
         er = ConfigError (e)
         sys.exit(1)
 
-def _check_props(ice_props, domain):
+def _check_props(ice_props, hostname):
     for key, value in ice_props.getPropertiesForPrefix("").iteritems():
         if (key in _PrxList_) and ('-h' not in value.split()):
-            if domain == None:
-                raise ConfigError ("Domain was not set.")
-                sys.exit(1)
-            value += " -h %s" % domain
+            if  hostname == None:
+                raise ConfigError ("Hostname for %s was not set." % key)
+            value += " -h %s" % hostname
             ice_props.setProperty(key, value)
 
     return ice_props
