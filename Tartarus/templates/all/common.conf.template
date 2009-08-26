@@ -11,3 +11,4 @@ Tartarus.SysDB.GroupManagerPrx = SysDB-Manager/Groups: ssl -h %(domain)s -p 1234
 Tartarus.Kerberos.KadminPrx = Kerberos/Kadmin: ssl -h %(domain)s -p 12345
 Tartarus.DNS.ServerPrx = DNS/Server: ssl -h %(domain)s -p 12345
 
+Tartarus.Domain = %(domain)s

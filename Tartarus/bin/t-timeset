@@ -10,11 +10,6 @@ def _comp_time (time):
         time = '%i%i' % (0, time)
     return time
 
-def _getServerTime(comm):
-    prx = comm.propertyToProxy('Tartarus.Time.ServerPrx')
-    t = Time.ServerPrx.checkedCast(prx)
-    return t.getTime()
-
 class TimeSetError(Exception):
     def __init__(self, error):
         super(TimeSetError, self).__init__(error)
