@@ -1,6 +1,6 @@
 
 Version: 0.8.3
-Release: alt2
+Release: alt3
 
 %define tname Tartarus
 
@@ -514,6 +514,10 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Aug 26 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.3-alt3
+- Second bugfixes to 0.8.3
++ Fixed bug #149 with server deployment
+
 * Tue May 26 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.3-alt2
 - First bugfixes to 0.8.3
 + clean code from silly bugs
