@@ -1,6 +1,6 @@
 
 Version: 0.8.3
-Release: alt3
+Release: alt3.1
 
 %define tname Tartarus
 
@@ -514,6 +514,9 @@ fi
 # {{{1 changelog
 
 %changelog
+* Wed Nov 25 2009 Eugeny A. Rostovtsev (REAL) <real at altlinux.org> 0.8.3-alt3.1
+- Rebuilt with python 2.6
+
 * Wed Aug 26 2009 Evgeny Sinelnikov <sin@altlinux.ru> 0.8.3-alt3
 - Second bugfixes to 0.8.3
 + Fixed bug #149 with server deployment
