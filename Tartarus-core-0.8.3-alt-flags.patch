@@ -1,0 +1,13 @@
+diff --git a/Tartarus/wscript b/Tartarus/wscript
+index 6b51c3e..2e1cae3 100644
+--- a/Tartarus/wscript
++++ b/Tartarus/wscript
+@@ -29,6 +29,8 @@ def configure(cfg):
+     cfg.sub_config('slice')
+     cfg.env['VERSION'] = VERSION
+     cfg.env.append_value('CPPFLAGS', '-O2')
++    cfg.env.append_value('CPPFLAGS', '-g')
++    cfg.env.append_value('CPPFLAGS', '-fpermissive')
+ 
+ def build(bld):
+     bld.auto_add_subdirs()
